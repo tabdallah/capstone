@@ -1,0 +1,52 @@
+{
+    "puck": {
+        "color": {
+            "hue": {
+                "upper": 27, 
+                "lower": 0
+            }, 
+            "val": {
+                "upper": 161, 
+                "lower": 45
+            }, 
+            "sat": {
+                "upper": 255, 
+                "lower": 197
+            }
+        }
+    }, 
+    "fiducial": {
+        "color": {
+            "hue": {
+                "upper": 97, 
+                "lower": 70
+            }, 
+            "val": {
+                "upper": 150, 
+                "lower": 55
+            }, 
+            "sat": {
+                "upper": 239, 
+                "lower": 84
+            }
+        }, 
+        "coordinates": {
+            "bl": {
+                "y": 389, 
+                "x": 199
+            }, 
+            "tl": {
+                "y": 178, 
+                "x": 255
+            }, 
+            "tr": {
+                "y": 173, 
+                "x": 448
+            }, 
+            "br": {
+                "y": 394, 
+                "x": 502
+            }
+        }
+    }
+}

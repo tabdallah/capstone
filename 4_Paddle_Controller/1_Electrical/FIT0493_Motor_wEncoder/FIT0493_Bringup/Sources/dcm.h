@@ -49,20 +49,28 @@
 //#define DCM_X_DISTANCE_PER_ENC_TICK 1604 // Distance in m^-7 per encoder tick
 //#define DCM_X_DISTANCE_FACTOR 10000		 // Conversion factor to get distance in mm
 
-
+#define DCM_GAIN_P_X 2
 
 // Structure definitions
 typedef struct dcm_t {
 	unsigned int position_cmd_enc_ticks;		// Commanded linear position
 	unsigned int position_enc_ticks;			// Current linear position
 	signed int position_error_ticks;			// Difference between current and commanded linear position
-	signed char direction;						// Motor direction, 1 = forward, 0 = off, -1 = reverse
+	signed char h_bridge_direction;				// H-Bridge direction, 1 = forward, 0 = off, -1 = reverse
+	signed char quadrature_direction;			// Quadrature encoder measured direction, 1 = forward, -1 = reverse
 	unsigned char pwm_duty;						// Current PWM duty cycle
-	unsigned int enc_edge_1_tcnt_ticks;			// Encoder first rising edge TCNT timestamp
-	unsigned int enc_edge_2_tcnt_ticks;			// Encoder second rising edge TCNT timestamp
-	unsigned char enc_edge_1_tcnt_overflow;		// Value of TCNT overflow counter at first rising edge
-	unsigned char enc_edge_2_tcnt_overflow;		// Value of TCNT overflow counter at second rising edge
-	unsigned char enc_edge_tracker;				// 0 = first rising edge, 1 = second rising edge
+
+	unsigned int enc_a_edge_tcnt_ticks;			// Encoder most recent rising edge TCNT timestamp
+	unsigned char enc_a_edge_tcnt_overflow;		// Value of TCNT overflow counter at most recent rising edge
+	unsigned int enc_a_edge_1_tcnt_ticks;		// Encoder first rising edge TCNT timestamp
+	unsigned int enc_a_edge_2_tcnt_ticks;		// Encoder second rising edge TCNT timestamp
+	unsigned char enc_a_edge_1_tcnt_overflow;	// Value of TCNT overflow counter at first rising edge
+	unsigned char enc_a_edge_2_tcnt_overflow;	// Value of TCNT overflow counter at second rising edge
+	unsigned char enc_a_edge_tracker;			// 0 = first rising edge, 1 = second rising edge
+
+	unsigned int enc_b_edge_tcnt_ticks;			// Encoder B most recent rising edge TCNT timestamp
+	unsigned char enc_b_edge_tcnt_overflow;		// Value of TCNT overflow counter at most recent rising edge
+
 	unsigned long period_tcnt_ticks;			// Encoder period in TCNT ticks
 	unsigned int speed_mm_s;					// Linear speed in mm/s
 } dcm_t;

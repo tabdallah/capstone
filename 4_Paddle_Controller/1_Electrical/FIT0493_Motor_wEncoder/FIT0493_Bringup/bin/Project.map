@@ -28,8 +28,8 @@ Entry point: 0xC029 (_Startup)
 _startupData is allocated at 0xC031 and uses 6 Bytes
 extern struct _tagStartup {
   unsigned nofZeroOut     1
-  _Range   pZeroOut       0x900     29
-  _Copy    *toCopyDownBeg 0xC868
+  _Range   pZeroOut       0x900     35
+  _Copy    *toCopyDownBeg 0xC91A
 } _startupData;
 
 *********************************************************************************************
@@ -40,8 +40,8 @@ Section Name                    Size  Type     From       To       Segment
 .startData                        10     R     0xC031     0xC03A   ROM_C000
 .rodata                          116     R     0xC03B     0xC0AE   ROM_C000
 .rodata1                          57     R     0xC0AF     0xC0E7   ROM_C000
-.text                           1825     R     0xC0E8     0xC808   ROM_C000
-.copy                              2     R     0xC868     0xC869   ROM_C000
+.text                           1978     R     0xC0E8     0xC8A1   ROM_C000
+.copy                              2     R     0xC91A     0xC91B   ROM_C000
 .stack                           256   R/W      0x800      0x8FF   RAM
 .abs_section_8                     1   N/I        0x8        0x8   .absSeg0
 .abs_section_9                     1   N/I        0x9        0x9   .absSeg1
@@ -268,13 +268,13 @@ Section Name                    Size  Type     From       To       Segment
 .abs_section_ffec                  2     R     0xFFEC     0xFFED   .absSeg222
 .abs_section_ffde                  2     R     0xFFDE     0xFFDF   .absSeg223
 .abs_section_ffe2                  2     R     0xFFE2     0xFFE3   .absSeg224
-.bss                              29   R/W      0x900      0x91C   RAM
-RUNTIME                           95     R     0xC809     0xC867   ROM_C000
+.bss                              35   R/W      0x900      0x922   RAM
+RUNTIME                          120     R     0xC8A2     0xC919   ROM_C000
 .vectSeg225_vect                   2     R     0xFFFE     0xFFFF   .vectSeg225
 
 Summary of section sizes per section type:
-READ_ONLY (R):         874 (dec:     2164)
-READ_WRITE (R/W):      11D (dec:      285)
+READ_ONLY (R):         926 (dec:     2342)
+READ_WRITE (R/W):      123 (dec:      291)
 NO_INIT (N/I):         104 (dec:      260)
 
 *********************************************************************************************
@@ -480,7 +480,7 @@ MODULE:                 -- mc9s12c32.c.o --
      _DBGCA                                      2B       2       2       0   .abs_section_2b
      _DBGCB                                      2E       2       2       0   .abs_section_2e
      _TCNT                                       44       2       2       4   .abs_section_44
-     _TC0                                        50       2       2       2   .abs_section_50
+     _TC0                                        50       2       2       1   .abs_section_50
      _TC1                                        52       2       2       1   .abs_section_52
      _TC2                                        54       2       2       0   .abs_section_54
      _TC3                                        56       2       2       0   .abs_section_56
@@ -537,12 +537,13 @@ MODULE:                 -- PRINTF.C.o (ansisi.lib) --
      pbuf                                       900       6       6      15   .bss        
 MODULE:                 -- rtshc12.c.o (ansisi.lib) --
 - PROCEDURES:
-     _LCMP_P                                   C809      15      21       3   RUNTIME     
-     _LNEG                                     C81E       D      13       1   RUNTIME     
-     _ILSEXT                                   C82B       7       7       2   RUNTIME     
-     _CASE_DIRECT_BYTE                         C832       5       5       1   RUNTIME     
-     _CASE_SEARCH_8                            C837      17      23       1   RUNTIME     
-     _CASE_SEARCH_8_BYTE                       C84E      1A      26       1   RUNTIME     
+     _LCMP                                     C8A2      19      25       1   RUNTIME     
+     _LCMP_P                                   C8BB      15      21       3   RUNTIME     
+     _LNEG                                     C8D0       D      13       1   RUNTIME     
+     _ILSEXT                                   C8DD       7       7       2   RUNTIME     
+     _CASE_DIRECT_BYTE                         C8E4       5       5       1   RUNTIME     
+     _CASE_SEARCH_8                            C8E9      17      23       1   RUNTIME     
+     _CASE_SEARCH_8_BYTE                       C900      1A      26       1   RUNTIME     
 - VARIABLES:
 MODULE:                 -- lcd.c.o --
 - PROCEDURES:
@@ -561,17 +562,16 @@ MODULE:                 -- timer.c.o --
 MODULE:                 -- dcm.c.o --
 - PROCEDURES:
      dcm_configure                             C71D      46      70       1   .text       
-     dcm_position_ctrl_x                       C763      47      71       1   .text       
-     dcm_encoder_b_x                           C7AA      4B      75       1   .text       
-     dcm_encoder_a_x                           C7F5       3       3       1   .text       
-     dcm_tcnt_overflow_handler                 C7F8       6       6       1   .text       
-     dcm_1kHz_loop                             C7FE       B      11       1   .text       
+     dcm_position_ctrl_x                       C763      77     119       1   .text       
+     dcm_encoder_b_x                           C7DA      57      87       1   .text       
+     dcm_encoder_a_x                           C831      60      96       1   .text       
+     dcm_tcnt_overflow_handler                 C891       6       6       1   .text       
+     dcm_1kHz_loop                             C897       B      11       1   .text       
 - VARIABLES:
      STRING.Configuring.DC.Motor.1             C0BB      17      23       1   .rodata1    
      STRING.DC.Motors.Configured.2             C0D2      16      22       1   .rodata1    
-     dcm_x                                      906      15      21      21   .bss        
-     dcm_tcnt_overflow                          91B       1       1       3   .bss        
-     previous_direction.3                       91C       1       1       2   .bss        
+     dcm_tcnt_overflow                          906       1       1       3   .bss        
+     dcm_x                                      907      1C      28      50   .bss        
      _Vector_8                                 FFEE       2       2       0   .abs_section_ffee
      _Vector_9                                 FFEC       2       2       0   .abs_section_ffec
      _Vector_16                                FFDE       2       2       0   .abs_section_ffde
@@ -585,10 +585,10 @@ MODULE STATISTIC
   main.c.o                                     0     43     12
   Start12.c.o                                  0     49      0
   PRINTF.C.o (ansisi.lib)                      6   1212    116
-  rtshc12.c.o (ansisi.lib)                     0     95      0
+  rtshc12.c.o (ansisi.lib)                     0    120      0
   lcd.c.o                                      0    266      0
   timer.c.o                                    0     68      0
-  dcm.c.o                                     23    236     53
+  dcm.c.o                                     29    389     53
   other                                      256     12      2
 
 *********************************************************************************************
@@ -600,7 +600,7 @@ SECTION: ".text"
   dcm_configure dcm_position_ctrl_x dcm_encoder_b_x dcm_encoder_a_x 
   dcm_tcnt_overflow_handler dcm_1kHz_loop 
 SECTION: ".bss"
-  pbuf dcm_x dcm_tcnt_overflow previous_direction.3 
+  pbuf dcm_tcnt_overflow dcm_x 
 SECTION: ".init"
   Init _Startup 
 SECTION: ".rodata"
@@ -1051,7 +1051,8 @@ SECTION: ".abs_section_16e"
 SECTION: ".abs_section_17e"
   _CANTXTSR 
 SECTION: "RUNTIME"
-  _LCMP_P _LNEG _ILSEXT _CASE_DIRECT_BYTE _CASE_SEARCH_8 _CASE_SEARCH_8_BYTE 
+  _LCMP _LCMP_P _LNEG _ILSEXT _CASE_DIRECT_BYTE _CASE_SEARCH_8 
+  _CASE_SEARCH_8_BYTE 
 SECTION: ".abs_section_ffee"
   _Vector_8 
 SECTION: ".abs_section_ffec"
@@ -1122,7 +1123,7 @@ OBJECT LIST SORTED BY ADDRESS
      _TSCR2                                      4D       1       1       1   .abs_section_4d
      _TFLG1                                      4E       1       1       2   .abs_section_4e
      _TFLG2                                      4F       1       1       0   .abs_section_4f
-     _TC0                                        50       2       2       2   .abs_section_50
+     _TC0                                        50       2       2       1   .abs_section_50
      _TC1                                        52       2       2       1   .abs_section_52
      _TC2                                        54       2       2       0   .abs_section_54
      _TC3                                        56       2       2       0   .abs_section_56
@@ -1287,9 +1288,8 @@ OBJECT LIST SORTED BY ADDRESS
      _PERAD                                     274       1       1       0   .abs_section_274
      _PPSAD                                     275       1       1       0   .abs_section_275
      pbuf                                       900       6       6      15   .bss        
-     dcm_x                                      906      15      21      21   .bss        
-     dcm_tcnt_overflow                          91B       1       1       3   .bss        
-     previous_direction.3                       91C       1       1       2   .bss        
+     dcm_tcnt_overflow                          906       1       1       3   .bss        
+     dcm_x                                      907      1C      28      50   .bss        
      Init                                      C000      29      41       1   .init       
      _Startup                                  C029       8       8       0   .init       
      pow10                                     C03B      28      40       4   .rodata     
@@ -1312,17 +1312,18 @@ OBJECT LIST SORTED BY ADDRESS
      timer_configure_1kHz                      C6E1      11      17       1   .text       
      timer_delay_ms                            C6F2      2B      43       5   .text       
      dcm_configure                             C71D      46      70       1   .text       
-     dcm_position_ctrl_x                       C763      47      71       1   .text       
-     dcm_encoder_b_x                           C7AA      4B      75       1   .text       
-     dcm_encoder_a_x                           C7F5       3       3       1   .text       
-     dcm_tcnt_overflow_handler                 C7F8       6       6       1   .text       
-     dcm_1kHz_loop                             C7FE       B      11       1   .text       
-     _LCMP_P                                   C809      15      21       3   RUNTIME     
-     _LNEG                                     C81E       D      13       1   RUNTIME     
-     _ILSEXT                                   C82B       7       7       2   RUNTIME     
-     _CASE_DIRECT_BYTE                         C832       5       5       1   RUNTIME     
-     _CASE_SEARCH_8                            C837      17      23       1   RUNTIME     
-     _CASE_SEARCH_8_BYTE                       C84E      1A      26       1   RUNTIME     
+     dcm_position_ctrl_x                       C763      77     119       1   .text       
+     dcm_encoder_b_x                           C7DA      57      87       1   .text       
+     dcm_encoder_a_x                           C831      60      96       1   .text       
+     dcm_tcnt_overflow_handler                 C891       6       6       1   .text       
+     dcm_1kHz_loop                             C897       B      11       1   .text       
+     _LCMP                                     C8A2      19      25       1   RUNTIME     
+     _LCMP_P                                   C8BB      15      21       3   RUNTIME     
+     _LNEG                                     C8D0       D      13       1   RUNTIME     
+     _ILSEXT                                   C8DD       7       7       2   RUNTIME     
+     _CASE_DIRECT_BYTE                         C8E4       5       5       1   RUNTIME     
+     _CASE_SEARCH_8                            C8E9      17      23       1   RUNTIME     
+     _CASE_SEARCH_8_BYTE                       C900      1A      26       1   RUNTIME     
      _Vector_16                                FFDE       2       2       0   .abs_section_ffde
      _Vector_14                                FFE2       2       2       0   .abs_section_ffe2
      _Vector_9                                 FFEC       2       2       0   .abs_section_ffec
@@ -1336,7 +1337,7 @@ PRINTF.C.o (ansisi.lib):
   set_printf sprintf 
 rtshc12.c.o (ansisi.lib):
   _BSHL _BSHRS _BSHRU _BDIVMODU _BDIVMODS _ISHL _ISHRU _ISHRS _LSHL _LSHRU 
-  _LSHRS _LADD _LSUB _LAND _LOR _LXOR _LCMP _LCMP_PP _LCOM _LINC _LDEC _LMUL 
+  _LSHRS _LADD _LSUB _LAND _LOR _LXOR _LCMP_PP _LCOM _LINC _LDEC _LMUL 
   _LMULU16x32 _LMULS16x32 _lDivMod _LDIVU _NEG_P _LDIVS _LMODU _LMODS _COPY 
   _CASE_DIRECT _CASE_CHECKED _CASE_CHECKED_BYTE _CASE_SEARCH _CASE_SEARCH_BYTE 
   _FCALL _FPCMP 
@@ -1351,7 +1352,7 @@ rtshc12.c.o (ansisi.lib):
 *********************************************************************************************
 COPYDOWN SECTION
 ---------------------------------------------------------------------------------------------
-------- ROM-ADDRESS: 0xC868 ---- SIZE       2 ---
+------- ROM-ADDRESS: 0xC91A ---- SIZE       2 ---
 Filling bytes inserted
  0000
 
@@ -1382,9 +1383,8 @@ dcm_configure             USES STRING.Configuring.DC.Motor.1 lcd_printf _DDRAB
                                 _PWMCAE _PWMPER45 _PWMDTY45 _PWMCNT45 _PWME _TIOS 
                                 _TCTL4 _TIE _TFLG1 STRING.DC.Motors.Configured.2 
 dcm_position_ctrl_x       USES dcm_x _PWMDTY45 _PORTAB 
-dcm_encoder_b_x           USES dcm_x previous_direction.3 _TC0 
-                                dcm_tcnt_overflow 
-dcm_encoder_a_x           USES _TC1 
+dcm_encoder_b_x           USES _TC0 dcm_x dcm_tcnt_overflow _LCMP 
+dcm_encoder_a_x           USES _TC1 dcm_x dcm_tcnt_overflow 
 dcm_tcnt_overflow_handler USES dcm_tcnt_overflow _TCNT 
 dcm_1kHz_loop             USES dcm_position_ctrl_x _TCNT _TC6 
 _Vector_16                USES dcm_tcnt_overflow_handler 
@@ -1456,7 +1456,9 @@ DEPENDENCY TREE
  _Vector_8           
  | 
  +- dcm_encoder_b_x     
-      
+    | 
+    +- _LCMP               
+         
  _Vector_9           
  | 
  +- dcm_encoder_a_x     
@@ -1477,6 +1479,6 @@ STATISTIC SECTION
 
 ExeFile:
 --------
-Number of blocks to be downloaded: 11
-Total size of all blocks to be downloaded: 2164
+Number of blocks to be downloaded: 10
+Total size of all blocks to be downloaded: 2342
 

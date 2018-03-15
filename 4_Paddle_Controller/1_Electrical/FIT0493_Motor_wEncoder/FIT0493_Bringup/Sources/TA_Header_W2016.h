@@ -10,6 +10,9 @@
 //;	Macros
 //;******************************************************************************
 
+#define MAX(a, b) ( ( a > b) ? a : b )
+#define MIN(a, b) ( ( a < b) ? a : b )
+
 // Mask off the lower byte of a specified value
 #define LOW(value) ((value) & 0xFF)
 

@@ -20,13 +20,10 @@
 // Define TCTL_1_2 as a single 16 bit register made up of TCTL1 and TCTL2 together
 #define TCTL_1_2 (*(volatile word * const) &TCTL1)
 
+#define TCNT_S 2000000			// Number of TCNT ticks for 1s with prescaler of 4
 #define TCNT_mS 2000			// Number of TCNT ticks for 1mS with prescaler of 4
 #define TCNT_uS 2 				// Number of TCNT ticks for 1uS with prescaler of 4
-
-// DC Motor Encoder Constants & Macros
-#define ENC_X_TIMER TC0 		//Timer channel for Encoder A readings
-#define OVF_Factor 65536l	//2^16
-#define periodBufSz 50u     // Number of elements for period ring buffer
+#define TNCT_OVF_FACTOR 65536l	// 2^16
 
 // Function prototypes
 void timer_configure(void);					// Configure the timer module at startup

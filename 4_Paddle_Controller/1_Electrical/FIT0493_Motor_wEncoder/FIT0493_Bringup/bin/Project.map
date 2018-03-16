@@ -28,8 +28,8 @@ Entry point: 0xC029 (_Startup)
 _startupData is allocated at 0xC031 and uses 6 Bytes
 extern struct _tagStartup {
   unsigned nofZeroOut     1
-  _Range   pZeroOut       0x900     35
-  _Copy    *toCopyDownBeg 0xC91A
+  _Range   pZeroOut       0x900     31
+  _Copy    *toCopyDownBeg 0xC8BD
 } _startupData;
 
 *********************************************************************************************
@@ -40,9 +40,10 @@ Section Name                    Size  Type     From       To       Segment
 .startData                        10     R     0xC031     0xC03A   ROM_C000
 .rodata                          116     R     0xC03B     0xC0AE   ROM_C000
 .rodata1                          57     R     0xC0AF     0xC0E7   ROM_C000
-.text                           1978     R     0xC0E8     0xC8A1   ROM_C000
-.copy                              2     R     0xC91A     0xC91B   ROM_C000
+.text                           1910     R     0xC0E8     0xC85D   ROM_C000
+.copy                              9     R     0xC8BD     0xC8C5   ROM_C000
 .stack                           256   R/W      0x800      0x8FF   RAM
+.data                             24   R/W      0x900      0x917   RAM
 .abs_section_8                     1   N/I        0x8        0x8   .absSeg0
 .abs_section_9                     1   N/I        0x9        0x9   .absSeg1
 .abs_section_a                     1   N/I        0xA        0xA   .absSeg2
@@ -264,17 +265,16 @@ Section Name                    Size  Type     From       To       Segment
 .abs_section_fc                    2   N/I       0xFC       0xFD   .absSeg218
 .abs_section_16e                   2   N/I      0x16E      0x16F   .absSeg219
 .abs_section_17e                   2   N/I      0x17E      0x17F   .absSeg220
-.abs_section_ffee                  2     R     0xFFEE     0xFFEF   .absSeg221
-.abs_section_ffec                  2     R     0xFFEC     0xFFED   .absSeg222
-.abs_section_ffde                  2     R     0xFFDE     0xFFDF   .absSeg223
-.abs_section_ffe2                  2     R     0xFFE2     0xFFE3   .absSeg224
-.bss                              35   R/W      0x900      0x922   RAM
-RUNTIME                          120     R     0xC8A2     0xC919   ROM_C000
-.vectSeg225_vect                   2     R     0xFFFE     0xFFFF   .vectSeg225
+.abs_section_ffec                  2     R     0xFFEC     0xFFED   .absSeg221
+.abs_section_ffde                  2     R     0xFFDE     0xFFDF   .absSeg222
+.abs_section_ffe2                  2     R     0xFFE2     0xFFE3   .absSeg223
+.bss                               7   R/W      0x918      0x91E   RAM
+RUNTIME                           95     R     0xC85E     0xC8BC   ROM_C000
+.vectSeg224_vect                   2     R     0xFFFE     0xFFFF   .vectSeg224
 
 Summary of section sizes per section type:
-READ_ONLY (R):         926 (dec:     2342)
-READ_WRITE (R/W):      123 (dec:      291)
+READ_ONLY (R):         8CE (dec:     2254)
+READ_WRITE (R/W):      11F (dec:      287)
 NO_INIT (N/I):         104 (dec:      260)
 
 *********************************************************************************************
@@ -325,7 +325,7 @@ MODULE:                 -- mc9s12c32.c.o --
      _RTICTL                                     3B       1       1       0   .abs_section_3b
      _COPCTL                                     3C       1       1       0   .abs_section_3c
      _ARMCOP                                     3F       1       1       0   .abs_section_3f
-     _TIOS                                       40       1       1       5   .abs_section_40
+     _TIOS                                       40       1       1       4   .abs_section_40
      _CFORC                                      41       1       1       0   .abs_section_41
      _OC7M                                       42       1       1       0   .abs_section_42
      _OC7D                                       43       1       1       0   .abs_section_43
@@ -429,9 +429,9 @@ MODULE:                 -- mc9s12c32.c.o --
      _CANTXDSR7                                 17B       1       1       0   .abs_section_17b
      _CANTXDLR                                  17C       1       1       0   .abs_section_17c
      _CANTXTBPR                                 17D       1       1       0   .abs_section_17d
-     _PTT                                       240       1       1       0   .abs_section_240
+     _PTT                                       240       1       1       1   .abs_section_240
      _PTIT                                      241       1       1       0   .abs_section_241
-     _DDRT                                      242       1       1       0   .abs_section_242
+     _DDRT                                      242       1       1       1   .abs_section_242
      _RDRT                                      243       1       1       0   .abs_section_243
      _PERT                                      244       1       1       0   .abs_section_244
      _PPST                                      245       1       1       0   .abs_section_245
@@ -472,7 +472,7 @@ MODULE:                 -- mc9s12c32.c.o --
      _RDRAD                                     273       1       1       0   .abs_section_273
      _PERAD                                     274       1       1       0   .abs_section_274
      _PPSAD                                     275       1       1       0   .abs_section_275
-     _PORTAB                                      0       2       2      36   .abs_section_0
+     _PORTAB                                      0       2       2      35   .abs_section_0
      _DDRAB                                       2       2       2       3   .abs_section_2
      _PARTID                                     1A       2       2       0   .abs_section_1a
      _DBGTB                                      22       2       2       0   .abs_section_22
@@ -480,8 +480,8 @@ MODULE:                 -- mc9s12c32.c.o --
      _DBGCA                                      2B       2       2       0   .abs_section_2b
      _DBGCB                                      2E       2       2       0   .abs_section_2e
      _TCNT                                       44       2       2       4   .abs_section_44
-     _TC0                                        50       2       2       1   .abs_section_50
-     _TC1                                        52       2       2       1   .abs_section_52
+     _TC0                                        50       2       2       0   .abs_section_50
+     _TC1                                        52       2       2       2   .abs_section_52
      _TC2                                        54       2       2       0   .abs_section_54
      _TC3                                        56       2       2       0   .abs_section_56
      _TC4                                        58       2       2       0   .abs_section_58
@@ -534,16 +534,15 @@ MODULE:                 -- PRINTF.C.o (ansisi.lib) --
      pow10                                     C03B      28      40       4   .rodata     
      pow16                                     C063      20      32       4   .rodata     
      pow8                                      C083      2C      44       4   .rodata     
-     pbuf                                       900       6       6      15   .bss        
+     pbuf                                       918       6       6      15   .bss        
 MODULE:                 -- rtshc12.c.o (ansisi.lib) --
 - PROCEDURES:
-     _LCMP                                     C8A2      19      25       1   RUNTIME     
-     _LCMP_P                                   C8BB      15      21       3   RUNTIME     
-     _LNEG                                     C8D0       D      13       1   RUNTIME     
-     _ILSEXT                                   C8DD       7       7       2   RUNTIME     
-     _CASE_DIRECT_BYTE                         C8E4       5       5       1   RUNTIME     
-     _CASE_SEARCH_8                            C8E9      17      23       1   RUNTIME     
-     _CASE_SEARCH_8_BYTE                       C900      1A      26       1   RUNTIME     
+     _LCMP_P                                   C85E      15      21       3   RUNTIME     
+     _LNEG                                     C873       D      13       1   RUNTIME     
+     _ILSEXT                                   C880       7       7       2   RUNTIME     
+     _CASE_DIRECT_BYTE                         C887       5       5       1   RUNTIME     
+     _CASE_SEARCH_8                            C88C      17      23       1   RUNTIME     
+     _CASE_SEARCH_8_BYTE                       C8A3      1A      26       1   RUNTIME     
 - VARIABLES:
 MODULE:                 -- lcd.c.o --
 - PROCEDURES:
@@ -562,17 +561,15 @@ MODULE:                 -- timer.c.o --
 MODULE:                 -- dcm.c.o --
 - PROCEDURES:
      dcm_configure                             C71D      46      70       1   .text       
-     dcm_position_ctrl_x                       C763      77     119       1   .text       
-     dcm_encoder_b_x                           C7DA      57      87       1   .text       
-     dcm_encoder_a_x                           C831      60      96       1   .text       
-     dcm_tcnt_overflow_handler                 C891       6       6       1   .text       
-     dcm_1kHz_loop                             C897       B      11       1   .text       
+     dcm_position_ctrl_x                       C763      72     114       1   .text       
+     dcm_encoder_a_x                           C7D5      78     120       1   .text       
+     dcm_tcnt_overflow_handler                 C84D       6       6       1   .text       
+     dcm_1kHz_loop                             C853       B      11       1   .text       
 - VARIABLES:
      STRING.Configuring.DC.Motor.1             C0BB      17      23       1   .rodata1    
      STRING.DC.Motors.Configured.2             C0D2      16      22       1   .rodata1    
-     dcm_tcnt_overflow                          906       1       1       3   .bss        
-     dcm_x                                      907      1C      28      50   .bss        
-     _Vector_8                                 FFEE       2       2       0   .abs_section_ffee
+     dcm_x                                      900      18      24      32   .data       
+     dcm_tcnt_overflow                          91E       1       1       3   .bss        
      _Vector_9                                 FFEC       2       2       0   .abs_section_ffec
      _Vector_16                                FFDE       2       2       0   .abs_section_ffde
      _Vector_14                                FFE2       2       2       0   .abs_section_ffe2
@@ -585,11 +582,11 @@ MODULE STATISTIC
   main.c.o                                     0     43     12
   Start12.c.o                                  0     49      0
   PRINTF.C.o (ansisi.lib)                      6   1212    116
-  rtshc12.c.o (ansisi.lib)                     0    120      0
+  rtshc12.c.o (ansisi.lib)                     0     95      0
   lcd.c.o                                      0    266      0
   timer.c.o                                    0     68      0
-  dcm.c.o                                     29    389     53
-  other                                      256     12      2
+  dcm.c.o                                     25    321     51
+  other                                      256     12      9
 
 *********************************************************************************************
 SECTION USE IN OBJECT-ALLOCATION SECTION
@@ -597,10 +594,12 @@ SECTION USE IN OBJECT-ALLOCATION SECTION
 SECTION: ".text"
   main vprintf _out deposit_char vsprintf lcd_configure lcd_data lcd_cmd 
   lcd_puts lcd_printf timer_configure timer_configure_1kHz timer_delay_ms 
-  dcm_configure dcm_position_ctrl_x dcm_encoder_b_x dcm_encoder_a_x 
-  dcm_tcnt_overflow_handler dcm_1kHz_loop 
+  dcm_configure dcm_position_ctrl_x dcm_encoder_a_x dcm_tcnt_overflow_handler 
+  dcm_1kHz_loop 
+SECTION: ".data"
+  dcm_x 
 SECTION: ".bss"
-  pbuf dcm_tcnt_overflow dcm_x 
+  pbuf dcm_tcnt_overflow 
 SECTION: ".init"
   Init _Startup 
 SECTION: ".rodata"
@@ -1051,10 +1050,7 @@ SECTION: ".abs_section_16e"
 SECTION: ".abs_section_17e"
   _CANTXTSR 
 SECTION: "RUNTIME"
-  _LCMP _LCMP_P _LNEG _ILSEXT _CASE_DIRECT_BYTE _CASE_SEARCH_8 
-  _CASE_SEARCH_8_BYTE 
-SECTION: ".abs_section_ffee"
-  _Vector_8 
+  _LCMP_P _LNEG _ILSEXT _CASE_DIRECT_BYTE _CASE_SEARCH_8 _CASE_SEARCH_8_BYTE 
 SECTION: ".abs_section_ffec"
   _Vector_9 
 SECTION: ".abs_section_ffde"
@@ -1066,7 +1062,7 @@ SECTION: ".abs_section_ffe2"
 OBJECT LIST SORTED BY ADDRESS
      Name                                      Addr   hSize   dSize     Ref    Section   RLIB
 ---------------------------------------------------------------------------------------------
-     _PORTAB                                      0       2       2      36   .abs_section_0
+     _PORTAB                                      0       2       2      35   .abs_section_0
      _DDRAB                                       2       2       2       3   .abs_section_2
      _PORTE                                       8       1       1       0   .abs_section_8
      _DDRE                                        9       1       1       0   .abs_section_9
@@ -1108,7 +1104,7 @@ OBJECT LIST SORTED BY ADDRESS
      _RTICTL                                     3B       1       1       0   .abs_section_3b
      _COPCTL                                     3C       1       1       0   .abs_section_3c
      _ARMCOP                                     3F       1       1       0   .abs_section_3f
-     _TIOS                                       40       1       1       5   .abs_section_40
+     _TIOS                                       40       1       1       4   .abs_section_40
      _CFORC                                      41       1       1       0   .abs_section_41
      _OC7M                                       42       1       1       0   .abs_section_42
      _OC7D                                       43       1       1       0   .abs_section_43
@@ -1123,8 +1119,8 @@ OBJECT LIST SORTED BY ADDRESS
      _TSCR2                                      4D       1       1       1   .abs_section_4d
      _TFLG1                                      4E       1       1       2   .abs_section_4e
      _TFLG2                                      4F       1       1       0   .abs_section_4f
-     _TC0                                        50       2       2       1   .abs_section_50
-     _TC1                                        52       2       2       1   .abs_section_52
+     _TC0                                        50       2       2       0   .abs_section_50
+     _TC1                                        52       2       2       2   .abs_section_52
      _TC2                                        54       2       2       0   .abs_section_54
      _TC3                                        56       2       2       0   .abs_section_56
      _TC4                                        58       2       2       0   .abs_section_58
@@ -1244,9 +1240,9 @@ OBJECT LIST SORTED BY ADDRESS
      _CANTXDLR                                  17C       1       1       0   .abs_section_17c
      _CANTXTBPR                                 17D       1       1       0   .abs_section_17d
      _CANTXTSR                                  17E       2       2       0   .abs_section_17e
-     _PTT                                       240       1       1       0   .abs_section_240
+     _PTT                                       240       1       1       1   .abs_section_240
      _PTIT                                      241       1       1       0   .abs_section_241
-     _DDRT                                      242       1       1       0   .abs_section_242
+     _DDRT                                      242       1       1       1   .abs_section_242
      _RDRT                                      243       1       1       0   .abs_section_243
      _PERT                                      244       1       1       0   .abs_section_244
      _PPST                                      245       1       1       0   .abs_section_245
@@ -1287,9 +1283,9 @@ OBJECT LIST SORTED BY ADDRESS
      _RDRAD                                     273       1       1       0   .abs_section_273
      _PERAD                                     274       1       1       0   .abs_section_274
      _PPSAD                                     275       1       1       0   .abs_section_275
-     pbuf                                       900       6       6      15   .bss        
-     dcm_tcnt_overflow                          906       1       1       3   .bss        
-     dcm_x                                      907      1C      28      50   .bss        
+     dcm_x                                      900      18      24      32   .data       
+     pbuf                                       918       6       6      15   .bss        
+     dcm_tcnt_overflow                          91E       1       1       3   .bss        
      Init                                      C000      29      41       1   .init       
      _Startup                                  C029       8       8       0   .init       
      pow10                                     C03B      28      40       4   .rodata     
@@ -1312,22 +1308,19 @@ OBJECT LIST SORTED BY ADDRESS
      timer_configure_1kHz                      C6E1      11      17       1   .text       
      timer_delay_ms                            C6F2      2B      43       5   .text       
      dcm_configure                             C71D      46      70       1   .text       
-     dcm_position_ctrl_x                       C763      77     119       1   .text       
-     dcm_encoder_b_x                           C7DA      57      87       1   .text       
-     dcm_encoder_a_x                           C831      60      96       1   .text       
-     dcm_tcnt_overflow_handler                 C891       6       6       1   .text       
-     dcm_1kHz_loop                             C897       B      11       1   .text       
-     _LCMP                                     C8A2      19      25       1   RUNTIME     
-     _LCMP_P                                   C8BB      15      21       3   RUNTIME     
-     _LNEG                                     C8D0       D      13       1   RUNTIME     
-     _ILSEXT                                   C8DD       7       7       2   RUNTIME     
-     _CASE_DIRECT_BYTE                         C8E4       5       5       1   RUNTIME     
-     _CASE_SEARCH_8                            C8E9      17      23       1   RUNTIME     
-     _CASE_SEARCH_8_BYTE                       C900      1A      26       1   RUNTIME     
+     dcm_position_ctrl_x                       C763      72     114       1   .text       
+     dcm_encoder_a_x                           C7D5      78     120       1   .text       
+     dcm_tcnt_overflow_handler                 C84D       6       6       1   .text       
+     dcm_1kHz_loop                             C853       B      11       1   .text       
+     _LCMP_P                                   C85E      15      21       3   RUNTIME     
+     _LNEG                                     C873       D      13       1   RUNTIME     
+     _ILSEXT                                   C880       7       7       2   RUNTIME     
+     _CASE_DIRECT_BYTE                         C887       5       5       1   RUNTIME     
+     _CASE_SEARCH_8                            C88C      17      23       1   RUNTIME     
+     _CASE_SEARCH_8_BYTE                       C8A3      1A      26       1   RUNTIME     
      _Vector_16                                FFDE       2       2       0   .abs_section_ffde
      _Vector_14                                FFE2       2       2       0   .abs_section_ffe2
      _Vector_9                                 FFEC       2       2       0   .abs_section_ffec
-     _Vector_8                                 FFEE       2       2       0   .abs_section_ffee
 
 *********************************************************************************************
 UNUSED-OBJECTS SECTION
@@ -1337,14 +1330,14 @@ PRINTF.C.o (ansisi.lib):
   set_printf sprintf 
 rtshc12.c.o (ansisi.lib):
   _BSHL _BSHRS _BSHRU _BDIVMODU _BDIVMODS _ISHL _ISHRU _ISHRS _LSHL _LSHRU 
-  _LSHRS _LADD _LSUB _LAND _LOR _LXOR _LCMP_PP _LCOM _LINC _LDEC _LMUL 
+  _LSHRS _LADD _LSUB _LAND _LOR _LXOR _LCMP _LCMP_PP _LCOM _LINC _LDEC _LMUL 
   _LMULU16x32 _LMULS16x32 _lDivMod _LDIVU _NEG_P _LDIVS _LMODU _LMODS _COPY 
   _CASE_DIRECT _CASE_CHECKED _CASE_CHECKED_BYTE _CASE_SEARCH _CASE_SEARCH_BYTE 
   _FCALL _FPCMP 
 timer.c.o:
   timer_delay_us 
 dcm.c.o:
-  dcm_safety_limit_x dcm_calculate_speed_x 
+  dcm_safety_limit_x 
 NOT USED VARIABLES
 rtshc12.c.o (ansisi.lib):
   _PowOfTwo_8 _PowOfTwo_16 _PowOfTwo_32 errno 
@@ -1352,7 +1345,13 @@ rtshc12.c.o (ansisi.lib):
 *********************************************************************************************
 COPYDOWN SECTION
 ---------------------------------------------------------------------------------------------
-------- ROM-ADDRESS: 0xC91A ---- SIZE       2 ---
+------- ROM-ADDRESS: 0xC8BD ---- SIZE       4 ---
+Filling bytes inserted
+ 00030901
+------- ROM-ADDRESS: 0xC8C1 ---- RAM-ADDRESS: 0x901 ---- SIZE       3 ---
+Name of initialized Object : dcm_x:1
+ 640064
+------- ROM-ADDRESS: 0xC8C4 ---- SIZE       2 ---
 Filling bytes inserted
  0000
 
@@ -1381,16 +1380,15 @@ timer_delay_ms            USES _TCTL1 _TCNT _TC7 _TIOS _TFLG1
 dcm_configure             USES STRING.Configuring.DC.Motor.1 lcd_printf _DDRAB 
                                 _PORTAB _PWMCTL _PWMPRCLK _PWMSCLA _PWMCLK _PWMPOL 
                                 _PWMCAE _PWMPER45 _PWMDTY45 _PWMCNT45 _PWME _TIOS 
-                                _TCTL4 _TIE _TFLG1 STRING.DC.Motors.Configured.2 
+                                _TCTL4 _TIE _TFLG1 _DDRT 
+                                STRING.DC.Motors.Configured.2 
 dcm_position_ctrl_x       USES dcm_x _PWMDTY45 _PORTAB 
-dcm_encoder_b_x           USES _TC0 dcm_x dcm_tcnt_overflow _LCMP 
-dcm_encoder_a_x           USES _TC1 dcm_x dcm_tcnt_overflow 
+dcm_encoder_a_x           USES _PTT dcm_x _TC1 dcm_tcnt_overflow 
 dcm_tcnt_overflow_handler USES dcm_tcnt_overflow _TCNT 
 dcm_1kHz_loop             USES dcm_position_ctrl_x _TCNT _TC6 
 _Vector_16                USES dcm_tcnt_overflow_handler 
 _Vector_14                USES dcm_1kHz_loop 
 _Vector_9                 USES dcm_encoder_a_x 
-_Vector_8                 USES dcm_encoder_b_x 
 
 *********************************************************************************************
 DEPENDENCY TREE
@@ -1453,12 +1451,6 @@ DEPENDENCY TREE
     |    
     +- main                 (see above)
        
- _Vector_8           
- | 
- +- dcm_encoder_b_x     
-    | 
-    +- _LCMP               
-         
  _Vector_9           
  | 
  +- dcm_encoder_a_x     
@@ -1480,5 +1472,5 @@ STATISTIC SECTION
 ExeFile:
 --------
 Number of blocks to be downloaded: 10
-Total size of all blocks to be downloaded: 2342
+Total size of all blocks to be downloaded: 2254
 

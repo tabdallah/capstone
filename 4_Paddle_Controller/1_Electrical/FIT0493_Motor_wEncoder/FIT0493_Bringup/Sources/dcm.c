@@ -5,7 +5,7 @@
 #include "timer.h"
 #include "lcd.h"
 
-static dcm_t dcm_x;
+static dcm_t dcm_x = {DCM_POS_OFFSET_TICKS, DCM_POS_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
 static unsigned char dcm_tcnt_overflow = 0;
 
 //;**************************************************************
@@ -13,7 +13,8 @@ static unsigned char dcm_tcnt_overflow = 0;
 //;*  Configures the lower nibble of Port B for Motor Direction Control
 //;*  Sets up PWM module for period of 100 and duty cycle of zero  
 //;**************************************************************
-void dcm_configure(void) {
+void dcm_configure(void)
+{
 	lcd_printf("Configuring DC\nMotors.");
 
 	// Configure direction ports for DC Motor H-Bridge
@@ -34,12 +35,15 @@ void dcm_configure(void) {
 	DCM_PWM_CLR_CNT_X;			// Reset counter for PWM4
 	DCM_PWM_ENABLE_X;			// Enable the PWM output
 
-  	//Configure IC for encoders
-	TIOS &= LOW((~TIOS_IOS0_MASK)); 	// Enable TC0 as IC for X-Axis Encoder B Phase
+  	// Configure IC for encoders
+	//TIOS &= LOW((~TIOS_IOS0_MASK)); 	// Enable TC0 as IC for X-Axis Encoder B Phase
 	TIOS &= LOW((~TIOS_IOS1_MASK)); 	// Enable TC1 as IC for X-Axis Encoder A Phase
-	TCTL4 = TCTL4_INIT;					// Capture on rising edges of TC0 and TC1
-	TIE = (TIOS_IOS0_MASK | TIOS_IOS1_MASK);	// Enable interrupts for TC0 and TC1
-	TFLG1 = (TFLG1_C0F_MASK | TFLG1_C1F_MASK);	// Clear the flag in case anything is pending
+	TCTL4 = TCTL4_INIT;					// Capture on rising edges of TC1
+	TIE = (TIOS_IOS1_MASK);		// Enable interrupts for TC1
+	TFLG1 = (TFLG1_C1F_MASK);	// Clear the flag in case anything is pending
+
+	// Configure encoder ports so we can read raw values
+	CLEAR_BITS(DCM_ENC_DDR, (DCM_ENC_A_X | DCM_ENC_B_X));
 
 	lcd_printf("DC Motors\nConfigured.");
 }
@@ -48,14 +52,15 @@ void dcm_configure(void) {
 //;*                 dcm_position_ctrl_x()
 //;*  Position control loop for X-Axis DC Motor
 //;**************************************************************
-void dcm_position_ctrl_x(void) {
+void dcm_position_ctrl_x(void)
+{
 	dcm_x.position_error_ticks = dcm_x.position_cmd_enc_ticks - dcm_x.position_enc_ticks;
 	
 	// Stop if at desired position
 	if (dcm_x.position_error_ticks == 0) {
 		DCM_PWM_SET_DUTY_X(DCM_PWM_MIN);
 		dcm_x.pwm_duty = DCM_PWM_MIN;
-		dcm_x.h_bridge_direction = 0;
+		dcm_x.h_bridge_direction = h_bridge_dir_brake;
 		DCM_X_BRAKE;
 		return;
 	}
@@ -66,13 +71,13 @@ void dcm_position_ctrl_x(void) {
 			// Stop before changing direction
 			DCM_PWM_SET_DUTY_X(DCM_PWM_MIN);
 			dcm_x.pwm_duty = DCM_PWM_MIN;
-			dcm_x.h_bridge_direction = 0;
+			dcm_x.h_bridge_direction = h_bridge_dir_brake;
 			DCM_X_BRAKE;
 			return;
 		} else {
 			dcm_x.pwm_duty = MIN(DCM_PWM_MAX, (dcm_x.position_error_ticks * DCM_GAIN_P_X));
 			DCM_PWM_SET_DUTY_X(dcm_x.pwm_duty);
-			dcm_x.h_bridge_direction = 1;
+			dcm_x.h_bridge_direction = h_bridge_dir_forward;
 			DCM_X_FORWARD;
 			return;
 		}
@@ -81,13 +86,13 @@ void dcm_position_ctrl_x(void) {
 			// Stop before changing direction
 			DCM_PWM_SET_DUTY_X(DCM_PWM_MIN);
 			dcm_x.pwm_duty = DCM_PWM_MIN;
-			dcm_x.h_bridge_direction = 0;
+			dcm_x.h_bridge_direction = h_bridge_dir_brake;
 			DCM_X_BRAKE;
 			return;
 		} else {
 			dcm_x.pwm_duty = MIN(DCM_PWM_MAX, (-dcm_x.position_error_ticks * DCM_GAIN_P_X));
 			DCM_PWM_SET_DUTY_X(dcm_x.pwm_duty);
-			dcm_x.h_bridge_direction = -1;
+			dcm_x.h_bridge_direction = h_bridge_dir_reverse;
 			DCM_X_REVERSE;
 			return;
 		}
@@ -99,50 +104,29 @@ void dcm_position_ctrl_x(void) {
 //;*  	Check that motor speed is within reasonible limits based
 //;*	on applied voltage
 //;**************************************************************
-void dcm_safety_limit_x(void) {
+void dcm_safety_limit_x(void)
+{
 
 
 }
 
 //;**************************************************************
-//;*                 dcm_calculate_speed_x()
-//;*  	Calculate linear speed in mm/s
+//;*                 dcm_encoder_a_x()
+//;*  Handles IC function for X-Axis Encoder A Phase
 //;**************************************************************
-void dcm_calculate_speed_x(void) {
-	dcm_x.period_tcnt_ticks = (dcm_x.enc_a_edge_2_tcnt_ticks
-		+ (dcm_x.enc_a_edge_2_tcnt_overflow * TNCT_OVF_FACTOR))
-		- (dcm_x.enc_a_edge_1_tcnt_ticks
-		+ (dcm_x.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
-
-	//unsigned int distance = DCM_X_DISTANCE_PER_ENC_TICK / 
-
-	//dcm_x.speed_mm_s = 
-}
-
-//;**************************************************************
-//;*                 dcm_encoder_b_x()
-//;*  Handles IC function for X-Axis Encoder B Phase
-//;**************************************************************
-interrupt 8 void dcm_encoder_b_x(void) {
-
-	dcm_x.enc_b_edge_tcnt_ticks = DCM_ENCODER_B_TIMER_X;
-	dcm_x.enc_b_edge_tcnt_overflow = dcm_tcnt_overflow;
-
-	// Determine quadrature direction
-	if ((dcm_x.enc_b_edge_tcnt_ticks - dcm_x.enc_a_edge_tcnt_ticks) < (dcm_x.period_tcnt_ticks / 2)) {
-		// A leads B
-		dcm_x.quadrature_direction = 1;
+interrupt 9 void dcm_encoder_a_x(void)
+{
+	// Track direction
+	if (DCM_ENC_PORT & DCM_ENC_B_X) {
+		// Phase B leads Phase A
+		dcm_x.quadrature_direction = quad_dir_reverse;				
 	} else {
-		dcm_x.quadrature_direction = -1;
-	}
-
-	// Handle first ever encoder tick
-	if (dcm_x.enc_a_edge_tcnt_ticks == 0) {
-		dcm_x.quadrature_direction = -1;
+		// Phase A leads Phase B
+		dcm_x.quadrature_direction = quad_dir_forward;
 	}
 
 	// Track position by encoder ticks
-	if (dcm_x.quadrature_direction > 0) {
+	if (dcm_x.quadrature_direction == quad_dir_forward) {
 		if (dcm_x.position_enc_ticks < MAX_UINT) {
 			dcm_x.position_enc_ticks ++;
 		}
@@ -151,24 +135,15 @@ interrupt 8 void dcm_encoder_b_x(void) {
 			dcm_x.position_enc_ticks --;
 		}
 	}
-}
 
-//;**************************************************************
-//;*                 dcm_encoder_a_x()
-//;*  Handles IC function for X-Axis Encoder A Phase
-//;**************************************************************
-interrupt 9 void dcm_encoder_a_x(void) {
-	// Track speed by timestamps of encoder ticks
-	dcm_x.enc_a_edge_tcnt_ticks = DCM_ENCODER_A_TIMER_X;
-	dcm_x.enc_a_edge_tcnt_overflow = dcm_tcnt_overflow;
-
+	// Calculate Encoder A period for speed measurements
 	if (dcm_x.enc_a_edge_tracker == 0) {
-		dcm_x.enc_a_edge_1_tcnt_ticks = dcm_x.enc_a_edge_tcnt_ticks;
-		dcm_x.enc_a_edge_1_tcnt_overflow = dcm_x.enc_a_edge_tcnt_overflow ;
+		dcm_x.enc_a_edge_1_tcnt_ticks = DCM_ENCODER_A_TIMER_X;
+		dcm_x.enc_a_edge_1_tcnt_overflow = dcm_tcnt_overflow;
 		dcm_x.enc_a_edge_tracker = 1;
 	} else {
-		dcm_x.enc_a_edge_2_tcnt_ticks = dcm_x.enc_a_edge_tcnt_ticks;
-		dcm_x.enc_a_edge_2_tcnt_overflow = dcm_x.enc_a_edge_tcnt_overflow ;
+		dcm_x.enc_a_edge_2_tcnt_ticks = DCM_ENCODER_A_TIMER_X;
+		dcm_x.enc_a_edge_2_tcnt_overflow = dcm_tcnt_overflow;
 		dcm_x.enc_a_edge_tracker = 0;
 		dcm_x.period_tcnt_ticks = (dcm_x.enc_a_edge_2_tcnt_ticks
 		+ (dcm_x.enc_a_edge_2_tcnt_overflow * TNCT_OVF_FACTOR))
@@ -181,7 +156,8 @@ interrupt 9 void dcm_encoder_a_x(void) {
 //;*                 dcm_tcnt_overflow_handler()
 //;*  Increments global variable to track timer overflow events
 //;**************************************************************
-interrupt 16 void dcm_tcnt_overflow_handler(void) {
+interrupt 16 void dcm_tcnt_overflow_handler(void)
+{
     dcm_tcnt_overflow ++; //Increment the overflow counter
     (void)TCNT;   //To clear the interrupt flag with fast-clear enabled.
 }
@@ -190,7 +166,8 @@ interrupt 16 void dcm_tcnt_overflow_handler(void) {
 //;*                 dcm_1kHz_loop()
 //;*  1kHz loop triggered by timer channel 6
 //;**************************************************************
-interrupt 14 void dcm_1kHz_loop(void) {
+interrupt 14 void dcm_1kHz_loop(void)
+{
     dcm_position_ctrl_x();
     TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }

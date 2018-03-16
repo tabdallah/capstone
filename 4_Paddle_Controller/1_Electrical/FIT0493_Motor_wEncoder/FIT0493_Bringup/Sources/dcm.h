@@ -43,6 +43,10 @@
 #define DCM_PWM_DISABLE_X CLEAR_BITS(PWME, PWME_PWME4_MASK)		// Disable X-Axis PWM channel
 
 // Encoder macros
+#define DCM_ENC_PORT PTT
+#define DCM_ENC_DDR DDRT
+#define DCM_ENC_A_X 0b00000010
+#define DCM_ENC_B_X 0b00000001
 #define DCM_ENCODER_B_TIMER_X TC0	// Timer channel for X-Axis Encoder B Phase readings
 #define DCM_ENCODER_A_TIMER_X TC1	// Timer channel for X-Axis Encoder A Phase readings
 
@@ -50,26 +54,40 @@
 //#define DCM_X_DISTANCE_FACTOR 10000		 // Conversion factor to get distance in mm
 
 #define DCM_GAIN_P_X 2
+#define DCM_POS_OFFSET_TICKS 100
+
+// Enumerated data types
+typedef enum {
+	h_bridge_dir_brake = 0,
+	h_bridge_dir_forward = 1,
+	h_bridge_dir_reverse = 2
+} h_bridge_dir_e;
+
+typedef enum {
+	quad_dir_init = 0,
+	quad_dir_forward = 1,
+	quad_dir_reverse = 2
+} quad_dir_e;
+
+typedef enum {
+	quad_phase_a = 0,
+	quad_phase_b = 1
+} quad_phase_e;
 
 // Structure definitions
 typedef struct dcm_t {
 	unsigned int position_cmd_enc_ticks;		// Commanded linear position
 	unsigned int position_enc_ticks;			// Current linear position
 	signed int position_error_ticks;			// Difference between current and commanded linear position
-	signed char h_bridge_direction;				// H-Bridge direction, 1 = forward, 0 = off, -1 = reverse
-	signed char quadrature_direction;			// Quadrature encoder measured direction, 1 = forward, -1 = reverse
+	h_bridge_dir_e h_bridge_direction;			// H-Bridge direction
+	quad_dir_e quadrature_direction;			// Quadrature encoder measured direction
 	unsigned char pwm_duty;						// Current PWM duty cycle
 
-	unsigned int enc_a_edge_tcnt_ticks;			// Encoder most recent rising edge TCNT timestamp
-	unsigned char enc_a_edge_tcnt_overflow;		// Value of TCNT overflow counter at most recent rising edge
 	unsigned int enc_a_edge_1_tcnt_ticks;		// Encoder first rising edge TCNT timestamp
 	unsigned int enc_a_edge_2_tcnt_ticks;		// Encoder second rising edge TCNT timestamp
 	unsigned char enc_a_edge_1_tcnt_overflow;	// Value of TCNT overflow counter at first rising edge
 	unsigned char enc_a_edge_2_tcnt_overflow;	// Value of TCNT overflow counter at second rising edge
 	unsigned char enc_a_edge_tracker;			// 0 = first rising edge, 1 = second rising edge
-
-	unsigned int enc_b_edge_tcnt_ticks;			// Encoder B most recent rising edge TCNT timestamp
-	unsigned char enc_b_edge_tcnt_overflow;		// Value of TCNT overflow counter at most recent rising edge
 
 	unsigned long period_tcnt_ticks;			// Encoder period in TCNT ticks
 	unsigned int speed_mm_s;					// Linear speed in mm/s

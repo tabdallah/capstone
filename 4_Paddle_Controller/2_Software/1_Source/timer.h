@@ -1,9 +1,7 @@
 //;******************************************************************************
-//; timer.h - Header file for operating the RC servo on timer 3 (PT3)
-//:
+//; timer.h
 //; Name: Thomas Abdallah
 //; Date: 2016-03-31
-//;
 //;******************************************************************************
 
 // Action values for OC function
@@ -15,7 +13,6 @@
 // Timer configuration parameters
 #define TSCR1_INIT 0b10110000	// Turn on timer module and enable fast-clear and freeze in debug
 #define TSCR2_INIT 0b10000010	// Set pre-scaler to 4 for finest resolution @50Hz PWM frequency, overflow interrupt enabled
-#define TCTL4_INIT 0b00000101	// Capture on rising edges of TC0 and TC1
 
 // Define TCTL_1_2 as a single 16 bit register made up of TCTL1 and TCTL2 together
 #define TCTL_1_2 (*(volatile word * const) &TCTL1)
@@ -27,6 +24,6 @@
 
 // Function prototypes
 void timer_configure(void);					// Configure the timer module at startup
-void timer_configure_1kHz(void);			// Set up timer interrupt to run at 1kHz
 void timer_delay_ms(unsigned char time);	// Delay by time ms using OC polling
 void timer_delay_us(unsigned char time);	// Delay by time us using OC polling
+unsigned char timer_get_overflow(void);		// Returns current value of the TCNT overflow counter

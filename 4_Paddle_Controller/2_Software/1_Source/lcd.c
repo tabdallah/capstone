@@ -1,5 +1,4 @@
 #include <hidef.h>      /* common defines and macros */
-//#include <stdarg.h>
 #include <stdio.h>
 #include "derivative.h"      /* derivative-specific definitions */
 #include "TA_Header_W2016.h"  /* my macros and constants */

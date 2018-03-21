@@ -65,7 +65,6 @@ void timer_delay_us(unsigned char time) {
     TIOS &= LOW(~TIOS_IOS7_MASK);  // Turn off OC on TC7
 }
 
-
 //;**************************************************************
 //;*                 timer_tcnt_overflow_handler()
 //;*    Increments global variable to track timer overflow events
@@ -74,16 +73,6 @@ interrupt 16 void timer_tcnt_overflow_handler(void)
 {
     timer_tcnt_overflow ++; //Increment the overflow counter
     (void)TCNT;   //To clear the interrupt flag with fast-clear enabled.
-}
-
-//;**************************************************************
-//;*                 timer_1kHz_loop()
-//;*    1kHz loop triggered by timer channel 6
-//;**************************************************************
-interrupt 14 void timer_1kHz_loop(void)
-{
-    x_axis_position_ctrl();
-    TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }
 
 //;**************************************************************

@@ -34,7 +34,7 @@ void x_axis_configure(void)
 	CLEAR_BITS(X_AXIS_ENC_DDR, X_AXIS_ENC_B);	// B-Phase input is read during ISR for A-Phase
 	CLEAR_BITS(TIOS, X_AXIS_ENC_A_TIOS_MASK);	// Set A-Phase timer channel to input capture mode
 	TCTL4 = X_AXIS_TCTL4_INIT;					// Capture on rising edge
-	TIE |= (X_AXIS_ENC_A_TIOS_MASK);				// Enable interrupts for A-Phase timer channel
+	SET_BITS(TIE, X_AXIS_ENC_A_TIOS_MASK);		// Enable interrupts for A-Phase timer channel
 	TFLG1 = (X_AXIS_ENC_A_TFLG1_MASK);			// Clear the flag in case anything is pending
 }
 
@@ -126,4 +126,14 @@ interrupt 8 void x_axis_encoder_a(void)
 		- (x_axis.enc_a_edge_1_tcnt_ticks
 		+ (x_axis.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
+}
+
+//;**************************************************************
+//;*                 timer_1kHz_loop()
+//;*    1kHz loop triggered by timer channel 6
+//;**************************************************************
+interrupt 14 void timer_1kHz_loop(void)
+{
+    x_axis_position_ctrl();
+    TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }

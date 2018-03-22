@@ -27,8 +27,8 @@ typedef struct dcm_t {
 	unsigned int position_cmd_enc_ticks;		// Commanded linear position
 	unsigned int position_enc_ticks;			// Current linear position
 	signed int position_error_ticks;			// Difference between current and commanded linear position
-	dcm_h_bridge_dir_e h_bridge_direction;			// H-Bridge direction
-	dcm_quad_dir_e quadrature_direction;			// Quadrature encoder measured direction
+	dcm_h_bridge_dir_e h_bridge_direction;		// H-Bridge direction
+	dcm_quad_dir_e quadrature_direction;		// Quadrature encoder measured direction
 	unsigned char pwm_duty;						// Current PWM duty cycle
 
 	unsigned int enc_a_edge_1_tcnt_ticks;		// Encoder first rising edge TCNT timestamp

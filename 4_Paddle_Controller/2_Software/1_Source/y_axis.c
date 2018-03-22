@@ -3,6 +3,7 @@
 //; Name: Thomas Abdallah
 //; Date: 2018-03-19
 //;******************************************************************************
+#include <stdlib.h>
 #include <hidef.h>      /* common defines and macros */
 #include "derivative.h"      /* derivative-specific definitions */
 #include "timer.h"
@@ -56,6 +57,8 @@ void y_axis_configure(void)
 //;**************************************************************
 void y_axis_position_ctrl(void)
 {	
+	unsigned int error_l_p, error_r_p;
+
 	// Always force right (slave) position command to match left (master) position command
 	y_axis_r.position_cmd_enc_ticks = y_axis_l.position_cmd_enc_ticks;
 
@@ -79,6 +82,7 @@ void y_axis_position_ctrl(void)
 
 	// Calculate error for left motor (master)
 	y_axis_l.position_error_ticks = y_axis_l.position_cmd_enc_ticks - y_axis_l.position_enc_ticks;
+	error_l_p = abs(y_axis_l.position_error_ticks) * Y_AXIS_L_POS_GAIN_P;
 	
 	// Drive left motor to desired position
 	if (y_axis_l.position_error_ticks > 0) {
@@ -89,7 +93,11 @@ void y_axis_position_ctrl(void)
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_L_H_BRIDGE_BRAKE;
 		} else {
-			y_axis_l.pwm_duty = MIN(Y_AXIS_PWM_DUTY_MAX, (y_axis_l.position_error_ticks * Y_AXIS_L_POS_GAIN_P));
+			if (error_l_p > Y_AXIS_PWM_DUTY_MAX) {
+				y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+			} else {
+				y_axis_l.pwm_duty = LOW(error_l_p);
+			}
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_forward;
 			Y_AXIS_L_H_BRIDGE_FORWARD;
@@ -102,7 +110,11 @@ void y_axis_position_ctrl(void)
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_L_H_BRIDGE_BRAKE;
 		} else {
-			y_axis_l.pwm_duty = MIN(Y_AXIS_PWM_DUTY_MAX, (-y_axis_l.position_error_ticks * Y_AXIS_L_POS_GAIN_P));
+			if (error_l_p > Y_AXIS_PWM_DUTY_MAX) {
+				y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+			} else {
+				y_axis_l.pwm_duty = LOW(error_l_p);
+			}
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			Y_AXIS_L_H_BRIDGE_REVERSE;
@@ -118,6 +130,7 @@ void y_axis_position_ctrl(void)
 	// Calculate error for right motor (slave)
 	y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
 	y_axis_r.position_error_ticks = MIN(y_axis_r.position_error_ticks, y_axis_lr_position_error_enc_ticks);
+	error_r_p = abs(y_axis_r.position_error_ticks) * Y_AXIS_R_POS_GAIN_P;
 
 	// Drive right motor to desired position
 	if (y_axis_r.position_error_ticks > 0) {
@@ -128,7 +141,11 @@ void y_axis_position_ctrl(void)
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_R_H_BRIDGE_BRAKE;
 		} else {
-			y_axis_r.pwm_duty = MIN(Y_AXIS_PWM_DUTY_MAX, (y_axis_r.position_error_ticks * Y_AXIS_R_POS_GAIN_P));
+			if (error_r_p > Y_AXIS_PWM_DUTY_MAX) {
+				y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+			} else {
+				y_axis_r.pwm_duty = LOW(error_r_p);
+			}
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_forward;
 			Y_AXIS_R_H_BRIDGE_FORWARD;
@@ -141,7 +158,11 @@ void y_axis_position_ctrl(void)
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_R_H_BRIDGE_BRAKE;
 		} else {
-			y_axis_r.pwm_duty = MIN(Y_AXIS_PWM_DUTY_MAX, (-y_axis_r.position_error_ticks * Y_AXIS_R_POS_GAIN_P));
+			if (error_r_p > Y_AXIS_PWM_DUTY_MAX) {
+				y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+			} else {
+				y_axis_r.pwm_duty = LOW(error_r_p);
+			}
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			Y_AXIS_R_H_BRIDGE_REVERSE;

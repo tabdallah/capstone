@@ -51,8 +51,8 @@
 
 // Position control constants
 #define Y_AXIS_ENC_OFFSET_TICKS 100		// Encoder offset to allow for closed loop control back to position zero
-#define Y_AXIS_L_POS_GAIN_P 2
-#define Y_AXIS_R_POS_GAIN_P 2
+#define Y_AXIS_L_POS_GAIN_P 10
+#define Y_AXIS_R_POS_GAIN_P 10
 #define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 100		// Shut down system if left vs right motor position differs by more than this
 
 // Function prototypes

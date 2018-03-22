@@ -35,8 +35,9 @@
 #define X_AXIS_TCTL4_INIT 0b00000001	// Capture on rising edge of TC0
 
 // Position control constants
-#define X_AXIS_ENC_OFFSET_TICKS 100	// Encoder offset to allow for closed loop control back to position zero
-#define X_AXIS_POS_GAIN_P 2
+#define X_AXIS_LEFT_POS_LIMIT_TICKS 100		// Zero/Home position
+#define X_AXIS_RIGHT_POS_LIMIT_TICKS 4500	// Opposite edge of table, measured from home position
+#define X_AXIS_POS_GAIN_P 10
 
 // Function prototypes
 void x_axis_configure(void);

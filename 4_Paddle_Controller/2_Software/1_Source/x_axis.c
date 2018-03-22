@@ -3,6 +3,7 @@
 //; Name: Thomas Abdallah
 //; Date: 2018-03-19
 //;******************************************************************************
+#include <stdlib.h>
 #include <hidef.h>      /* common defines and macros */
 #include "derivative.h"      /* derivative-specific definitions */
 #include "timer.h"
@@ -10,7 +11,7 @@
 #include "dcm.h"
 #include "x_axis.h"
 
-static dcm_t x_axis = {X_AXIS_ENC_OFFSET_TICKS, X_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
+static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
 
 //;**************************************************************
 //;*                 x_axis_configure(void)
@@ -40,11 +41,14 @@ void x_axis_configure(void)
 
 //;**************************************************************
 //;*                 x_axis_position_ctrl(void)
+//;*	Closed loop position control for the X-Axis motor.
 //;**************************************************************
 void x_axis_position_ctrl(void)
 {
+	unsigned int error_p;
 	x_axis.position_error_ticks = x_axis.position_cmd_enc_ticks - x_axis.position_enc_ticks;
-	
+	error_p = abs(x_axis.position_error_ticks) * X_AXIS_POS_GAIN_P;
+
 	// Stop if at desired position
 	if (x_axis.position_error_ticks == 0) {
 		X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
@@ -63,7 +67,11 @@ void x_axis_position_ctrl(void)
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
 			X_AXIS_H_BRIDGE_BRAKE;
 		} else {
-			x_axis.pwm_duty = MIN(X_AXIS_PWM_DUTY_MAX, (x_axis.position_error_ticks * X_AXIS_POS_GAIN_P));
+			if (error_p > X_AXIS_PWM_DUTY_MAX) {
+				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+			} else {
+				x_axis.pwm_duty = LOW(error_p);
+			}
 			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
 			X_AXIS_H_BRIDGE_FORWARD;
@@ -77,7 +85,11 @@ void x_axis_position_ctrl(void)
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
 			X_AXIS_H_BRIDGE_BRAKE;
 		} else {
-			x_axis.pwm_duty = MIN(X_AXIS_PWM_DUTY_MAX, (-x_axis.position_error_ticks * X_AXIS_POS_GAIN_P));
+			if (error_p > X_AXIS_PWM_DUTY_MAX) {
+				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+			} else {
+				x_axis.pwm_duty = LOW(error_p);
+			}
 			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			X_AXIS_H_BRIDGE_REVERSE;
@@ -135,5 +147,6 @@ interrupt 8 void x_axis_encoder_a(void)
 interrupt 14 void timer_1kHz_loop(void)
 {
     x_axis_position_ctrl();
+    //x_axis_safety_limit();
     TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }

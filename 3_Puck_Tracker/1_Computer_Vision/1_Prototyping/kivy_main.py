@@ -20,7 +20,7 @@ class Camera(Image):
 
     def update(self, dt):
         ret, frame = self.capture.read()
-	frame = pc.perspective_correction(frame, self.fiducials)
+	#frame = pc.perspective_correction(frame, self.fiducials)
 	frame, puckCenter = pt.track_puck(frame, self.puckLowerHSV, self.puckUpperHSV)
         if ret:
             # convert it to texture
@@ -36,7 +36,10 @@ class Camera(Image):
 class UiApp(App):
     def build(self):
         self.capture = cv2.VideoCapture(0)
-	success = pc.find_fiducials(self.capture)
+	self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 320);
+	self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 240);
+	self.capture.set(cv2.CAP_PROP_FPS, 224);
+	#success = pc.find_fiducials(self.capture)
         camera = Camera(capture=self.capture, fps=120)
         root = BoxLayout(orientation='horizontal')
         root.add_widget(Button(text="<-", size_hint=(0.1,1)))

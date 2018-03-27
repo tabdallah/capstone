@@ -11,8 +11,8 @@
 #include "dcm.h"
 #include "y_axis.h"
 
-static dcm_t y_axis_l = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
-static dcm_t y_axis_r = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
+static dcm_t y_axis_l = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t y_axis_r = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static signed int y_axis_lr_position_error_enc_ticks = 0;
 static y_axis_error_e y_axis_error = y_axis_error_none;
 

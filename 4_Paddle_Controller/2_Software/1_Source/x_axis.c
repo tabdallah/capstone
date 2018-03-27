@@ -11,7 +11,7 @@
 #include "dcm.h"
 #include "x_axis.h"
 
-static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0};
+static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 
 //;**************************************************************
 //;*                 x_axis_configure(void)
@@ -37,6 +37,46 @@ void x_axis_configure(void)
 	TCTL4 = X_AXIS_TCTL4_INIT;					// Capture on rising edge
 	SET_BITS(TIE, X_AXIS_ENC_A_TIOS_MASK);		// Enable interrupts for A-Phase timer channel
 	TFLG1 = (X_AXIS_ENC_A_TFLG1_MASK);			// Clear the flag in case anything is pending
+
+	// Configure limit switch port pins.
+	SET_BITS(X_AXIS_LIMIT_DDR, (X_AXIS_LIMIT_1_PIN | X_AXIS_LIMIT_2_PIN));
+
+	// Default to position control
+	x_axis.ctrl_mode = dcm_ctrl_mode_position;
+}
+
+//;**************************************************************
+//;*                 x_axis_home(void)
+//;*	Move paddle to home position in the X-Axis
+//;**************************************************************
+void x_axis_home(void)
+{
+	// Save current control mode to be restored before returning
+	dcm_ctrl_mode_e ctrl_mode = x_axis.ctrl_mode;
+
+	// Disable position/velocity controllers
+	x_axis.ctrl_mode = dcm_ctrl_mode_manual;
+
+	// Drive motor backwards
+	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+	X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
+	x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
+	X_AXIS_H_BRIDGE_REVERSE;
+
+	// Wait for limit switch to be hit
+	// To Do: Should have some timeout here to handle broken switch
+	while (X_AXIS_LIMIT_1 == dcm_limit_switch_unpressed) {};
+	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+
+	// Stop motor
+	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
+	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+	x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
+	X_AXIS_H_BRIDGE_BRAKE;
+
+	// Return control to position/velocity controllers
+	x_axis.ctrl_mode = ctrl_mode;
+	return;
 }
 
 //;**************************************************************
@@ -46,6 +86,26 @@ void x_axis_configure(void)
 void x_axis_position_ctrl(void)
 {
 	unsigned int error_p;
+
+	// Limit position commands to sane values
+	if (x_axis.position_cmd_enc_ticks > X_AXIS_RIGHT_POS_LIMIT_TICKS) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_RIGHT_POS_LIMIT_TICKS;
+	}
+	if (x_axis.position_cmd_enc_ticks < X_AXIS_LEFT_POS_LIMIT_TICKS) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+	}
+
+	// Read limit switch states
+	x_axis.limit_switch_1 = X_AXIS_LIMIT_1;
+	x_axis.limit_switch_2 = X_AXIS_LIMIT_2;
+	if (x_axis.limit_switch_1 == dcm_limit_switch_pressed) {
+		x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+	}
+	if (x_axis.limit_switch_2 == dcm_limit_switch_pressed) {
+		x_axis.position_enc_ticks = X_AXIS_RIGHT_POS_LIMIT_TICKS;
+	}
+
+	// Calculate position error
 	x_axis.position_error_ticks = x_axis.position_cmd_enc_ticks - x_axis.position_enc_ticks;
 	error_p = abs(x_axis.position_error_ticks) * X_AXIS_POS_GAIN_P;
 
@@ -146,7 +206,9 @@ interrupt 8 void x_axis_encoder_a(void)
 //;**************************************************************
 interrupt 14 void timer_1kHz_loop(void)
 {
-    x_axis_position_ctrl();
-    //x_axis_safety_limit();
-    TC6 = TCNT + TCNT_mS;   // Delay 1mS
+	if (x_axis.ctrl_mode == dcm_ctrl_mode_position) {
+		x_axis_position_ctrl();
+	}
+
+	TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }

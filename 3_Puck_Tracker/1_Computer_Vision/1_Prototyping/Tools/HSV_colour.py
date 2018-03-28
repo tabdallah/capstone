@@ -2,7 +2,7 @@ import numpy as np
 import imutils
 import cv2
 import sys
-import perspective_correction as pc
+import puck_tracker as pt
 
 cap = cv2.VideoCapture(0)
 
@@ -90,29 +90,32 @@ if masking:
             lower = np.array(lower, dtype="uint8")
             upper = np.array(upper, dtype="uint8")
 
-	    fiducials = pc.retrieve_fiducials()
-	    image = pc.perspective_correction(image, fiducials)
+	    fiducials = pt.get_fiducial_coordinates()
+	    image = pt.correct_image_perspective(image, fiducials)
             # find the colors within the specified boundaries and apply
             image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             mask = cv2.inRange(image, lower, upper)
 	    cv2.imshow('Mask', mask)
 
-	    median = cv2.medianBlur(mask, 5)
-	    cv2.imshow('Median', median)
+            #kernel = np.ones((2,2),np.uint8)
+            #erode1 = cv2.erode(mask, kernel, iterations=3)
+	    #cv2.imshow('ErodeFirst', erode1)
+	    #dilateSecond = cv2.dilate(erodeFirst, kernel, iterations=1)
+	    #cv2.imshow('DilateSecond', dilateSecond)
+
+	    median2 = cv2.medianBlur(mask, 5)
+	    cv2.imshow('Median', median2)
 
 	    kernel1 = np.ones((15,15), np.float32)/225
 	    smoothed = cv2.filter2D(mask, -1, kernel1)
 
 	    cv2.imshow('Smoothed', smoothed)
-	    kernel = np.ones((2,2),np.uint8)
+	    
 
 	    color = cv2.bitwise_and(image, image, mask = mask)
 	    cv2.imshow('Color', color)
 
-            erodeFirst = cv2.erode(mask, kernel, iterations=1)
-	    cv2.imshow('ErodeFirst', erodeFirst)
-	    dilateSecond = cv2.dilate(erodeFirst, kernel, iterations=1)
-	    cv2.imshow('DilateSecond', dilateSecond)
+            
 	    #mask = cv2.dilate(mask, None, iterations=1)
             #cv2.imshow('Dilate', mask)
 	    #kernel = np.ones((2,2),np.uint8)

@@ -1,6 +1,7 @@
 # import necessary modules
 import cv2
 import numpy as np
+import Queue
 import json
 import time
 import math
@@ -11,14 +12,14 @@ lastPuckPositionMmX = 0
 lastPuckPositionMmY = 0
 lastTime = 0
 pixelToMmFactors = (0,0)
-tableWidthMm = 622
-tableLengthMm = 1397
-puckMinimumArea = 40
-puckMaximumArea = 130
+tableWidthMm = 774.7
+tableLengthMm = 1692.275
+puckMinimumArea = 30
+puckMaximumArea = 150
 
 def get_puck_color():
     """Return the upper and lower HSV thresholds for the puck color"""
-    with open('camera_parameters.json', 'r') as fp:
+    with open('puck_tracker_settings.json', 'r') as fp:
         camParams = json.load(fp)
         fp.close()
 
@@ -32,7 +33,8 @@ def get_puck_color():
     return puckLowerHSV, puckUpperHSV
 
 def get_fiducial_coordinates():
-    with open('camera_parameters.json', 'r') as fp:
+    """Return the fiducial coordinates saved in the JSON file"""
+    with open('puck_tracker_settings.json', 'r') as fp:
         camParams = json.load(fp)
         fp.close()
 
@@ -48,7 +50,7 @@ def get_fiducial_coordinates():
 
     return fiducialCoordinates
 
-def get_puck_position(frame, puckLowerHSV, puckUpperHSV):
+def get_puck_position(frame, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixelY):
     """Return the location of the puck in x, y coordinates (mm)"""
     # convert the frame to HSV color space
     frameHSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -56,7 +58,12 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV):
     # create a mask for the puck color
     puckMask = cv2.inRange(frameHSV, puckLowerHSV, puckUpperHSV)
 
-    # apply median blur filter (helps with noise)
+    # erode and dilate the image
+    kernel = np.ones((2,2),np.uint8)
+    #erodedMask = cv2.erode(puckMask, kernel, iterations=3)
+    #dilatedMask = cv2.dilate(erodedMask, kernel, iterations=2)
+
+    # apply median blur filter
     puckMaskFiltered = cv2.medianBlur(puckMask, 5)
 
     # find contours in the mask
@@ -67,12 +74,19 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV):
     
     # proceed if a contour is found
     if len(contourList) > 0:
+        #print len(contourList)
         puckLocated = False
         for contour in contourList:
             contourArea = cv2.contourArea(contour)
             if puckMinimumArea < contourArea < puckMaximumArea:
-                puckSizedContour = contour
-                puckLocated = True
+                ellipse = cv2.fitEllipse(contour)
+                if 7 < ellipse[1][0] < 15:
+                    if 9 < ellipse[1][1] < 16:
+                        #print "Contour Area: ", contourArea
+                        #print "Ellipse (a,b): ", ellipse[1][0], ellipse[1][1]
+                        puckSizedContour = contour
+                        puckLocated = True
+                        cv2.ellipse(frame,ellipse,(0,255,0), 2)
         
         if puckLocated:
             ((x, y), radius) = cv2.minEnclosingCircle(puckSizedContour)
@@ -80,13 +94,15 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV):
 
             if M["m00"] != 0:
                 puckCenterCoords = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-                cv2.circle(frame, puckCenterCoords, int(radius), (0, 255, 255), 1)
+                #cv2.circle(frame, puckCenterCoords, int(radius), (0, 255, 255), 1)
+                #cv2.putText(frame, str(contourArea), (int(x+10), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, 100)
                 puckPositionMmX = puckCenterCoords[0]*mmPerPixelX
                 puckPositionMmY = puckCenterCoords[1]*mmPerPixelY
                 
     return frame, (puckPositionMmX, puckPositionMmY)
 
 def get_puck_velocity(puckPositionMmXy):
+    """Return the puck velocity"""
     global lastPuckPositionMmX
     global lastPuckPositionMmY
     global lastTime
@@ -101,11 +117,11 @@ def get_puck_velocity(puckPositionMmXy):
     
     if currentPuckPositionMmX != 0 and lastPuckPositionMmX != 0:
         distanceTraveledMmX = currentPuckPositionMmX - lastPuckPositionMmX
-        velocityMmPerSX = int(distanceTraveledMmX/travelTime)
+        velocityMmPerSX = int(distanceTraveledMmX / travelTime)
     
     if currentPuckPositionMmY != 0 and lastPuckPositionMmY != 0:
         distanceTraveledMmY = currentPuckPositionMmY - lastPuckPositionMmY
-        velocityMmPerSY = int(distanceTraveledMmY/travelTime)
+        velocityMmPerSY = int(distanceTraveledMmY / travelTime)
     
     lastPuckPositionMmX = currentPuckPositionMmX
     lastPuckPositionMmY = currentPuckPositionMmY
@@ -114,6 +130,7 @@ def get_puck_velocity(puckPositionMmXy):
     return (velocityMmPerSX, velocityMmPerSY)
 
 def get_pixel_to_mm_factors(fiducialCoordinates):
+    """Return the scaling factors for pixel to mm conversion"""
     (tl, tr, br, bl) = fiducialCoordinates
     mmPerPixelX = int(tableLengthMm/(br[0] - bl[0]))
     mmPerPixelY = int(tableWidthMm/(bl[1] - tl[1]))
@@ -121,6 +138,7 @@ def get_pixel_to_mm_factors(fiducialCoordinates):
     return mmPerPixelX, mmPerPixelY
 
 def correct_image_perspective(frame, fiducials):
+    """Apply a perspective transform to the image to make it look like the camera is above the surface"""
     (tl, tr, br, bl) = fiducials
 
     # compute the width of the new image, which will be the
@@ -155,9 +173,14 @@ def correct_image_perspective(frame, fiducials):
     # return the warped image
     return correctedFrame
 
-"""----------------------------MAIN---------------------------"""
-if __name__ == '__main__':
+"""----------------------------Puck Tracker Process--------------------------"""
+def ptProcess(dataToPT, dataFromPT):
+    """All things puck tracker happen here. Communicates directly with master controller"""
     capture = cv2.VideoCapture(0)
+    
+    if capture.isOpened() == False:
+        dataFromPT.put("Error: Camera Disconnected")
+    
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
     capture.set(cv2.CAP_PROP_FPS, 224)
@@ -166,54 +189,37 @@ if __name__ == '__main__':
     mmPerPixelX, mmPerPixelY = get_pixel_to_mm_factors(fiducialCoordinates)
     puckLowerHSV, puckUpperHSV = get_puck_color()
 
-    puckPositionX = np.array([])
-    puckPositionY = np.array([])
-    puckVelocityX = np.array([])
-    puckVelocityY = np.array([])
-
     while True:
+	try:
+            incomingMessage = dataToPT.get(False)
+        except Queue.Empty:
+            incomingMessage = 0
+	
+	if incomingMessage != 0:
+            print incomingMessage
+	
 	ret, frame = capture.read()
+	
+	if ret == False:
+            dataFromPT.put("Error: Camera Disconnected")
+            
         frameCorrected = correct_image_perspective(frame, fiducialCoordinates)
-        frame, puckPositionMmXy = get_puck_position(frameCorrected, puckLowerHSV, puckUpperHSV)
+        frame, puckPositionMmXy = get_puck_position(frameCorrected, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixelY)
         puckVelocityMmPerSXy = get_puck_velocity(puckPositionMmXy)
         
-        puckPositionX = np.append(puckPositionX, puckPositionMmXy[0])
-        puckPositionY = np.append(puckPositionY, puckPositionMmXy[1])
-        puckVelocityX = np.append(puckVelocityX, puckVelocityMmPerSXy[0])
-        puckVelocityY = np.append(puckVelocityY, puckVelocityMmPerSXy[1])
-
-        #print "Puck Position mm (x,y): ({0}, {1})".format(puckPositionMmXy[0], puckPositionMmXy[1])
-        #print "Puck Velocity mm/s (x,y): ({0}, {1})".format(puckVelocityMmPerSXy[0], puckVelocityMmPerSXy[1])
-        
+        try:
+            dataFromPT.put("puck_position_mm_x: {0}".format(puckPositionMmXy[0]))
+            dataFromPT.put("puck_position_mm_y: {0}".format(puckPositionMmXy[1]))
+            dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[0]))
+            dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[1]))
+        except Queue.Full:
+            print "Queue Full?"
+            
         cv2.imshow('Table', frame)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
-    plt.figure()
-    plt.subplot(2,2,1)
-    plt.plot(puckPositionX)
-    plt.title('Puck Position X')
-    plt.xlabel('Samples')
-    plt.ylabel('Position (mm)')
-    plt.subplot(2,2,2)
-    plt.plot(puckPositionY)
-    plt.title('Puck Position Y')
-    plt.xlabel('Samples')
-    plt.ylabel('Position (mm)')
-    plt.subplot(2,2,3)
-    plt.plot(puckVelocityX)
-    plt.title('Puck Velocity X')
-    plt.xlabel('Samples')
-    plt.ylabel('Velocity (mm/s)')
-    plt.subplot(2,2,4)
-    plt.plot(puckVelocityY)
-    plt.title('Puck Velocity Y')
-    plt.xlabel('Samples')
-    plt.ylabel('Velocity (mm/s)')    
-    plt.tight_layout()
-    plt.show()
-    
+
     # When everything done, release the capture
     capture.release()
     cv2.destroyAllWindows()
@@ -230,7 +236,7 @@ def find_fiducials(cameraStream):
 	frameWidth = cameraStream.get(cv2.CAP_PROP_FRAME_WIDTH)
 	frameHeight = cameraStream.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-	with open('camera_parameters.json', 'r') as fp:
+	with open('puck_tracker_settings.json', 'r') as fp:
 		camParam = json.load(fp)
 		fp.close()
 
@@ -292,7 +298,7 @@ def find_fiducials(cameraStream):
 			break
 
 	# if all coordinates for the playing surface are found, save to json
-	with open('camera_parameters.json', 'r+') as fp:
+	with open('puck_tracker_settings.json', 'r+') as fp:
 		camParam = json.load(fp)
 		camParam['fiducial']['coordinates']['tl']['x'] = fiducials[0][0]
 		camParam['fiducial']['coordinates']['tl']['y'] = fiducials[0][1]
@@ -313,6 +319,44 @@ def find_fiducials(cameraStream):
 
 
 
+
+"""
+THIS IS SAMPLE PLOTTING CODE
+
+puckPositionX = np.array([])
+puckPositionY = np.array([])
+puckVelocityX = np.array([])
+puckVelocityY = np.array([])
+
+puckPositionX = np.append(puckPositionX, puckPositionMmXy[0])
+puckPositionY = np.append(puckPositionY, puckPositionMmXy[1])
+puckVelocityX = np.append(puckVelocityX, puckVelocityMmPerSXy[0])
+puckVelocityY = np.append(puckVelocityY, puckVelocityMmPerSXy[1])
+
+plt.figure()
+plt.subplot(2,2,1)
+plt.plot(puckPositionX)
+plt.title('Puck Position X')
+plt.xlabel('Samples')
+plt.ylabel('Position (mm)')
+plt.subplot(2,2,2)
+plt.plot(puckPositionY)
+plt.title('Puck Position Y')
+plt.xlabel('Samples')
+plt.ylabel('Position (mm)')
+plt.subplot(2,2,3)
+plt.plot(puckVelocityX)
+plt.title('Puck Velocity X')
+plt.xlabel('Samples')
+plt.ylabel('Velocity (mm/s)')
+plt.subplot(2,2,4)
+plt.plot(puckVelocityY)
+plt.title('Puck Velocity Y')
+plt.xlabel('Samples')
+plt.ylabel('Velocity (mm/s)')    
+plt.tight_layout()
+plt.show()
+"""
 
 
 

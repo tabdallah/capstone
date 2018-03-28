@@ -2,16 +2,16 @@
     "puck": {
         "color": {
             "hue": {
-                "upper": 179, 
-                "lower": 0
+                "upper": 78, 
+                "lower": 27
             }, 
             "val": {
-                "upper": 88, 
-                "lower": 35
+                "upper": 145, 
+                "lower": 54
             }, 
             "sat": {
-                "upper": 255, 
-                "lower": 183
+                "upper": 191, 
+                "lower": 57
             }
         }
     }, 
@@ -32,19 +32,19 @@
         }, 
         "coordinates": {
             "bl": {
-                "y": 234, 
+                "y": 224, 
                 "x": 6
             }, 
             "tl": {
-                "y": 3, 
+                "y": 13, 
                 "x": 18
             }, 
             "tr": {
-                "y": 70, 
+                "y": 80, 
                 "x": 294
             }, 
             "br": {
-                "y": 184, 
+                "y": 174, 
                 "x": 294
             }
         }

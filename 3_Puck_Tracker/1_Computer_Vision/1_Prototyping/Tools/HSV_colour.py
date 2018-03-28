@@ -2,7 +2,7 @@ import numpy as np
 import imutils
 import cv2
 import sys
-import puck_tracker as pt
+#import puck_tracker as pt
 
 cap = cv2.VideoCapture(0)
 
@@ -90,8 +90,8 @@ if masking:
             lower = np.array(lower, dtype="uint8")
             upper = np.array(upper, dtype="uint8")
 
-	    fiducials = pt.get_fiducial_coordinates()
-	    image = pt.correct_image_perspective(image, fiducials)
+	    #fiducials = pt.get_fiducial_coordinates()
+	    #image = pt.correct_image_perspective(image, fiducials)
             # find the colors within the specified boundaries and apply
             image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             mask = cv2.inRange(image, lower, upper)

@@ -14,41 +14,42 @@ lastTime = 0
 pixelToMmFactors = (0,0)
 tableWidthMm = 774.7
 tableLengthMm = 1692.275
-puckMinimumArea = 30
-puckMaximumArea = 150
+puckMinimumArea = 40
+puckMaximumArea = 160
+puckMinimumRadius = 3
+puckMaximumRadius = 8
 
-def get_puck_color():
-    """Return the upper and lower HSV thresholds for the puck color"""
+def get_puck_tracker_settings():
+    """Return the stored settings for the puck tracker"""
     with open('puck_tracker_settings.json', 'r') as fp:
-        camParams = json.load(fp)
+        ptSettings = json.load(fp)
         fp.close()
 
-    puckLowerHSV = (camParams['puck']['color']['hue']['lower'],
-                    camParams['puck']['color']['sat']['lower'],
-                    camParams['puck']['color']['val']['lower'])
-    puckUpperHSV = (camParams['puck']['color']['hue']['upper'],
-                    camParams['puck']['color']['sat']['upper'],
-                    camParams['puck']['color']['val']['upper'])
-
-    return puckLowerHSV, puckUpperHSV
-
-def get_fiducial_coordinates():
-    """Return the fiducial coordinates saved in the JSON file"""
-    with open('puck_tracker_settings.json', 'r') as fp:
-        camParams = json.load(fp)
-        fp.close()
-
+    puckLowerHSV = (ptSettings['puck']['color']['hue']['lower'],
+                    ptSettings['puck']['color']['sat']['lower'],
+                    ptSettings['puck']['color']['val']['lower'])
+    puckUpperHSV = (ptSettings['puck']['color']['hue']['upper'],
+                    ptSettings['puck']['color']['sat']['upper'],
+                    ptSettings['puck']['color']['val']['upper'])
+    
+    fiducialLowerHSV = (ptSettings['fiducial']['color']['hue']['lower'],
+                        ptSettings['fiducial']['color']['sat']['lower'],
+                        ptSettings['fiducial']['color']['val']['lower'])
+    fiducialUpperHSV = (ptSettings['fiducial']['color']['hue']['upper'],
+                        ptSettings['fiducial']['color']['sat']['upper'],
+                        ptSettings['fiducial']['color']['val']['upper'])
+    
     fiducialCoordinates = np.array([
-        [camParams['fiducial']['coordinates']['tl']['x'],
-         camParams['fiducial']['coordinates']['tl']['y']],
-        [camParams['fiducial']['coordinates']['tr']['x'],
-         camParams['fiducial']['coordinates']['tr']['y']],
-        [camParams['fiducial']['coordinates']['br']['x'],
-         camParams['fiducial']['coordinates']['br']['y']],
-        [camParams['fiducial']['coordinates']['bl']['x'],
-         camParams['fiducial']['coordinates']['bl']['y']]], dtype = "float32")
+        [ptSettings['fiducial']['coordinates']['tl']['x'],
+         ptSettings['fiducial']['coordinates']['tl']['y']],
+        [ptSettings['fiducial']['coordinates']['tr']['x'],
+         ptSettings['fiducial']['coordinates']['tr']['y']],
+        [ptSettings['fiducial']['coordinates']['br']['x'],
+         ptSettings['fiducial']['coordinates']['br']['y']],
+        [ptSettings['fiducial']['coordinates']['bl']['x'],
+         ptSettings['fiducial']['coordinates']['bl']['y']]], dtype = "float32")
 
-    return fiducialCoordinates
+    return (puckLowerHSV, puckUpperHSV), (fiducialLowerHSV, fiducialUpperHSV), fiducialCoordinates
 
 def get_puck_position(frame, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixelY):
     """Return the location of the puck in x, y coordinates (mm)"""
@@ -57,11 +58,6 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixel
 
     # create a mask for the puck color
     puckMask = cv2.inRange(frameHSV, puckLowerHSV, puckUpperHSV)
-
-    # erode and dilate the image
-    kernel = np.ones((2,2),np.uint8)
-    #erodedMask = cv2.erode(puckMask, kernel, iterations=3)
-    #dilatedMask = cv2.dilate(erodedMask, kernel, iterations=2)
 
     # apply median blur filter
     puckMaskFiltered = cv2.medianBlur(puckMask, 5)
@@ -74,27 +70,21 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixel
     
     # proceed if a contour is found
     if len(contourList) > 0:
-        #print len(contourList)
         puckLocated = False
         for contour in contourList:
             contourArea = cv2.contourArea(contour)
             if puckMinimumArea < contourArea < puckMaximumArea:
-                ellipse = cv2.fitEllipse(contour)
-                if 7 < ellipse[1][0] < 15:
-                    if 9 < ellipse[1][1] < 16:
-                        #print "Contour Area: ", contourArea
-                        #print "Ellipse (a,b): ", ellipse[1][0], ellipse[1][1]
-                        puckSizedContour = contour
-                        puckLocated = True
-                        cv2.ellipse(frame,ellipse,(0,255,0), 2)
-        
-        if puckLocated:
-            ((x, y), radius) = cv2.minEnclosingCircle(puckSizedContour)
-            M = cv2.moments(puckSizedContour)
+                ((x, y), radius) = cv2.minEnclosingCircle(contour)
+                if puckMinimumRadius < radius < puckMaximumRadius:
+                    puckSizedContour = contour
+                    puckLocated = True
+                    break
 
+        if puckLocated:      
+            M = cv2.moments(puckSizedContour)
             if M["m00"] != 0:
                 puckCenterCoords = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-                #cv2.circle(frame, puckCenterCoords, int(radius), (0, 255, 255), 1)
+                cv2.circle(frame, puckCenterCoords, int(radius + 2), (0, 255, 255), 2)
                 #cv2.putText(frame, str(contourArea), (int(x+10), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, 100)
                 puckPositionMmX = puckCenterCoords[0]*mmPerPixelX
                 puckPositionMmY = puckCenterCoords[1]*mmPerPixelY
@@ -132,14 +122,15 @@ def get_puck_velocity(puckPositionMmXy):
 def get_pixel_to_mm_factors(fiducialCoordinates):
     """Return the scaling factors for pixel to mm conversion"""
     (tl, tr, br, bl) = fiducialCoordinates
+    
     mmPerPixelX = int(tableLengthMm/(br[0] - bl[0]))
     mmPerPixelY = int(tableWidthMm/(bl[1] - tl[1]))
     
     return mmPerPixelX, mmPerPixelY
 
-def correct_image_perspective(frame, fiducials):
-    """Apply a perspective transform to the image to make it look like the camera is above the surface"""
-    (tl, tr, br, bl) = fiducials
+def get_perspective_transform_matrix(fiducialCoordinates):
+    """Return the calculated perspective transform matrix for perspective correction"""
+    (tl, tr, br, bl) = fiducialCoordinates
 
     # compute the width of the new image, which will be the
     # maximum distance between bottom-right and bottom-left
@@ -166,87 +157,211 @@ def correct_image_perspective(frame, fiducials):
             [maxWidth - 1, maxHeight - 1],
             [0, maxHeight - 1]], dtype = "float32")
 
-    # compute the perspective transform matrix and then apply it
-    M = cv2.getPerspectiveTransform(fiducials, dst)
-    correctedFrame = cv2.warpPerspective(frame, M, (maxWidth, maxHeight), cv2.INTER_NEAREST)
+    # compute the perspective transform matrix
+    perspectiveTransformMatrix = cv2.getPerspectiveTransform(fiducialCoordinates, dst)
+    
+    return perspectiveTransformMatrix, maxWidth, maxHeight
 
-    # return the warped image
-    return correctedFrame
+def find_fiducials(frame, fiducialLowerHSV, fiducialUpperHSV):
+    ret = False
+    frameWidth = 640
+    frameHeight = 480
+    
+    # array to hold the 4 fiducial coordinates (x, y)
+    #fiducials = np.zeros((4, 2), dtype =  "int16")
+    fiducials = [0, 0, 0, 0]
+
+    # convert the frame to HSV color space
+    frameHSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # create a mask for the fiducial color
+    mask = cv2.inRange(frameHSV, fiducialLowerHSV, fiducialUpperHSV)
+
+    # apply a median blur filter to the mask (helps with image noise)
+    medianBlur = cv2.medianBlur(mask, 5)
+
+    # find contours in the mask
+    contourList = cv2.findContours(medianBlur.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+
+    # proceed if a contour is found
+    if len(contourList) > 0:
+        for contour in contourList:
+            # find the minimum enclosing circle for the contour
+            ((x, y), radius) = cv2.minEnclosingCircle(contour)
+
+            # use moments to find an accurate centroid for the fiducial
+            M = cv2.moments(contour)
+    
+            # check for divide by zero
+            if M["m00"] != 0:
+                fiducialCenter = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+                if (fiducialCenter[0] < (frameWidth/2)) and (fiducialCenter[1] < (frameHeight)/2):
+                    fiducials[0] = fiducialCenter
+                elif (fiducialCenter[0] > (frameWidth/2)) and (fiducialCenter[1] < (frameHeight)/2):
+                    fiducials[1] = fiducialCenter
+                elif (fiducialCenter[0] > (frameWidth/2)) and (fiducialCenter[1] > (frameHeight)/2):
+                    fiducials[2] = fiducialCenter
+                elif (fiducialCenter[0] < (frameWidth/2)) and (fiducialCenter[1] > (frameHeight)/2):
+                    fiducials[3] = fiducialCenter
+                else:
+                    pass
+
+        if 0 in fiducials:
+            ret = False
+        else:
+            ret = True
+            
+            # if all coordinates for the playing surface are found, save to json
+            with open('puck_tracker_settings.json', 'r') as fp:
+                ptSettings = json.load(fp)
+                fp.close()
+            
+            ptSettings['fiducial']['coordinates']['tl']['x'] = int(fiducials[0][0]/2)
+            ptSettings['fiducial']['coordinates']['tl']['y'] = int(fiducials[0][1]/2)
+            ptSettings['fiducial']['coordinates']['tr']['x'] = int(fiducials[1][0]/2)
+            ptSettings['fiducial']['coordinates']['tr']['y'] = int(fiducials[1][1]/2)
+            ptSettings['fiducial']['coordinates']['br']['x'] = int(fiducials[2][0]/2)
+            ptSettings['fiducial']['coordinates']['br']['y'] = int(fiducials[2][1]/2)
+            ptSettings['fiducial']['coordinates']['bl']['x'] = int(fiducials[3][0]/2)
+            ptSettings['fiducial']['coordinates']['bl']['y'] = int(fiducials[3][1]/2)
+            
+            with open('puck_tracker_settings.json', 'w+') as fp:
+                json.dump(ptSettings, fp, indent=4)
+                fp.close()
+                    
+    return ret
+
+
 
 """----------------------------Puck Tracker Process--------------------------"""
 def ptProcess(dataToPT, dataFromPT):
     """All things puck tracker happen here. Communicates directly with master controller"""
-    capture = cv2.VideoCapture(0)
-    
-    if capture.isOpened() == False:
-        dataFromPT.put("Error: Camera Disconnected")
-    
-    capture.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
-    capture.set(cv2.CAP_PROP_FPS, 224)
-
-    fiducialCoordinates = get_fiducial_coordinates()
-    mmPerPixelX, mmPerPixelY = get_pixel_to_mm_factors(fiducialCoordinates)
-    puckLowerHSV, puckUpperHSV = get_puck_color()
-
     while True:
-	try:
-            incomingMessage = dataToPT.get(False)
+        videoStream = cv2.VideoCapture(0)
+        
+        if videoStream.isOpened() == True:
+            break
+        else:
+            dataFromPT.put("Error: Camera Disconnected")
+    
+    ptState = "Idle" 
+    
+    while True:
+        start = time.time()
+        try:
+            mcCmd = dataToPT.get(False)
         except Queue.Empty:
-            incomingMessage = 0
-	
-	if incomingMessage != 0:
-            print incomingMessage
-	
-	ret, frame = capture.read()
-	
-	if ret == False:
+            mcCmd = "Idle"
+            
+        if videoStream.isOpened() == False:
             dataFromPT.put("Error: Camera Disconnected")
             
-        frameCorrected = correct_image_perspective(frame, fiducialCoordinates)
-        frame, puckPositionMmXy = get_puck_position(frameCorrected, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixelY)
-        puckVelocityMmPerSXy = get_puck_velocity(puckPositionMmXy)
-        
-        try:
-            dataFromPT.put("puck_position_mm_x: {0}".format(puckPositionMmXy[0]))
-            dataFromPT.put("puck_position_mm_y: {0}".format(puckPositionMmXy[1]))
-            dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[0]))
-            dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[1]))
-        except Queue.Full:
-            print "Queue Full?"
+        if mcCmd == "Calibrate":
+            ptDesiredState = "Calibrate"
+        elif mcCmd == "TrackPuck":
+            ptDesiredState = "TrackPuck"
+        else:
+            ptDesiredState = "Idle"
+    
+        if ptDesiredState == "Calibrate" and ptState != "Calibrate":
+            ptState = "Calibrate"
             
-        cv2.imshow('Table', frame)
+            # setup for puck tracker calibration
+            videoStream.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            videoStream.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            videoStream.set(cv2.CAP_PROP_FPS, 30)
+            
+            puckHSV, fiducialHSV, fiducialCoordinates = get_puck_tracker_settings()
+            print "Calibrate Setup Complete"
+            
+        elif ptDesiredState == "TrackPuck" and ptState != "TrackPuck":
+            ptState = "TrackPuck"
+            
+            # setup for puck tracking
+            videoStream.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+            videoStream.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+            videoStream.set(cv2.CAP_PROP_FPS, 224)
+            
+            puckHSV, fiducialHSV, fiducialCoordinates = get_puck_tracker_settings()
+            mmPerPixelX, mmPerPixelY = get_pixel_to_mm_factors(fiducialCoordinates)
+            perspectiveTransformMatrix, maxWidth, maxHeight = get_perspective_transform_matrix(fiducialCoordinates)
+            
+            print "Puck Tracker Setup Complete"
+        else:
+            pass
+            # stay in current state
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        if ptState == "Calibrate":
+            ret, frame = videoStream.read()
+            
+            if ret == False:
+                dataFromPT.put("Error: Camera Disconnected")
+                
+            fiducialsFound = find_fiducials(frame, fiducialHSV[0], fiducialHSV[1])
+            
+            if fiducialsFound:
+                dataFromPT.put("Calibration Complete")
+                print "Calibration Complete"
+                ptState = "Idle"
+            else:
+                dataFromPT.put("Calibrating...")
+            
+        elif ptState == "TrackPuck":
+            ret, frame = videoStream.read()
+	
+            if ret == False:
+                dataFromPT.put("Error: Camera Disconnected")
 
+            frameCorrected = cv2.warpPerspective(frame, perspectiveTransformMatrix, (maxWidth, maxHeight), cv2.INTER_NEAREST)
+            frame, puckPositionMmXy = get_puck_position(frameCorrected, puckHSV[0], puckHSV[1], mmPerPixelX, mmPerPixelY)
+            puckVelocityMmPerSXy = get_puck_velocity(puckPositionMmXy)
+    
+            try:
+                dataFromPT.put("puck_position_mm_x: {0}".format(puckPositionMmXy[0]))
+                dataFromPT.put("puck_position_mm_y: {0}".format(puckPositionMmXy[1]))
+                dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[0]))
+                dataFromPT.put("puck_velocity_mmps_x: {0}".format(puckVelocityMmPerSXy[1]))
+            except Queue.Full:
+                print "Queue Full?"
+        
+            print "Time for 1 Frame: ", time.time()-start
+            cv2.imshow('Table', frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+    
     # When everything done, release the capture
-    capture.release()
+    videoStream.release()
     cv2.destroyAllWindows()
+	
+	
+        
+        
+            
+        
+        
+        
+
+    
+
+
+"""
+ellipse = cv2.fitEllipse(contour)
+                if 7 < ellipse[1][0] < 15:
+                    if 9 < ellipse[1][1] < 16:
+                    
+                    cv2.ellipse(frame,ellipse,(0,255,0), 2)
+                    """
 
 
 
 
-
-
-
-
+"""
 def find_fiducials(cameraStream):
 	# the frame width/height
 	frameWidth = cameraStream.get(cv2.CAP_PROP_FRAME_WIDTH)
 	frameHeight = cameraStream.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-	with open('puck_tracker_settings.json', 'r') as fp:
-		camParam = json.load(fp)
-		fp.close()
-
-	# the HSV range for detecting playing surface fiducials
-	fiducialLowerHSV = (camParam['fiducial']['color']['hue']['lower'],
-			    camParam['fiducial']['color']['sat']['lower'],
-			    camParam['fiducial']['color']['val']['lower'])
-	fiducialUpperHSV = (camParam['fiducial']['color']['hue']['upper'],
-                            camParam['fiducial']['color']['sat']['upper'],
-                            camParam['fiducial']['color']['val']['upper'])
 
 	# array to hold the 4 fiducial coordinates (x, y)
 	#fiducials = np.zeros((4, 2), dtype =  "float32")
@@ -315,7 +430,7 @@ def find_fiducials(cameraStream):
 	return True
 
 
-
+"""
 
 
 

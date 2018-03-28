@@ -39,6 +39,17 @@
 #define X_AXIS_RIGHT_POS_LIMIT_TICKS 4500	// Opposite edge of table, measured from home position
 #define X_AXIS_POS_GAIN_P 10
 
+// Limit switch port setup and macros
+#define X_AXIS_LIMIT_PORT PTAD
+#define X_AXIS_LIMIT_DDR ATDDIEN
+#define X_AXIS_LIMIT_1_PIN 0b01000000 // PAD06
+#define X_AXIS_LIMIT_1_SHIFT 6
+#define X_AXIS_LIMIT_1 ((X_AXIS_LIMIT_PORT & X_AXIS_LIMIT_1_PIN) >> X_AXIS_LIMIT_1_SHIFT)
+#define X_AXIS_LIMIT_2_PIN 0b10000000 // PAD07
+#define X_AXIS_LIMIT_2_SHIFT 7
+#define X_AXIS_LIMIT_2 ((X_AXIS_LIMIT_PORT & X_AXIS_LIMIT_2_PIN) >> X_AXIS_LIMIT_2_SHIFT)
+
 // Function prototypes
 void x_axis_configure(void);
+void x_axis_home(void);
 void x_axis_position_ctrl(void);

@@ -22,6 +22,18 @@ typedef enum {
 	dcm_quad_phase_b = 1
 } dcm_quad_phase_e;
 
+typedef enum {
+	dcm_limit_switch_unpressed = 0,
+	dcm_limit_switch_pressed = 1
+} dcm_limit_switch_e;
+
+typedef enum {
+	dcm_ctrl_mode_disable = 0,
+	dcm_ctrl_mode_manual = 1,
+	dcm_ctrl_mode_position = 2,
+	dcm_ctrl_mode_velocity = 3
+} dcm_ctrl_mode_e;
+
 // Structure definitions
 typedef struct dcm_t {
 	unsigned int position_cmd_enc_ticks;		// Commanded linear position
@@ -39,4 +51,7 @@ typedef struct dcm_t {
 
 	unsigned long period_tcnt_ticks;			// Encoder period in TCNT ticks
 	unsigned int speed_mm_s;					// Linear speed in mm/s
+	dcm_limit_switch_e limit_switch_1;			// Limit switch 1 state
+	dcm_limit_switch_e limit_switch_2;			// Limit switch 2 state
+	dcm_ctrl_mode_e ctrl_mode;					// Motor control mode
 } dcm_t;

@@ -18,7 +18,9 @@ if __name__ == '__main__':
     uiProcess.start()
     ptProcess.start()
     
-    dataToPT.put("Calibrate")
+    #dataToPT.put("Calibrate")
+    #dataToPT.put("TrackPuck")
+    dataToUI.put("RunUI")
     
     # read messages
     while True:
@@ -27,6 +29,7 @@ if __name__ == '__main__':
         except Queue.Empty:
             ptData = 0
         else:
+            print ptData
             if ptData == "Calibration Complete":
                 dataToPT.put("TrackPuck")
         

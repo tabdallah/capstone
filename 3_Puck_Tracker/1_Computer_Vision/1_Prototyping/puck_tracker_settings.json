@@ -2,50 +2,50 @@
     "puck": {
         "color": {
             "hue": {
-                "upper": 179, 
-                "lower": 0
+                "upper": 80, 
+                "lower": 35
             }, 
             "val": {
-                "upper": 88, 
-                "lower": 35
+                "upper": 255, 
+                "lower": 15
             }, 
             "sat": {
                 "upper": 255, 
-                "lower": 183
+                "lower": 65
             }
         }
     }, 
     "fiducial": {
         "color": {
             "hue": {
-                "upper": 66, 
-                "lower": 37
+                "upper": 179, 
+                "lower": 160
             }, 
             "val": {
-                "upper": 115, 
-                "lower": 34
+                "upper": 203, 
+                "lower": 110
             }, 
             "sat": {
-                "upper": 255, 
-                "lower": 56
+                "upper": 220, 
+                "lower": 140
             }
         }, 
         "coordinates": {
             "bl": {
-                "y": 234, 
-                "x": 6
+                "y": 233, 
+                "x": 16
             }, 
             "tl": {
-                "y": 3, 
-                "x": 18
+                "y": 6, 
+                "x": 27
             }, 
             "tr": {
-                "y": 70, 
-                "x": 294
+                "y": 71, 
+                "x": 304
             }, 
             "br": {
                 "y": 184, 
-                "x": 294
+                "x": 304
             }
         }
     }

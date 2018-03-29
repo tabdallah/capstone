@@ -38,6 +38,9 @@
 #define X_AXIS_LEFT_POS_LIMIT_TICKS 100		// Zero/Home position
 #define X_AXIS_RIGHT_POS_LIMIT_TICKS 4500	// Opposite edge of table, measured from home position
 #define X_AXIS_POS_GAIN_P 10
+#define X_AXIS_ENC_TICKS_PER_REV 374
+#define X_AXIS_MM_PER_REV 40
+
 
 // Limit switch port setup and macros
 #define X_AXIS_LIMIT_PORT PTAD

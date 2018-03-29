@@ -54,6 +54,8 @@
 #define Y_AXIS_L_POS_GAIN_P 10
 #define Y_AXIS_R_POS_GAIN_P 10
 #define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 100		// Shut down system if left vs right motor position differs by more than this
+#define Y_AXIS_ENC_TICKS_PER_REV 374
+#define Y_AXIS_MM_PER_REV 40
 
 // Function prototypes
 void y_axis_configure(void);

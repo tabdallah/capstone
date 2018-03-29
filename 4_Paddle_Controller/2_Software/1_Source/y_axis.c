@@ -10,11 +10,15 @@
 #include "pwm.h"
 #include "dcm.h"
 #include "y_axis.h"
+#include "can.h"
 
 static dcm_t y_axis_l = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static dcm_t y_axis_r = {Y_AXIS_ENC_OFFSET_TICKS, Y_AXIS_ENC_OFFSET_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static signed int y_axis_lr_position_error_enc_ticks = 0;
 static y_axis_error_e y_axis_error = y_axis_error_none;
+static can_msg_raw_t can_msg_raw;
+static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
+static can_msg_pc_status_t can_msg_pc_status;
 
 //;**************************************************************
 //;*                 y_axis_configure(void)
@@ -257,4 +261,40 @@ interrupt 14 void timer_1kHz_loop(void)
 {
     y_axis_position_ctrl();
     TC6 = TCNT + TCNT_mS;   // Delay 1mS
+}
+
+//;**************************************************************
+//;*                 can_rx_handler()
+//;*  Interrupt handler for CAN Rx
+//;**************************************************************
+interrupt 38 void can_rx_handler(void) {
+  	unsigned char i;	      // Loop counter
+	unsigned int ID0, ID1;   // To read CAN ID registers and manipulate 11-bit ID's into a single number
+	unsigned long pos_cmd_calculation;
+
+	// Store 11-bit CAN ID as a single number
+	ID0 = (CANRXIDR0 << 3);
+	ID1 = (CANRXIDR1 >> 5);
+	can_msg_raw.id = (0x0FFF) & (ID0 | ID1);
+	
+	// Store DLC
+	can_msg_raw.dlc = LO_NYBBLE(CANRXDLR);
+
+	// Read data one byte at a time
+	for (i=0; i < can_msg_raw.dlc; i++) {
+		can_msg_raw.data[i] = *(&CANRXDSR0 + i);
+	}
+
+	// Process commands from Master Controller
+	if (can_msg_raw.id == CAN_ID_MC_CMD_PC) {
+		// Bytes 2-3 Y-Axis position command
+		can_msg_mc_cmd_pc.pos_cmd_x_mm = (can_msg_raw.data[2] | (can_msg_raw.data[3] << 8));
+	}
+
+	// Set motor position command in encoder ticks
+	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_x_mm * 10) / Y_AXIS_MM_PER_REV;
+	y_axis_l.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation * (Y_AXIS_ENC_TICKS_PER_REV / 10) + Y_AXIS_ENC_OFFSET_TICKS);
+
+	// Clear Rx flag
+	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);
 }

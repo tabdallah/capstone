@@ -10,8 +10,12 @@
 #include "pwm.h"
 #include "dcm.h"
 #include "x_axis.h"
+#include "can.h"
 
 static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static can_msg_raw_t can_msg_raw;
+static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
+static can_msg_pc_status_t can_msg_pc_status;
 
 //;**************************************************************
 //;*                 x_axis_configure(void)
@@ -67,6 +71,21 @@ void x_axis_home(void)
 	// To Do: Should have some timeout here to handle broken switch
 	while (X_AXIS_LIMIT_1 == dcm_limit_switch_unpressed) {};
 	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+
+	// Stop motor
+	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
+	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+	x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
+	X_AXIS_H_BRIDGE_BRAKE;
+
+	// Move off the hard stop
+	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+	X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
+	x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
+	X_AXIS_H_BRIDGE_FORWARD;
+
+	while (x_axis.position_enc_ticks < 200) {};
+	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;	
 
 	// Stop motor
 	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
@@ -211,4 +230,40 @@ interrupt 14 void timer_1kHz_loop(void)
 	}
 
 	TC6 = TCNT + TCNT_mS;   // Delay 1mS
+}
+
+//;**************************************************************
+//;*                 can_rx_handler()
+//;*  Interrupt handler for CAN Rx
+//;**************************************************************
+interrupt 38 void can_rx_handler(void) {
+  	unsigned char i;	      // Loop counter
+	unsigned int ID0, ID1;   // To read CAN ID registers and manipulate 11-bit ID's into a single number
+	unsigned long pos_cmd_calculation;
+
+	// Store 11-bit CAN ID as a single number
+	ID0 = (CANRXIDR0 << 3);
+	ID1 = (CANRXIDR1 >> 5);
+	can_msg_raw.id = (0x0FFF) & (ID0 | ID1);
+	
+	// Store DLC
+	can_msg_raw.dlc = LO_NYBBLE(CANRXDLR);
+
+	// Read data one byte at a time
+	for (i=0; i < can_msg_raw.dlc; i++) {
+		can_msg_raw.data[i] = *(&CANRXDSR0 + i);
+	}
+
+	// Process commands from Master Controller
+	if (can_msg_raw.id == CAN_ID_MC_CMD_PC) {
+		// Bytes 0-1 X-Axis position command
+		can_msg_mc_cmd_pc.pos_cmd_x_mm = (can_msg_raw.data[0] | (can_msg_raw.data[1] << 8));
+	}
+
+	// Set motor position command in encoder ticks
+	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_x_mm * 10) / X_AXIS_MM_PER_REV;
+	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation * (X_AXIS_ENC_TICKS_PER_REV / 10) + X_AXIS_LEFT_POS_LIMIT_TICKS);
+
+	// Clear Rx flag
+	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);
 }

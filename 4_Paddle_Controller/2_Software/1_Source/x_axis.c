@@ -8,11 +8,11 @@
 #include "derivative.h"      /* derivative-specific definitions */
 #include "timer.h"
 #include "pwm.h"
-#include "dcm.h"
 #include "x_axis.h"
 #include "can.h"
 
 static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static x_axis_error_e x_axis_error = x_axis_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
 static can_msg_pc_status_t can_msg_pc_status;
@@ -62,36 +62,25 @@ void x_axis_home(void)
 	x_axis.ctrl_mode = dcm_ctrl_mode_manual;
 
 	// Drive motor backwards
-	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
-	X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
-	x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
-	X_AXIS_H_BRIDGE_REVERSE;
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, X_AXIS_PWM_DUTY_MAX);
 
 	// Wait for limit switch to be hit
 	// To Do: Should have some timeout here to handle broken switch
+	// For now broken switch handled by dcm overload check
 	while (X_AXIS_LIMIT_1 == dcm_limit_switch_unpressed) {};
 	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
 
 	// Stop motor
-	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
-	x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-	X_AXIS_H_BRIDGE_BRAKE;
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 
 	// Move off the hard stop
-	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
-	X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
-	x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
-	X_AXIS_H_BRIDGE_FORWARD;
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, X_AXIS_PWM_DUTY_MAX);
 
 	while (x_axis.position_enc_ticks < 200) {};
 	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;	
 
 	// Stop motor
-	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-	x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
-	x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-	X_AXIS_H_BRIDGE_BRAKE;
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 
 	// Return control to position/velocity controllers
 	x_axis.ctrl_mode = ctrl_mode;
@@ -130,10 +119,7 @@ void x_axis_position_ctrl(void)
 
 	// Stop if at desired position
 	if (x_axis.position_error_ticks == 0) {
-		X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-		x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
-		x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-		X_AXIS_H_BRIDGE_BRAKE;
+		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 		return;
 	}
 
@@ -141,39 +127,125 @@ void x_axis_position_ctrl(void)
 	if (x_axis.position_error_ticks > 0) {
 		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_reverse) {
 			// Stop before reversing direction
-			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
-			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-			X_AXIS_H_BRIDGE_BRAKE;
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 		} else {
 			if (error_p > X_AXIS_PWM_DUTY_MAX) {
 				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
 			} else {
 				x_axis.pwm_duty = LOW(error_p);
 			}
-			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
-			x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
-			X_AXIS_H_BRIDGE_FORWARD;
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, x_axis.pwm_duty);
 		}
 		return;
 	} else {
 		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_forward) {
 			// Stop before reversing direction
-			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
-			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-			X_AXIS_H_BRIDGE_BRAKE;
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 		} else {
 			if (error_p > X_AXIS_PWM_DUTY_MAX) {
 				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
 			} else {
 				x_axis.pwm_duty = LOW(error_p);
 			}
-			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
-			x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
-			X_AXIS_H_BRIDGE_REVERSE;
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, x_axis.pwm_duty);
 		}
 		return;
+	}
+}
+
+//;**************************************************************
+//;*                 x_axis_send_status_can(void)
+//;*	Send PC_Status_X message
+//;**************************************************************
+void x_axis_send_status_can(void)
+{
+	unsigned char data[2];
+	unsigned long pos_x_calc;
+	if (x_axis.position_enc_ticks < X_AXIS_LEFT_POS_LIMIT_TICKS) {
+		pos_x_calc = 0;
+	} else {
+		pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_LEFT_POS_LIMIT_TICKS) * 10;
+	}
+	pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
+	can_msg_pc_status.pos_x_mm = 0xFFFF & ((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10);
+
+	// This seems sloppy, fix this later.
+	data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
+	data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
+
+	if (can_tx(CAN_ST_ID_PC_STATUS_X, CAN_DLC_PC_STATUS_X, &data[0]) != CAN_ERR_NONE) {
+		// ToDo: Handle CAN errors
+	}
+}
+
+//;**************************************************************
+//;*                 x_axis_dcm_overload_check(void)
+//;*	Check that DC motor is not blocked/overloaded
+//;**************************************************************
+void x_axis_dcm_overload_check(void)
+{
+	static unsigned int strike_counter = 0;
+	static dcm_h_bridge_dir_e previous_direction = dcm_h_bridge_dir_brake;
+
+	// Reset strike counter if motor changes direction
+	if (previous_direction != x_axis.h_bridge_direction) {
+		previous_direction = x_axis.h_bridge_direction;
+		strike_counter = 0;
+		return;
+	}
+
+	// Only checking for overload condition at max speed.
+	// ToDo: Do some sort of interpolation to determine expected period from PWM duty
+	if (x_axis.pwm_duty != X_AXIS_PWM_DUTY_MAX) {
+		return;
+	}
+
+	// Check for overload condition
+	if (x_axis.period_tcnt_ticks > X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS) {
+		strike_counter ++;
+	} else {
+		strike_counter = 0;
+	}
+
+	// Throw error and stop motor if strike limit is reached
+	if (strike_counter >= X_AXIS_DCM_OVERLOAD_STRIKE_COUNT) {
+		x_axis_error = x_axis_error_dcm_overload;
+		x_axis.ctrl_mode = dcm_ctrl_mode_disable;
+		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+	}
+}
+
+//;**************************************************************
+//;*                 x_axis_set_dcm_direction(void)
+//;*	Private helper function to set DC motor direction
+//;**************************************************************
+static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+{
+	switch (direction)
+	{
+		case dcm_h_bridge_dir_brake:
+			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
+			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
+			X_AXIS_H_BRIDGE_BRAKE;
+			break;
+		case dcm_h_bridge_dir_forward:
+			X_AXIS_SET_PWM_DUTY(pwm_duty);
+			x_axis.pwm_duty = pwm_duty;
+			x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
+			X_AXIS_H_BRIDGE_FORWARD;
+			break;
+		case dcm_h_bridge_dir_reverse:
+			X_AXIS_SET_PWM_DUTY(pwm_duty);
+			x_axis.pwm_duty = pwm_duty;
+			x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
+			X_AXIS_H_BRIDGE_REVERSE;
+			break;
+		default:
+			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
+			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
+			X_AXIS_H_BRIDGE_BRAKE;
 	}
 }
 
@@ -225,8 +297,22 @@ interrupt 8 void x_axis_encoder_a(void)
 //;**************************************************************
 interrupt 14 void timer_1kHz_loop(void)
 {
+	static unsigned char count = 1;
+
+	x_axis_dcm_overload_check();
+
 	if (x_axis.ctrl_mode == dcm_ctrl_mode_position) {
 		x_axis_position_ctrl();
+	}
+
+	// Send status message at 100Hz
+	if ((count % 10) == 0) {
+		x_axis_send_status_can();
+	}
+	if (count == 10) {
+		count = 1;
+	} else {
+		count ++;
 	}
 
 	TC6 = TCNT + TCNT_mS;   // Delay 1mS

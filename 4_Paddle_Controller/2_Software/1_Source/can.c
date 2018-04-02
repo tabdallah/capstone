@@ -46,10 +46,10 @@ void can_configure(void) {
 }
 
 //;**************************************************************
-//;*                 can_tx(id, priority, length, *txdata)
+//;*                 can_tx(id, length, *txdata)
 //;*  Outputs a CAN frame using polling
 //;**************************************************************   
-unsigned char can_tx(unsigned long id, unsigned char priority,
+unsigned char can_tx(unsigned long id,
 	unsigned char length, unsigned char *txdata) {
 
 	unsigned char txbuffer;	// To store the selected buffer for transmitting
@@ -72,7 +72,7 @@ unsigned char can_tx(unsigned long id, unsigned char priority,
 	}
 
 	CANTXDLR = length;		// Set DLC
-	CANTXTBPR = priority;	// Set priority
+	CANTXTBPR = 0x00;		// Set priority to highest always (not enough traffic to matter)
 	CANTFLG = txbuffer; 	// Start transmission
 
 	while ( (CANTFLG & txbuffer) != txbuffer);	// Wait for transmit to complete

@@ -181,6 +181,31 @@ void y_axis_position_ctrl(void)
 }
 
 //;**************************************************************
+//;*                 y_axis_send_status_can(void)
+//;*	Send PC_Status_Y message
+//;**************************************************************
+void y_axis_send_status_can(void)
+{
+	unsigned char data[2];
+	unsigned int pos_y_calc;
+	if (y_axis_l.position_enc_ticks < Y_AXIS_ENC_OFFSET_TICKS) {
+		pos_y_calc = 0;
+	} else {
+		pos_y_calc = (y_axis_l.position_enc_ticks - Y_AXIS_ENC_OFFSET_TICKS) * 10;
+	}
+	pos_y_calc = pos_y_calc / Y_AXIS_ENC_TICKS_PER_REV;
+	can_msg_pc_status.pos_y_mm = ((pos_y_calc * Y_AXIS_MM_PER_REV) / 10);
+
+	// This seems sloppy, fix this later.
+	data[0] = can_msg_pc_status.pos_y_mm & 0x00FF;
+	data[1] = (can_msg_pc_status.pos_y_mm & 0xFF00) >> 8;
+
+	if (can_tx(CAN_ST_ID_PC_STATUS_Y, CAN_DLC_PC_STATUS_Y, &data[0]) != CAN_ERR_NONE) {
+		// ToDo: Handle CAN errors
+	}
+}
+
+//;**************************************************************
 //;*                 y_axis_l_encoder_a()
 //;*  Handles IC function for Y-Axis Left Motor Encoder A Phase
 //;**************************************************************
@@ -259,7 +284,20 @@ interrupt 10 void y_axis_r_encoder_a(void)
 //;**************************************************************
 interrupt 14 void timer_1kHz_loop(void)
 {
+	static unsigned char count = 1;
+
     y_axis_position_ctrl();
+
+   	// Send status message at 100Hz
+	if ((count % 10) == 0) {
+		y_axis_send_status_can();
+	}
+	if (count == 10) {
+		count = 1;
+	} else {
+		count ++;
+	}
+
     TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }
 

@@ -59,10 +59,14 @@
 
 // Function prototypes
 void y_axis_configure(void);
+void y_axis_home(void);
 void y_axis_position_ctrl(void);
+void y_axis_send_status_can(void);
+void y_axis_dcm_overload_check(void);
 
 // Enumerated data types
 typedef enum {
 	y_axis_error_none = 0,
-	y_axis_error_lr_pos_mism = 1
+	y_axis_error_dcm_overload = 1,
+	y_axis_error_lr_pos_mism = 2
 } y_axis_error_e;

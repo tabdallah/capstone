@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Thomas Abdallah | Logbook</title>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="This is the logbook page for Thomas Abdallah"/>
+	<meta name="robots" content="noindex nofollow"/>
+	<meta http-equiv="author" content="Thomas Abdallah"/>
+	<meta http-equiv="pragma" content="no-cache"/>
+
+	<link rel="icon" href="images/elevator.png">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+	<link href="./css/common.css" type="text/css" rel="stylesheet">
+</head>
+
+<body class="background-image">
+	<!-- Header -->
+	<header>
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<?php include 'php/top-menu.php';?>	
+		</nav>
+	</header>
+
+<!-- Logbook Page -->
+<div id="content">
+	<article class="container text-center">
+		<h1>Weekly Log Book - Thomas Abdallah</h1>
+		<img src="images/thomas.jpg" alt="Image of Thomas" title="Handsome" class="img-rounded" />
+		<p id="thomas_age"></p>
+		<div class="row text-left center-block">
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 1</h2>
+				<ul>
+					<li>Worked with Stan and David to develop project plan</li>
+					<li>Developed CAN firmware for HCS12 microcontroller</li>
+					<li>Debugged issues with CAN Rx ISR causing 'illegal bp' (unresolved)</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>								
+				<h2>Week 2</h2>
+				<ul>
+					<li>Developed <a href= "https://github.com/eelmand/S6Project/blob/master/Project%20Plan/Elevator_CAN_Network.pdf">CAN network layout</a> and <a href= "https://github.com/eelmand/S6Project/blob/master/Project%20Plan/Shared_CAN_Protocol_Proposal.xlsx">protocol proposal</a> with Stan and David</li>
+					<li>Reviewed proposal with class - agreed to all use same protocol and network layout at 125kBaud</li>
+					<li>Fixed issues with CAN Rx ISR causing 'illegal bp'</li>
+					<ul>
+						<li>Was caused by initializing the timer module with overflow interrupts enabled, but forgot to include the interrupt handler in the project</li>
+					</ul>
+					<li>Implemented a FIFO library for storing Rx CAN messages</li>
+					<ul>
+						<li>Using dynamic memory allocation on the HCS12 (i.e. malloc) requires rebuilding the libraries with a sensible heap size</li>
+						<li>Default heap size is 2000 bytes which is more than the available amount of RAM on our chip - this causes errors during linking</li>
+						<li><a href= "https://community.nxp.com/thread/388977">Instructions for rebuilding the libraries</a></li>
+					</ul>
+					<li>Started implementing "Elevator Controller" module</li>
+					<ul>
+						<li>Using my own project board from Semester 4 as it already has a Scmitt trigger and a DAC</li>
+						<li>Ultrasonic sensor implementation complete</li>
+						<ul>
+							<li>Using OC to send the 'trigger' pulse (10uS @20mS period) to the sensor</li>
+							<li>Using IC to measure the 'echo' waveform pulse width</li>
+							<ul>
+								<li>Distance (cm) = Pulse Width (uS) / 58</li>
+								<li>IC is messy without a Schmitt trigger to clean up the input signal</li>
+								<li>Using the encoder input on my board as it already has this</li>
+							</ul>
+							<li>Using LCD to display the current distance measurement in cm</li>
+						</ul>
+						<li>Motor control implementation started</li>
+						<ul>
+							<li>Using SPI controlled DAC to send analog voltage to servo-amp</li>
+							<li>Working on closed-loop control today (2017-05-19)</li>
+						</ul>
+					</ul>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 3</h2>
+				<ul>
+					<li>Finished elevator controller implementation</li>
+					<ul>
+						<li>Using input-capture to measure ultrasonic sensor distance and convert to 'floor number'</li>
+						<li>Using SPI controlled DAC to control motor voltage</li>
+						<li>Closed loop (PI) controller implemented based on floor request</li>
+						<li>Fully validated - code frozen and ready for entire class to use</li>
+					</ul>
+					<li>Installed PCAN Linux drivers</li>
+					<ul>
+						<li><a href= "http://www.peak-system.com/forum/viewtopic.php?f=59&t=256">This is not straight forward</a></li>
+						<li>Drivers do not stay installed after rebooting Virtual Machine - okay for now</li>
+					</ul>
+					<li>Installed PCAN Basic API (Python and C++ support)</li>
+					<li>Started playing with PCAN Basic API in Python to initialize and Tx/Rx messages</li>
+					<li>Implemented a basic "SC" Python script that just sends commands to EC and prints out status stuff</li>
+					<li><a href= "https://eelmand.github.io/S6Project/Website/about.html#sc_state_machine">Designed state machine for SC</a></li>
+					<li>Implemented State Machine in Python - Supervisory Controller fully functional</li>
+					<li>Worked with David to build 2 more floor controllers and set up a table for our CAN network testing</li>
+					<li>Started testing complete CAN network (simulating Car Controller with USB to CAN device)</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 4</h2>
+				<ul>
+					<li>Finished system integration with addition of Car Controller</li>
+					<li>Filmed video of complete system functionality</li>
+					<li>Revamped my logbook page using the new shared bootstrap theme and header</li>
+					<li>Developed test plans for Elevator Controller, Supervisory Controller, and complete system</li>
+					<li>Completed System Testing</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 5</h2>
+				<ul>
+					<li>Skeched out Web UI design ideas with David and Stan</li>
+					<li>Started prototyping Debug UI pages</li>
+					<li>Played around with JS integration</li>
+					<li>Set up an ngrok server to host our <a href="http://adequateelevators.com">website</a></li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 6</h2>
+				<ul>
+					<li>Finished prototyping of Debug UI pages</li>
+					<li>Implemented <a href="debug_CAN_viewer.html">CAN Viewer</a> page which will show live CAN signal values (simulated values for now)</li>
+					<li>Implemented <a href="debug_CAN_visualizer.html">CAN Visualizer</a> page which will show live representation of CAN nodes (simulated values for now)</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 7</h2>
+				<ul>
+					<li>Created a SQL database on my Linux VM - to be used for the project website</li>
+					<li>Created a simple table with signal names, raw and physical values, and timestamps</li>
+					<li>Entered some fake data in the table to play around with Queries in PHP</li>
+					<li>Wrote PHP script to query most recent value of each signal in the table and display on a page</li>
+					<li>Implemented database querying for the <a href="debug_CAN_viewer.html">CAN viewer page</a></li>
+					<li>Improved PHP x Javascript interaction by using JSON to pass data rather than separate variables</li>
+					<li>Working on using an <a href="https://stackoverflow.com/questions/32241639/run-php-script-every-10-seconds">AJAX request</a> to refresh signal values from the database every second</li>
+				</ul>
+
+				<br />
+				<p>Structure of our Database as of Week 7</p>
+				<ul>
+					<li>SCHEMA name: 'elevator'</li>
+					<li>TABLES: 'signals'</li>
+					<ul>
+						<li>'signals' table will store all CAN signals and their values with timestamps</li>
+						<img src="images/database.png" alt="Image of our database" title="Slick" class="img" />
+					</ul>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 8</h2>
+				<ul>
+					<li>Installed python-mysqldb library</li>
+					<li>Added basic MySQL functionality to supervisory controller (dumping Tx and Rx signals to DB)</li>
+					<li><a href="https://stackoverflow.com/questions/372885/how-do-i-connect-to-a-mysql-database-in-python">Basic MySQL integration in Python</a></li>
+					<li>Debug CAN Signal Viewer now shows remote request signal from database</li>
+					<li>Supervisory Controller now dumps CAN signals into database as they are received</li>
+					<li>Supervisory Controller now dumps State Machine signals into database as they are generated</li>
+					<li>Supervisory Controller now reads 'REMOTE_REQ' signal from database as it is generated</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 9 - 10</h2>
+				<ul>
+					<li>Worked on "Request Access" page features</li>
+					<li>On submission the user info is added to a table "new_users" (username, password, first_name, last_name)</li>
+					<li>On submisison an email is sent to the site administrators notifying them of the access request</li>
+					<li>To do: Add "grant access" button in that email which will move that users info from "new_users" table to the "users" table</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 11</h2>
+				<ul>
+					<li>Migrating site hosting to godaddy.com</li>
+					<li>Added <a href="https://stackoverflow.com/questions/24214106/php-code-written-in-html-file-doesnt-work-on-1and1-hosting-but-works-on-000webh">specific directive </a>to .htaccess file to enable php on html pages</li>
+					<li>How to perform a <a href="https://stackoverflow.com/questions/600079/how-do-i-clone-a-subdirectory-only-of-a-git-repository">sparse checkout on GIT</a></li>
+					<li>Finished implementation of request/grant access scheme</li>
+					<li>Started working on migrating SC functionality to Raspberry Pi</li>
+				</ul>
+			</div>
+			<div class="col-xs-12">
+				<hr>
+				<h2>Week 12</h2>
+				<ul>
+					<li>Migrated Supervisory Controller to Raspberry Pi</li>
+					<li>Recorded video of completed system including Website (link soon)</li>
+					<li>Added more Admin functionality for user management</li>
+					<ul>
+						<li>Grant/revoke access</li>
+						<li>User last login time</li>
+					</ul>
+				</ul>
+			</div>
+		</div>
+	</article>
+
+	<footer class="container-fluid text-center">
+		<p>Copyright &copy; 2017 ESE Team</p>
+	</footer>
+
+	<script src="js/common.js"></script>	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+</body>
+
+</html>

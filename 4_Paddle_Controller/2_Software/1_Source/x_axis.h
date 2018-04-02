@@ -4,6 +4,7 @@
 //; Date: 2018-03-19
 //;******************************************************************************
 #include "TA_Header_W2016.h"  /* my macros and constants */
+#include "dcm.h"
 
 // H-Bridge port setup and direction control macros
 #define X_AXIS_H_BRIDGE_PORT PORTB
@@ -40,7 +41,8 @@
 #define X_AXIS_POS_GAIN_P 10
 #define X_AXIS_ENC_TICKS_PER_REV 374
 #define X_AXIS_MM_PER_REV 40
-
+#define X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1000	// If encoder period drops below this for more than xx milliseconds, motor is blocked/overloaded
+#define X_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 
 // Limit switch port setup and macros
 #define X_AXIS_LIMIT_PORT PTAD
@@ -56,3 +58,12 @@
 void x_axis_configure(void);
 void x_axis_home(void);
 void x_axis_position_ctrl(void);
+void x_axis_send_status_can(void);
+void x_axis_dcm_overload_check(void);
+static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
+
+// Enumerated data types
+typedef enum {
+	x_axis_error_none = 0,
+	x_axis_error_dcm_overload = 1
+} x_axis_error_e;

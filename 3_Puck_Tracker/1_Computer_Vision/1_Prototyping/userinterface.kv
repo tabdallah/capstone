@@ -1,0 +1,32 @@
+#:kivy 1.10.0
+
+<Paddle>:
+    Image:
+        source: 'Images/paddle.png'
+        #pos: self.pos
+
+
+<ManualControlScreen>:
+    paddle_object: paddle
+    orientation: 'vertical'
+
+    canvas.before:
+        BorderImage:
+            source: 'Images/hockeySurface.png'
+            pos: self.pos
+            size: self.size
+
+    Button:
+        text: "Quit Application"
+        on_release: self.parent.kill_thing()
+
+    Label:
+        color: (0,0,0,1)
+        font_size: 30
+        center_x: root.width * 7/8
+        top: root.top - 10
+        text: str(int(self.parent.paddle_object.center_x)) + str(", ") + str(int(self.parent.paddle_object.center_y))
+
+    Paddle:
+        id: paddle
+        center: self.parent.center

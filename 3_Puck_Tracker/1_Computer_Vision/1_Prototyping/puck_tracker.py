@@ -85,10 +85,9 @@ def get_puck_position(frame, puckLowerHSV, puckUpperHSV, mmPerPixelX, mmPerPixel
             if M["m00"] != 0:
                 puckCenterCoords = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
                 cv2.circle(frame, puckCenterCoords, int(radius + 2), (0, 255, 255), 2)
-                #cv2.putText(frame, str(contourArea), (int(x+10), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, 100)
                 puckPositionMmX = puckCenterCoords[0]*mmPerPixelX
                 puckPositionMmY = puckCenterCoords[1]*mmPerPixelY
-                
+
     return frame, (puckPositionMmX, puckPositionMmY)
 
 def get_puck_velocity(puckPositionMmXy):
@@ -248,15 +247,13 @@ def ptProcess(dataToPT, dataFromPT):
     ptState = "Idle" 
     
     while True:
-        start = time.time()
+        # retrieve commands from master controller
         try:
             mcCmd = dataToPT.get(False)
         except Queue.Empty:
             mcCmd = "Idle"
             
-        if videoStream.isOpened() == False:
-            dataFromPT.put("Error: Camera Disconnected")
-            
+        # set desired state of puck tracker to that commanded by mc    
         if mcCmd == "Calibrate":
             ptDesiredState = "Calibrate"
         elif mcCmd == "TrackPuck":
@@ -264,18 +261,21 @@ def ptProcess(dataToPT, dataFromPT):
         else:
             ptDesiredState = "Idle"
     
+        # do the required setup to enter state requested by mc
         if ptDesiredState == "Calibrate" and ptState != "Calibrate":
+            ptDesiredState = "Idle"
             ptState = "Calibrate"
             
-            # setup for puck tracker calibration
+            # setup for puck tracker calibration, use higher resolution and lower fps for more accurate fiducial detection
             videoStream.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             videoStream.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             videoStream.set(cv2.CAP_PROP_FPS, 30)
             
+            # retrieve fiducialHSV range from settings file
             puckHSV, fiducialHSV, fiducialCoordinates = get_puck_tracker_settings()
-            print "Calibrate Setup Complete"
             
         elif ptDesiredState == "TrackPuck" and ptState != "TrackPuck":
+            ptDesiredState = "Idle"
             ptState = "TrackPuck"
             
             # setup for puck tracking
@@ -287,11 +287,11 @@ def ptProcess(dataToPT, dataFromPT):
             mmPerPixelX, mmPerPixelY = get_pixel_to_mm_factors(fiducialCoordinates)
             perspectiveTransformMatrix, maxWidth, maxHeight = get_perspective_transform_matrix(fiducialCoordinates)
             
-            print "Puck Tracker Setup Complete"
         else:
             pass
             # stay in current state
         
+        # perform puck tracker state tasks
         if ptState == "Calibrate":
             ret, frame = videoStream.read()
             
@@ -302,7 +302,6 @@ def ptProcess(dataToPT, dataFromPT):
             
             if fiducialsFound:
                 dataFromPT.put("Calibration Complete")
-                print "Calibration Complete"
                 ptState = "Idle"
             else:
                 dataFromPT.put("Calibrating...")
@@ -325,7 +324,7 @@ def ptProcess(dataToPT, dataFromPT):
             except Queue.Full:
                 print "Queue Full?"
         
-            print "Time for 1 Frame: ", time.time()-start
+            #print "Time for 1 Frame: ", time.time()-start
             cv2.imshow('Table', frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -335,105 +334,6 @@ def ptProcess(dataToPT, dataFromPT):
     videoStream.release()
     cv2.destroyAllWindows()
 	
-	
-        
-        
-            
-        
-        
-        
-
-    
-
-
-"""
-ellipse = cv2.fitEllipse(contour)
-                if 7 < ellipse[1][0] < 15:
-                    if 9 < ellipse[1][1] < 16:
-                    
-                    cv2.ellipse(frame,ellipse,(0,255,0), 2)
-                    """
-
-
-
-
-"""
-def find_fiducials(cameraStream):
-	# the frame width/height
-	frameWidth = cameraStream.get(cv2.CAP_PROP_FRAME_WIDTH)
-	frameHeight = cameraStream.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-	# array to hold the 4 fiducial coordinates (x, y)
-	#fiducials = np.zeros((4, 2), dtype =  "float32")
-	fiducials = [0, 0, 0, 0]
-
-	while True:
-		# continously grab a new frame
-		(grabbed, frame) = cameraStream.read()
-
-		# convert the frame to HSV color space
-		frameHSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-		# create a mask for the fiducial color
-		mask = cv2.inRange(frameHSV, fiducialLowerHSV, fiducialUpperHSV)
-
-		# apply a median blur filter to the mask (helps with image noise)
-		medianBlur = cv2.medianBlur(mask, 5)
-
-		# find contours in the mask
-		contourList = cv2.findContours(medianBlur.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
-
-		# proceed if a contour is found
-		if len(contourList) > 0:
-			for contour in contourList:
-				# find the minimum enclosing circle for the contour
-				((x, y), radius) = cv2.minEnclosingCircle(contour)
-
-				# use moments to find an accurate centroid for the fiducial
-				M = cv2.moments(contour)
-
-				# check for divide by zero
-				if M["m00"] != 0:
-					fiducialCenter = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-
-					if (fiducialCenter[0] < (frameWidth/2)) and (fiducialCenter[1] < (frameHeight)/2):
-						fiducials[0] = fiducialCenter
-					elif (fiducialCenter[0] > (frameWidth/2)) and (fiducialCenter[1] < (frameHeight)/2):
-						fiducials[1] = fiducialCenter
-					elif (fiducialCenter[0] > (frameWidth/2)) and (fiducialCenter[1] > (frameHeight)/2):
-						fiducials[2] = fiducialCenter
-					elif (fiducialCenter[0] < (frameWidth/2)) and (fiducialCenter[1] > (frameHeight)/2):
-						fiducials[3] = fiducialCenter
-					else:
-						print "Error: Fiducial out of range"
-
-		if 0 in fiducials:
-			print "Not all fiducials found, looking again"
-		else:
-			break
-
-	# if all coordinates for the playing surface are found, save to json
-	with open('puck_tracker_settings.json', 'r+') as fp:
-		camParam = json.load(fp)
-		camParam['fiducial']['coordinates']['tl']['x'] = fiducials[0][0]
-		camParam['fiducial']['coordinates']['tl']['y'] = fiducials[0][1]
-		camParam['fiducial']['coordinates']['tr']['x'] = fiducials[1][0]
-		camParam['fiducial']['coordinates']['tr']['y'] = fiducials[1][1]
-		camParam['fiducial']['coordinates']['br']['x'] = fiducials[2][0]
-		camParam['fiducial']['coordinates']['br']['y'] = fiducials[2][1]
-		camParam['fiducial']['coordinates']['bl']['x'] = fiducials[3][0]
-		camParam['fiducial']['coordinates']['bl']['y'] = fiducials[3][1]
-		fp.seek(0)
-		json.dump(camParam, fp, indent=4)
-		fp.close()
-
-	return True
-
-
-"""
-
-
-
 
 """
 THIS IS SAMPLE PLOTTING CODE
@@ -473,31 +373,3 @@ plt.tight_layout()
 plt.show()
 """
 
-
-
-"""
-                            # velocity calculation
-                            startTime = time.time()
-                            startPositionX = puckCenter[0]
-                            startPositionY = puckCenter[1]
-
-                            distancePixels = math.sqrt((abs(startPositionX-endPositionX))**2 + (abs(startPositionY-endPositionY))**2)
-                            scalingFactor = 0.001348
-                            distanceMeters = distancePixels*scalingFactor
-                            time1 = abs(startTime - endTime)
-                            velocity = distanceMeters/time1
-                            velocity = format(velocity, '.2f')
-
-                            x1 = startPositionX
-                            y1 = startPositionY
-                            if distancePixels != 0:
-                                    x1 = int(startPositionX + (startPositionX - endPositionX) / distancePixels * 30)
-                                    y1 = int(startPositionY + (startPositionY - endPositionY) / distancePixels * 30)
-
-                            cv2.putText(frame, str(velocity), (int(x+30), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, 100)
-                            cv2.arrowedLine(frame, (endPositionX, endPositionY), (x1, y1), (0, 255, 0), 2, 8, 0, 0.3)
-
-                            endTime = startTime
-                            endPositionX = startPositionX
-                            endPositionY = startPositionY
-"""

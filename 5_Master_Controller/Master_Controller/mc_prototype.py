@@ -8,6 +8,7 @@ from pprint import pprint
 import sys
 import select
 import os
+import logging
 import h5py
 import numpy as np
 
@@ -76,19 +77,19 @@ def Init_IPC():
 	dataFromUI = multiprocessing.Queue()
 	dataToPT = multiprocessing.Queue()
 	dataFromPT = multiprocessing.Queue()
-	print "Created IPC queues"
+	logging.debug("Created IPC queues")
 
 	# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
 	uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
-	print "Created UI process with a queue"
+	logging.debug("Created UI process with a queue")
 	ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
-	print "Created Puck Tracker process with a queue"
+	logging.debug("Created Puck Tracker process with a queue")
 
 	# start child processes
 	uiProcess.start()
-	print "Started UI process"
+	logging.debug("Started UI process")
 	ptProcess.start()
-	print "Started Puck Tracker process"
+	logging.debug("Started Puck Tracker process")
 
 	#dataToPT.put("Calibrate")
 	#dataToPT.put("TrackPuck")
@@ -114,24 +115,25 @@ def Rx_IPC():
 	except Queue.Empty:
 		ptData = 0
 	else:
-		print ptData
+		logging.debug("ptData: %s", ptData)
 		if ptData == "Calibration Complete":
 			dataToPT.put("TrackPuck")
 
 	try:
 		uiData = dataFromUI.get(False)
+		logging.debug(str(uiData))
 		
 		#string manipulation
 		uiData = uiData.split(":")
 		if uiData[0] == "paddle_position_mm_x":
 			mc_pos_cmd_x_mm = uiData[1]
-		if uiData[0] == "paddle_position_mm_y":
+		elif uiData[0] == "paddle_position_mm_y":
 			mc_pos_cmd_y_mm = uiData[1]
 
 	except Queue.Empty:
 		uiData = 0
 	else:
-		print uiData
+		logging.debug(str(uiData))
 
 ## end of method
 
@@ -146,10 +148,13 @@ def Init_PCAN(device):
 	PCANBasic.Reset(device, PCAN_USBBUS1)
 	if status > 0:
 		print "Error Initializing PCAN USB"
+		logging.error("Error Initializing PCAN USB")
 		print PCANBasic.GetErrorText(device, status, 0)
+		logging.error(PCANBasic.GetErrorText(device, status, 0))
 		exit
 	else:
 		print "PCAN USB Initialized"
+		logging.debug("PCAN USB Initialized")
 
 ## end of method
 
@@ -162,12 +167,16 @@ def Uninit_PCAN(device):
 	status = PCANBasic.Uninitialize(device, PCAN_USBBUS1)
 	if status > 0:
 		print "Error Uninitializing PCAN USB"
+		logging.error("Error Uninitializing PCAN USB")
 		print PCANBasic.GetErrorText(device, status, 0)
+		logging.error(PCANBasic.GetErrorText(device, status, 0))
 		exit
 	else:
 		print "PCAN USB Uninitialized"
-		exit	
-## end of method	
+		logging.debug("PCAN USB Uninitialized")
+		exit
+
+## end of method
 
 
 ##
@@ -178,9 +187,11 @@ def process_input():
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
 
-	print "Elevator Command Input"
+	print "Air Hockey Command Input"
 	mc_pos_cmd_x_mm = input("Enter Position X: ")
-	mc_pos_cmd_y_mm = input("Enter Position Y: ")		
+	logging.debug("New entered pos X: %s", mc_pos_cmd_x_mm)
+	mc_pos_cmd_y_mm = input("Enter Position Y: ")	
+	logging.debug("New entered pos Y: %s", mc_pos_cmd_y_mm)	
 ## end of method
 
 
@@ -218,18 +229,19 @@ def Rx_CAN(device):
 
 	# Keep reading messages until there aren't any more
 	while message[1].ID > 1:
-		print "Incoming messages"
 		# Process PC Status X message
 		if message[1].ID == ID_pc_status_x:
 			pc_pos_status_x_mm_b0 = message[1].DATA[0]
 			pc_pos_status_x_mm_b1 = message[1].DATA[1]
 			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
+			logging.debug("Incoming message from PC, Status X: %s", pc_pos_status_x_mm)
 
 		# Process PC Status Y message
 		elif message[1].ID == ID_pc_status_y:
 			pc_pos_status_y_mm_b0 = message[1].DATA[0]
 			pc_pos_status_y_mm_b1 = message[1].DATA[1]
 			pc_pos_status_y_mm = pc_pos_status_y_mm_b0 | (pc_pos_status_y_mm_b1 << 8)
+			logging.debug("Incoming message from PC, Status Y: %s", pc_pos_status_y_mm)
 
 		# Read next message
 		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
@@ -253,11 +265,15 @@ def Tx_PC_Cmd(device):
 	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
 	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
 
+	logging.debug("Transmitting message to PC: %s", message)
+
 	# Send the message and check if it was successful
 	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
 	if status > 0:
 		print "Error transmitting CAN message"
+		logging.error("Error transmitting CAN message")
 		print PCANBasic.GetErrorText(device, status, 0)
+		logging.error(PCANBasic.GetErrorText(device, status, 0))
 		exit()
 
 ## end of method
@@ -267,24 +283,29 @@ def Tx_PC_Cmd(device):
 ## main()
 ##
 def main():
+
+	# Create and set format of the logging file
+	logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG)
+	logging.basicConfig(format='%(asctime)s %(message)s')
+
 	# Initialize device
 	Init_PCAN(PCAN)
 	
 	# When we control position using UI
-	if str(sys.argv[0]) == "UI":
+	if str(sys.argv[1]) == "UI":
 		# Initialize IPC between MC - PC - UI
 		Init_IPC()
+		logging.debug("arg1: ", str(sys.argv[1]))
 
 		# read messages from IPC
 		while 1:
-			print "arg0", str(sys.argv[0])
 			Rx_CAN(PCAN)
 		  	Rx_IPC()
 		  	update_display()
 		  	Tx_PC_Cmd(PCAN)
-		  	#sleep(timeout)
+		  	sleep(timeout) 
 
-	#Keyboard control of the position
+	# Keyboard control of the position
 	else:	
 		# Infinite loop of reading CAN messages & keyboard input
 		while 1:

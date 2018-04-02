@@ -59,7 +59,7 @@ def Init_PCAN(device):
 		print PCANBasic.GetErrorText(device, status, 0)
 		exit
 	else:
-		print "PCAN USB Initialized"	
+		print "PCAN USB Initialized"
 
 ## end of method
 
@@ -128,6 +128,7 @@ def Rx_CAN(device):
 
 	# Keep reading messages until there aren't any more
 	while message[1].ID > 1:
+		print "Incoming messages"
 		# Process PC Status X message
 		if message[1].ID == ID_pc_status_x:
 			pc_pos_status_x_mm_byte_0 = message[1].DATA[0] 
@@ -153,7 +154,10 @@ def Tx_PC_Cmd(device):
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
 	message.LEN = 4
-	message.DATA[0] = (mc_pos_cmd_x_mm | (mc_pos_cmd_y_mm << 16))
+	message.DATA[0] = (mc_pos_cmd_x_mm & 0x00FF)
+	message.DATA[1] = ((mc_pos_cmd_x_mm & 0xFF00) >> 8)
+	message.DATA[2] = (mc_pos_cmd_y_mm & 0x00FF)
+	message.DATA[3] = ((mc_pos_cmd_y_mm & 0xFF00) >> 8)
 
 	# Send the message and check if it was successful
 	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
@@ -185,7 +189,7 @@ def main():
 		else:
 			Rx_CAN(PCAN)
 	  		update_display()
-	  		#Tx_PC_Cmd(PCAN)
+	  		Tx_PC_Cmd(PCAN)
 	  		sleep(0.5)  
 ## end of method
 

@@ -19,10 +19,10 @@ read_list = [sys.stdin] # Files monitored for input
 
 timeout = 0.1 			# Timeout for keyboard input in seconds
 
-mc_pos_cmd_x_mm = -1
-mc_pos_cmd_y_mm = -1
-pc_pos_status_x_mm = -1
-pc_pos_status_y_mm = -1
+mc_pos_cmd_x_mm = 0
+mc_pos_cmd_y_mm = 0
+pc_pos_status_x_mm = 0
+pc_pos_status_y_mm = 0
 
 ##############################################################################################
 ## CAN protocol definition
@@ -35,10 +35,10 @@ ID_pc_status_x = 	0x101 		# CAN message ID for Paddle Controller Status on X-axi
 ID_pc_status_y = 	0x102		# CAN message ID for Paddle Controller Status on Y-axis
 
 # CAN signal masks
-mask_pos_cmd_x_mm = 		0x0000FFFF		# Hex mask for pos_cmd_x_mm signal
-mask_pos_cmd_y_mm = 		0xFFFF0000		# Hex mask for pos_cmd_y_mm signal
-mask_pos_x_mm = 			0x0000FFFF		# Hex mask for pos_x_mm signal
-mask_pos_y_mm = 			0x0000FFFF		# Hex mask for pos_y_mm signal
+mask_pos_cmd_x_mm_b0 = 		0x00FF		# Hex mask for pos_cmd_x_mm signal (msg byte0)
+mask_pos_cmd_x_mm_b1 = 		0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
+mask_pos_cmd_y_mm_b2 = 		0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
+mask_pos_cmd_y_mm_b3 = 		0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
 
 # CAN signal value tables
 
@@ -131,11 +131,15 @@ def Rx_CAN(device):
 		print "Incoming messages"
 		# Process PC Status X message
 		if message[1].ID == ID_pc_status_x:
-			pc_pos_status_x_mm_byte_0 = message[1].DATA[0] 
+			pc_pos_status_x_mm_b0 = message[1].DATA[0]
+			pc_pos_status_x_mm_b1 = message[1].DATA[1]
+			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
 
 		# Process PC Status Y message
 		elif message[1].ID == ID_pc_status_y:
-			pc_pos_status_y_mm = message[1].DATA[0] & mask_pos_y_mm
+			pc_pos_status_y_mm_b0 = message[1].DATA[0]
+			pc_pos_status_y_mm_b1 = message[1].DATA[1]
+			pc_pos_status_y_mm = pc_pos_status_y_mm_b0 | (pc_pos_status_y_mm_b1 << 8)
 
 		# Read next message
 		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
@@ -154,10 +158,10 @@ def Tx_PC_Cmd(device):
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
 	message.LEN = 4
-	message.DATA[0] = (mc_pos_cmd_x_mm & 0x00FF)
-	message.DATA[1] = ((mc_pos_cmd_x_mm & 0xFF00) >> 8)
-	message.DATA[2] = (mc_pos_cmd_y_mm & 0x00FF)
-	message.DATA[3] = ((mc_pos_cmd_y_mm & 0xFF00) >> 8)
+	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
+	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
+	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
+	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
 
 	# Send the message and check if it was successful
 	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
@@ -189,7 +193,8 @@ def main():
 		else:
 			Rx_CAN(PCAN)
 	  		update_display()
-	  		Tx_PC_Cmd(PCAN)
+	  		if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):
+	  			Tx_PC_Cmd(PCAN)
 	  		sleep(0.5)  
 ## end of method
 

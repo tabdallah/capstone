@@ -32,8 +32,8 @@ class ManualControlScreen(Widget):
         scalingFactorWidth = tableWidthMm/self.width
         scalingFactorLength = tableHalfLengthMm/self.height
         try:
-            self.dataFromUI.put("paddle_position_mm_x: {0}".format(paddleCoordinates[0]*scalingFactorWidth))
-            self.dataFromUI.put("paddle_position_mm_y: {0}".format(paddleCoordinates[1]*scalingFactorLength))
+            self.dataFromUI.put("paddle_position_mm_x:{0:.0f}".format(paddleCoordinates[0]*scalingFactorWidth))
+            self.dataFromUI.put("paddle_position_mm_y:{0:.0f}".format(paddleCoordinates[1]*scalingFactorLength))
         except Queue.Full:
             print "Queue Full?"
 

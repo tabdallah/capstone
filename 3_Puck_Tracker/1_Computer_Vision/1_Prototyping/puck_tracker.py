@@ -244,7 +244,11 @@ def ptProcess(dataToPT, dataFromPT):
         else:
             dataFromPT.put("Error: Camera Disconnected")
     
-    ptState = "Idle" 
+    ptState = "Idle"
+    puckPositionX = np.array([])
+    puckPositionY = np.array([])
+    puckVelocityX = np.array([])
+    puckVelocityY = np.array([])
     
     while True:
         # retrieve commands from master controller
@@ -315,7 +319,12 @@ def ptProcess(dataToPT, dataFromPT):
             frameCorrected = cv2.warpPerspective(frame, perspectiveTransformMatrix, (maxWidth, maxHeight), cv2.INTER_NEAREST)
             frame, puckPositionMmXy = get_puck_position(frameCorrected, puckHSV[0], puckHSV[1], mmPerPixelX, mmPerPixelY)
             puckVelocityMmPerSXy = get_puck_velocity(puckPositionMmXy)
-    
+            
+            puckPositionX = np.append(puckPositionX, puckPositionMmXy[0])
+            puckPositionY = np.append(puckPositionY, puckPositionMmXy[1])
+            puckVelocityX = np.append(puckVelocityX, puckVelocityMmPerSXy[0])
+            puckVelocityY = np.append(puckVelocityY, puckVelocityMmPerSXy[1])
+
             try:
                 dataFromPT.put("puck_position_mm_x: {0}".format(puckPositionMmXy[0]))
                 dataFromPT.put("puck_position_mm_y: {0}".format(puckPositionMmXy[1]))
@@ -330,6 +339,30 @@ def ptProcess(dataToPT, dataFromPT):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     
+    plt.figure()
+    plt.subplot(2,2,1)
+    plt.plot(puckPositionX)
+    plt.title('Puck Position X')
+    plt.xlabel('Samples')
+    plt.ylabel('Position (mm)')
+    plt.subplot(2,2,2)
+    plt.plot(puckPositionY)
+    plt.title('Puck Position Y')
+    plt.xlabel('Samples')
+    plt.ylabel('Position (mm)')
+    plt.subplot(2,2,3)
+    plt.plot(puckVelocityX)
+    plt.title('Puck Velocity X')
+    plt.xlabel('Samples')
+    plt.ylabel('Velocity (mm/s)')
+    plt.subplot(2,2,4)
+    plt.plot(puckVelocityY)
+    plt.title('Puck Velocity Y')
+    plt.xlabel('Samples')
+    plt.ylabel('Velocity (mm/s)')    
+    plt.tight_layout()
+    plt.show()
+        
     # When everything done, release the capture
     videoStream.release()
     cv2.destroyAllWindows()

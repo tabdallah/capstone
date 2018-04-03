@@ -6,6 +6,7 @@ from kivy.uix.scatter import Scatter
 from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProperty
 from kivy.vector import Vector
 from kivy.clock import Clock
+from time import sleep
 
 # globals
 tableWidthMm = 774.7
@@ -28,6 +29,7 @@ class ManualControlScreen(Widget):
         sys.exit()
     
     def update_screen(self, *args):
+        sleep(0.02)
         paddleCoordinates = self.paddle_object.center
         scalingFactorWidth = tableWidthMm/self.width
         scalingFactorLength = tableHalfLengthMm/self.height

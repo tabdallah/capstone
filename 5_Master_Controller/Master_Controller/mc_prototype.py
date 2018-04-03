@@ -6,17 +6,19 @@ from PCANBasic import *
 from time import sleep
 from pprint import pprint
 import sys
+import math
 import select
 import os
 import logging
 import h5py
 import numpy as np
 
-# multiprocessing
-import multiprocessing
-import Queue
-import puck_tracker as pt
-import user_interface as ui
+if __debug__:
+	# libraries for IPC with UI and PC
+	import multiprocessing
+	import Queue
+	import puck_tracker as pt
+	import user_interface as ui
 
 PCAN = PCANBasic() 		# Initialize an instance of the PCANBasic class
 read_list = [sys.stdin] # Files monitored for input
@@ -25,13 +27,15 @@ read_list = [sys.stdin] # Files monitored for input
 ## Global data storage
 ## Maybe improve this later
 ##############################################################################################
-
 timeout = 0.1 			# Timeout for keyboard input in seconds
 
 mc_pos_cmd_x_mm = 0
 mc_pos_cmd_y_mm = 0
+mc_pos_cmd_sent_x_mm = 0
+mc_pos_cmd_sent_y_mm = 0
 pc_pos_status_x_mm = 0
 pc_pos_status_y_mm = 0
+filter_pos_value_mm = 5		# Threshold filter value for the UI position control
 
 dataToUI = 0
 dataFromUI = 0
@@ -60,40 +64,42 @@ mask_pos_cmd_y_mm_b3 = 		0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
 ## Functions/methods
 ##############################################################################################
 
+
 ##
 ## Init_IPC() - Need to add error detection
 ## Initialize multiprocessing between UI, Puck Tracker and MC
 ## Create queues between those processes for IPC
 ## start child processes
 ##
-def Init_IPC():
-	global dataToUI
-	global dataFromUI
-	global dataToPT
-	global dataFromPT
+if __debug__:
+	def Init_IPC():
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
 
-	# create queues for bidirectional communication with other processes
-	dataToUI = multiprocessing.Queue()
-	dataFromUI = multiprocessing.Queue()
-	dataToPT = multiprocessing.Queue()
-	dataFromPT = multiprocessing.Queue()
-	logging.debug("Created IPC queues")
+		# create queues for bidirectional communication with other processes
+		dataToUI = multiprocessing.Queue()
+		dataFromUI = multiprocessing.Queue()
+		dataToPT = multiprocessing.Queue()
+		dataFromPT = multiprocessing.Queue()
+		logging.debug("Created IPC queues")
 
-	# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
-	uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
-	logging.debug("Created UI process with a queue")
-	ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
-	logging.debug("Created Puck Tracker process with a queue")
+		# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
+		uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
+		logging.debug("Created UI process with a queue")
+		ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
+		logging.debug("Created Puck Tracker process with a queue")
 
-	# start child processes
-	uiProcess.start()
-	logging.debug("Started UI process")
-	ptProcess.start()
-	logging.debug("Started Puck Tracker process")
+		# start child processes
+		uiProcess.start()
+		logging.debug("Started UI process")
+		ptProcess.start()
+		logging.debug("Started Puck Tracker process")
 
-	#dataToPT.put("Calibrate")
-	#dataToPT.put("TrackPuck")
-	dataToUI.put("RunUI")
+		#dataToPT.put("Calibrate")
+		#dataToPT.put("TrackPuck")
+		dataToUI.put("RunUI")
 
 ## end of method
 
@@ -102,38 +108,39 @@ def Init_IPC():
 ## Rx_IPC() -  Need to add error detection
 ## Receive any pending IPC Queue messages and populate global variables as necessary
 ##
-def Rx_IPC():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global dataToUI
-	global dataFromUI
-	global dataToPT
-	global dataFromPT
+if __debug__:
+	def Rx_IPC():
+		global mc_pos_cmd_x_mm
+		global mc_pos_cmd_y_mm
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
 
-	try:
-		ptData = dataFromPT.get(False)
-	except Queue.Empty:
-		ptData = 0
-	else:
-		logging.debug("ptData: %s", ptData)
-		if ptData == "Calibration Complete":
-			dataToPT.put("TrackPuck")
+		try:
+			ptData = dataFromPT.get(False)
+		except Queue.Empty:
+			ptData = 0
+		else:
+			logging.debug("ptData: %s", ptData)
+			if ptData == "Calibration Complete":
+				dataToPT.put("TrackPuck")
 
-	try:
-		uiData = dataFromUI.get(False)
-		logging.debug(str(uiData))
-		
-		#string manipulation
-		uiData = uiData.split(":")
-		if uiData[0] == "paddle_position_mm_x":
-			mc_pos_cmd_x_mm = uiData[1]
-		elif uiData[0] == "paddle_position_mm_y":
-			mc_pos_cmd_y_mm = uiData[1]
+		try:
+			uiData = dataFromUI.get(False)
+			logging.debug(str(uiData))
+			
+			#string manipulation
+			uiData = uiData.split(":")
+			if uiData[0] == "paddle_position_mm_x":
+				mc_pos_cmd_x_mm = uiData[1]
+			elif uiData[0] == "paddle_position_mm_y":
+				mc_pos_cmd_y_mm = uiData[1]
 
-	except Queue.Empty:
-		uiData = 0
-	else:
-		logging.debug(str(uiData))
+		except Queue.Empty:
+			uiData = 0
+		else:
+			logging.debug(str(uiData))
 
 ## end of method
 
@@ -178,6 +185,39 @@ def Uninit_PCAN(device):
 
 ## end of method
 
+##
+## Create_HDF5()
+## Create/truncate logger HDF5 file (for MATLAB) using h5py library
+##
+#def Create_HDF5():
+#	f = h5py.File("mytestfile.hdf5", "w")
+#	dset = f.create_dataset("positions", (1000,), dtype='uint16')
+
+## end of method
+
+
+##
+## filter_Tx_PC_Cmd()
+## filter new pos value if the distance from last sent pos
+## is below set threshold
+##	
+def filter_Tx_PC_Cmd():
+	global mc_pos_cmd_x_mm
+	global mc_pos_cmd_y_mm
+	global mc_pos_cmd_sent_x_mm
+	global mc_pos_cmd_sent_y_mm
+
+	pos_diff_x_mm = mc_pos_cmd_x_mm - mc_pos_cmd_sent_x_mm
+	pos_diff_y_mm = mc_pos_cmd_y_mm - mc_pos_cmd_sent_y_mm
+	pos_diff_mm = math.sqrt(pos_diff_x_mm**2 + pos_diff_y_mm**2)
+	
+	if pos_diff_mm < filter_pos_value_mm:
+		logging.debug("New pos(%i,%i) is filtered coz it's %imm(within %imm) away from last sent PC pos(%i,%i)", mc_pos_cmd_x_mm,
+						mc_pos_cmd_y_mm, pos_diff_mm, filter_pos_value_mm, mc_pos_cmd_sent_x_mm, mc_pos_cmd_sent_y_mm)
+		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
+		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
+## end of method
+
 
 ##
 ## process_input()
@@ -213,7 +253,7 @@ def update_display():
 	print "Position X Command: ", mc_pos_cmd_x_mm
 	print "Position Y Command: ", mc_pos_cmd_y_mm
 	print " "
-	print "Press 'Enter' for debug mode"
+	print "Press 'Enter' for debug mode (keyboard mode only)"
 ## end of method
 
 
@@ -255,6 +295,9 @@ def Rx_CAN(device):
 def Tx_PC_Cmd(device):
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
+	global mc_pos_cmd_sent_x_mm
+	global mc_pos_cmd_sent_y_mm
+
 	message = TPCANMsg()
 
 	message.ID = ID_mc_cmd_pc
@@ -264,6 +307,10 @@ def Tx_PC_Cmd(device):
 	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
 	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
 	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
+
+	# Save last sent position command
+	mc_pos_cmd_sent_x_mm = mc_pos_cmd_x_mm
+	mc_pos_cmd_sent_y_mm = mc_pos_cmd_y_mm
 
 	logging.debug("Transmitting message to PC: %s", message)
 
@@ -285,46 +332,51 @@ def Tx_PC_Cmd(device):
 def main():
 
 	# Create and set format of the logging file
-	logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG)
-	logging.basicConfig(format='%(asctime)s %(message)s')
+	logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG,
+	 					format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Initialize device
 	Init_PCAN(PCAN)
-	
-	# When we control position using UI
-	if str(sys.argv[1]) == "UI":
+
+	# UI control of the position
+	if __debug__:
+		logging.debug("Mode: UI control of the position")
+		
 		# Initialize IPC between MC - PC - UI
 		Init_IPC()
-		logging.debug("arg1: ", str(sys.argv[1]))
 
 		# read messages from IPC
 		while 1:
 			Rx_CAN(PCAN)
 		  	Rx_IPC()
-		  	update_display()
+		  	filter_Tx_PC_Cmd()
 		  	Tx_PC_Cmd(PCAN)
-		  	sleep(timeout) 
+		  	update_display()
+		  	sleep(timeout)
 
 	# Keyboard control of the position
-	else:	
-		# Infinite loop of reading CAN messages & keyboard input
-		while 1:
-			# Wait for keyboard input, or do other stuff
-			while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-				line = sys.stdin.readline()
-				if line:
-					process_input()
-				else: 
-					print('eof')
-					exit(0)
-			else:
-				Rx_CAN(PCAN)
-		  		update_display()
-		  		if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):
-		  			Tx_PC_Cmd(PCAN)
-		  		sleep(timeout)
-## end of method
+	#"""
+	logging.debug("Mode: Keyboard control of the position")
 
+	while 1:
+		# Wait for keyboard input, or do other stuff
+		while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+			line = sys.stdin.readline()
+			if line:
+				process_input()
+			else: 
+				print('eof')
+				exit(0)
+		else:
+			Rx_CAN(PCAN)
+	  		update_display()
+	  		filter_Tx_PC_Cmd()
+	  		Tx_PC_Cmd(PCAN)
+	  		sleep(timeout)
+
+	#"""
+
+## end of method
 
 try:
 	main()
@@ -336,26 +388,6 @@ except KeyboardInterrupt:
 
 ## Place to store cool shit
 def playground(device):
-	PCAN = device
-	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
 
-	if message[1].ID > 1:	# For some reason .Read returns ID of 1 when no messages present...
-		print "Received CAN Message"
-		print "ID: ",format(message[1].ID, '02x')
-		print "DLC: ", message[1].LEN
-		print "DATA: "
-
-		for j in range(0, message[1].LEN):
-			print "Byte ", j, ": ", message[1].DATA[j]
-
-
-
-##
-## Create_HDF5()
-## Create/truncate logger HDF5 file (for MATLAB) using h5py library
-##
-#def Create_HDF5():
-#	f = h5py.File("mytestfile.hdf5", "w")
-#	dset = f.create_dataset("positions", (1000,), dtype='uint16')
-
-## end of method
+	if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):
+		Tx_PC_Cmd(PCAN)

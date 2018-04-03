@@ -9,7 +9,7 @@ from kivy.clock import Clock
 from time import sleep
 
 # globals
-tableWidthMm = 774.7
+tableWidthMm = 660.4
 tableHalfLengthMm = 846.1
 
 # classes
@@ -25,11 +25,11 @@ class ManualControlScreen(Widget):
         self.dataFromUI = dataFromUI
         Clock.schedule_interval(self.update_screen, 0)
         
-    def kill_thing(self):
-        sys.exit()
+    def kill_app(self):
+        App.get_running_app().stop()
     
     def update_screen(self, *args):
-        sleep(0.02)
+        sleep(0.1)
         paddleCoordinates = self.paddle_object.center
         scalingFactorWidth = tableWidthMm/self.width
         scalingFactorLength = tableHalfLengthMm/self.height
@@ -70,5 +70,6 @@ def uiProcess(dataToUI, dataFromUI):
         if uiDesiredState == "RunUI" and uiState != "RunUI":
             uiState = "RunUI"
             uiDesiredState = "Idle"
-            UserInterfaceApp(dataToUI, dataFromUI).run()
-            
+            app = UserInterfaceApp(dataToUI, dataFromUI)
+            app.run()
+            sys.exit(1)

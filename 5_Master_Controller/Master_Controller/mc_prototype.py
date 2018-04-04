@@ -12,6 +12,7 @@ import os
 import logging
 import h5py
 import numpy as np
+import datetime
 
 if __debug__:
 	# libraries for IPC with UI and PC
@@ -27,6 +28,10 @@ read_list = [sys.stdin] # Files monitored for input
 ## Global data storage
 ## Maybe improve this later
 ##############################################################################################
+fileName_hdf5 = "PC_positions.hdf5"		# File name for hdf5 with PC positions
+fileName_log = "debug.log"				# File name for debug logging
+
+dset_size_hdf5 = 1000 	# dataset total number of elements for hdf5
 timeout = 0.1 			# Timeout for keyboard input in seconds
 
 mc_pos_cmd_x_mm = 0
@@ -188,10 +193,56 @@ def Uninit_PCAN(device):
 ##
 ## Create_HDF5()
 ## Create/truncate logger HDF5 file (for MATLAB) using h5py library
+## Example code used - http://download.nexusformat.org/sphinx/examples/h5py/index.html
 ##
-#def Create_HDF5():
-#	f = h5py.File("mytestfile.hdf5", "w")
-#	dset = f.create_dataset("positions", (1000,), dtype='uint16')
+def Create_HDF5():
+	global fileName_hdf5
+	global dset_size_hdf5
+
+	# create file
+	f = h5py.File(fileName_hdf5, "w")
+	#dset = f.create_dataset("positions", (1000,), dtype='uint16')
+	logging.debug("Created %s for logging", fileName_hdf5)
+
+	# point to the default data to be plotted
+	f.attrs['default'] = 'PC_data'
+	# give the HDF5 root some more attributes
+	f.attrs['file_name'] = fileName_hdf5
+	f.attrs['file_time'] = str(datetime.datetime.now())
+	f.attrs['creator'] = 'mc_prototype.py'
+	f.attrs['project'] = 'Air Hockey Robot'
+	#f.attrs[u'HDF5_Version']     = six.u(h5py.version.hdf5_version)
+	#f.attrs[u'h5py_version']     = six.u(h5py.version.version)
+	logging.debug("Added hdf5 attributes")
+
+	# create the group for X-Y positions to and from PC
+	h_data = f.create_group('PC_data')
+	logging.debug("Created hdf5 PC_data group")
+
+	# dataset for sent ahd received X-Y command positions to PC
+	h_pos_sent_x = h_data.create_dataset("pos_sent_x", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_sent_x.attrs["units"] = "mm"
+	h_pos_sent_y = h_data.create_dataset("pos_sent_y", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_sent_y.attrs["units"] = "mm"
+
+	h_pos_rcvd_x = h_data.create_dataset("pos_rcvd_x", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_rcvd_x.attrs["units"] = "mm"
+	h_pos_rcvd_y = h_data.create_dataset("pos_rcvd_y", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_rcvd_y.attrs["units"] = "mm"
+	logging.debug("Created hdf5 datasets for PC sent and received X-Y positions")
+
+	# timestamps for sent and received X-Y command positions to PC
+	# no h5py support of time datatype, so will use string
+	h_time_sent = h_data.create_dataset("time_sent", (dset_size_hdf5, ), dtype='S30')
+	h_time_sent.attrs["units"] = "time"
+
+	h_time_rcvd = h_data.create_dataset("time_rcvd", (dset_size_hdf5, ), dtype='S30')
+	h_time_rcvd.attrs["units"] = "time"
+	logging.debug("Created hdf5 datasets for PC sent and received X-Y times")
+
+	# make sure to close the file
+	f.close()
+	logging.debug("Closed hdf5 file")
 
 ## end of method
 
@@ -330,13 +381,17 @@ def Tx_PC_Cmd(device):
 ## main()
 ##
 def main():
+	global fileName_log
 
 	# Create and set format of the logging file
-	logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG,
+	logging.basicConfig(filename=fileName_log, filemode='w', level=logging.DEBUG,
 	 					format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Initialize device
 	Init_PCAN(PCAN)
+
+	# Create HDF5 file for logging PC position data
+	Create_HDF5()
 
 	# UI control of the position
 	if __debug__:
@@ -368,10 +423,10 @@ def main():
 				print('eof')
 				exit(0)
 		else:
-			Rx_CAN(PCAN)
+			#Rx_CAN(PCAN)
 	  		update_display()
 	  		filter_Tx_PC_Cmd()
-	  		Tx_PC_Cmd(PCAN)
+	  		#Tx_PC_Cmd(PCAN)
 	  		sleep(timeout)
 
 	#"""

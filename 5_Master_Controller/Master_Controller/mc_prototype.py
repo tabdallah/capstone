@@ -28,12 +28,12 @@ read_list = [sys.stdin] # Files monitored for input
 ## Global data storage
 ## Maybe improve this later
 ##############################################################################################
-fileName_hdf5 = "PC_positions.hdf5"		# File name for hdf5 with PC positions
-fileName_log = "debug.log"				# File name for debug logging
 
-dset_size_hdf5 = 1000 	# dataset total number of elements for hdf5
-timeout = 0.1 			# Timeout for keyboard input in seconds
+log_fileName = "debug.log"		# File name for debug logging
 
+timeout = 0.5 			# Timeout for keyboard input in seconds
+
+# PC positions
 mc_pos_cmd_x_mm = 0
 mc_pos_cmd_y_mm = 0
 mc_pos_cmd_sent_x_mm = 0
@@ -42,10 +42,21 @@ pc_pos_status_x_mm = 0
 pc_pos_status_y_mm = 0
 filter_pos_value_mm = 5		# Threshold filter value for the UI position control
 
+# IPC 
 dataToUI = 0
 dataFromUI = 0
 dataToPT = 0
 dataFromPT = 0
+uiProcess = 0
+ptProcess = 0
+
+# hdf5
+hdf5_fileName = "PC_positions.hdf5"		# File name for hdf5 with PC positions
+hdf5_dset_size = 1000 			# dataset total number of elements for hdf5
+hdf5_dset_max_size = 30000 		# dataset max number of elements  after resize when we reset the counter for hdf5
+hdf5_dset_stop_resize = False	# flag that indicates whether to continue dataset resize or not
+hdf5_dset_count = 0				# count to track current element in hdf5 PC_data dataset
+hdf5_file_handle = 0			# handle to hdf5 file
 
 ##############################################################################################
 ## CAN protocol definition
@@ -82,6 +93,8 @@ if __debug__:
 		global dataFromUI
 		global dataToPT
 		global dataFromPT
+		global uiProcess
+		global ptProcess
 
 		# create queues for bidirectional communication with other processes
 		dataToUI = multiprocessing.Queue()
@@ -108,6 +121,41 @@ if __debug__:
 
 ## end of method
 
+##
+## Uninit_IPC() - Need to add error detection
+## Uninitialize multiprocessing between UI, Puck Tracker and MC
+##
+if __debug__:
+	def Uninit_IPC():
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
+		global uiProcess
+		global ptProcess
+
+		# close queues for bidirectional communication with other processes
+		dataToUI.close()
+		dataFromUI.close()
+		dataToPT.close()
+		dataFromPT.close()
+		logging.debug("Closed IPC queues")
+
+		time.sleep(0.5)
+
+		# terminate seperate processes for the UI and Puck Tracker 
+		uiProcess.terminate()
+		logging.debug("Terminated UI process")
+		ptProcess.terminate()
+		logging.debug("Terminated Puck Tracker process")
+
+		# start child processes
+		uiProcess.start()
+		logging.debug("Started UI process")
+		ptProcess.start()
+		logging.debug("Started Puck Tracker process")
+
+## end of method
 
 ##
 ## Rx_IPC() -  Need to add error detection
@@ -196,53 +244,138 @@ def Uninit_PCAN(device):
 ## Example code used - http://download.nexusformat.org/sphinx/examples/h5py/index.html
 ##
 def Create_HDF5():
-	global fileName_hdf5
-	global dset_size_hdf5
+	global hdf5_fileName
+	global hdf5_dset_size
+	global hdf5_file_handle
 
 	# create file
-	f = h5py.File(fileName_hdf5, "w")
+	hdf5_file_handle = h5py.File(hdf5_fileName, "w")
 	#dset = f.create_dataset("positions", (1000,), dtype='uint16')
-	logging.debug("Created %s for logging", fileName_hdf5)
+	logging.debug("Created %s for logging", hdf5_fileName)
 
 	# point to the default data to be plotted
-	f.attrs['default'] = 'PC_data'
+	hdf5_file_handle.attrs['default'] = 'PC_data'
 	# give the HDF5 root some more attributes
-	f.attrs['file_name'] = fileName_hdf5
-	f.attrs['file_time'] = str(datetime.datetime.now())
-	f.attrs['creator'] = 'mc_prototype.py'
-	f.attrs['project'] = 'Air Hockey Robot'
+	hdf5_file_handle.attrs['file_name'] = hdf5_fileName
+	hdf5_file_handle.attrs['file_time'] = str(datetime.datetime.now())
+	hdf5_file_handle.attrs['creator'] = 'mc_prototype.py'
+	hdf5_file_handle.attrs['project'] = 'Air Hockey Robot'
 	#f.attrs[u'HDF5_Version']     = six.u(h5py.version.hdf5_version)
 	#f.attrs[u'h5py_version']     = six.u(h5py.version.version)
 	logging.debug("Added hdf5 attributes")
 
 	# create the group for X-Y positions to and from PC
-	h_data = f.create_group('PC_data')
+	h_data = hdf5_file_handle.create_group('PC_data')
 	logging.debug("Created hdf5 PC_data group")
 
 	# dataset for sent ahd received X-Y command positions to PC
-	h_pos_sent_x = h_data.create_dataset("pos_sent_x", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_sent_x = h_data.create_dataset("pos_sent_x", (hdf5_dset_size, ), maxshape=(None, ), dtype='uint16')
 	h_pos_sent_x.attrs["units"] = "mm"
-	h_pos_sent_y = h_data.create_dataset("pos_sent_y", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_sent_y = h_data.create_dataset("pos_sent_y", (hdf5_dset_size, ), maxshape=(None, ), dtype='uint16')
 	h_pos_sent_y.attrs["units"] = "mm"
 
-	h_pos_rcvd_x = h_data.create_dataset("pos_rcvd_x", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_rcvd_x = h_data.create_dataset("pos_rcvd_x", (hdf5_dset_size, ), maxshape=(None, ), dtype='uint16')
 	h_pos_rcvd_x.attrs["units"] = "mm"
-	h_pos_rcvd_y = h_data.create_dataset("pos_rcvd_y", (dset_size_hdf5, ), dtype='uint16')
+	h_pos_rcvd_y = h_data.create_dataset("pos_rcvd_y", (hdf5_dset_size, ), maxshape=(None, ), dtype='uint16')
 	h_pos_rcvd_y.attrs["units"] = "mm"
 	logging.debug("Created hdf5 datasets for PC sent and received X-Y positions")
 
 	# timestamps for sent and received X-Y command positions to PC
 	# no h5py support of time datatype, so will use string
-	h_time_sent = h_data.create_dataset("time_sent", (dset_size_hdf5, ), dtype='S30')
+	h_time_sent = h_data.create_dataset("time_sent", (hdf5_dset_size, ), maxshape=(None, ), dtype='S30')
 	h_time_sent.attrs["units"] = "time"
 
-	h_time_rcvd = h_data.create_dataset("time_rcvd", (dset_size_hdf5, ), dtype='S30')
+	h_time_rcvd = h_data.create_dataset("time_rcvd", (hdf5_dset_size, ), maxshape=(None, ), dtype='S30')
 	h_time_rcvd.attrs["units"] = "time"
 	logging.debug("Created hdf5 datasets for PC sent and received X-Y times")
 
+## end of method
+
+##
+## Close_HDF5()
+## Close HDF5 file (for MATLAB) using h5py library
+##
+def Close_HDF5():
+	global hdf5_file_handle
 	# make sure to close the file
-	f.close()
+	hdf5_file_handle.close()
 	logging.debug("Closed hdf5 file")
+
+## end of method
+
+##
+## add_pos_sent_HDF5()
+## Add new sent X-Y position and its' timestamp to HDF5 PC_data group
+## ARGUMENTS: time_rcvd - timestamp of MC sent X-Y position to PC in a string format
+##
+def add_pos_sent_HDF5(time_rcvd):
+	global hdf5_file_handle
+	global hdf5_dset_count
+	global mc_pos_cmd_sent_x_mm
+	global mc_pos_cmd_sent_x_mm
+
+	i = hdf5_dset_count
+
+	# store received positions with a timestamp
+	hdf5_file_handle['/PC_data/pos_sent_x'][i] = mc_pos_cmd_sent_x_mm
+	hdf5_file_handle['/PC_data/pos_sent_y'][i] = mc_pos_cmd_sent_y_mm
+	hdf5_file_handle['/PC_data/time_sent'][i] = time_rcvd
+	logging.debug("Stored sent XY position no. %i", i)
+
+## end of method
+
+##
+## add_pos_rcvd_HDF5()
+## Add new received X-Y position and its' timestamp to HDF5 PC_data group
+## ARGUMENTS: time_rcvd - timestamp of PC received X-Y position in a string format 
+##
+def add_pos_rcvd_HDF5(time_rcvd):
+	global hdf5_file_handle
+	global hdf5_dset_count
+	global pc_pos_status_x_mm
+	global pc_pos_status_y_mm
+
+	i = hdf5_dset_count
+
+	# store received positions with a timestamp
+	hdf5_file_handle['/PC_data/pos_rcvd_x'][i] = pc_pos_status_x_mm
+	hdf5_file_handle['/PC_data/pos_rcvd_y'][i] = pc_pos_status_y_mm
+	hdf5_file_handle['/PC_data/time_rcvd'][i] = time_rcvd
+	logging.debug("Stored received XY position no. %i", i)
+
+## end of method
+
+##
+## update_dset_HDF5()
+## Update counter
+## Resize PC_data datasets if hdf5_dset_size is reached: Increase the size by hdf5_dset_size rows
+## When reached max size of allowed elements in file stop resizing and reset counter to 0
+## FAQ used - http://docs.h5py.org/en/latest/faq.html#appending-data-to-a-dataset 
+##
+def update_dset_HDF5():
+	global hdf5_dset_size
+	global hdf5_file_handle
+	global hdf5_dset_count
+	global hdf5_dset_stop_resize
+
+	# increase counter
+	hdf5_dset_count += 1
+
+	# every hdf5_dset_size resize until reached hdf5_dset_max_size
+	if (hdf5_dset_count % hdf5_dset_size) == 0:
+		if hdf5_dset_count < hdf5_dset_max_size:
+			if hdf5_dset_stop_resize is False:
+				# resizing all PC_data datasets
+				hdf5_file_handle['/PC_data/pos_rcvd_x'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				hdf5_file_handle['/PC_data/pos_rcvd_y'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				hdf5_file_handle['/PC_data/time_rcvd'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				hdf5_file_handle['/PC_data/pos_sent_x'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				hdf5_file_handle['/PC_data/pos_sent_y'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				hdf5_file_handle['/PC_data/time_sent'].resize((hdf5_dset_count+hdf5_dset_size, ))
+				logging.debug("Resized all hdf5 PC_data datasets to %i", hdf5_dset_count+hdf5_dset_size)
+		else:
+			hdf5_dset_count = 0
+			hdf5_dset_stop_resize = True
 
 ## end of method
 
@@ -336,6 +469,7 @@ def Rx_CAN(device):
 
 		# Read next message
 		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
+
 ## end of method
 
 
@@ -381,10 +515,11 @@ def Tx_PC_Cmd(device):
 ## main()
 ##
 def main():
-	global fileName_log
+	global log_fileName
 
 	# Create and set format of the logging file
-	logging.basicConfig(filename=fileName_log, filemode='w', level=logging.DEBUG,
+	# If you want to disable the logger then set "level=logging.ERROR"
+	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG,
 	 					format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Initialize device
@@ -396,18 +531,21 @@ def main():
 	# UI control of the position
 	if __debug__:
 		logging.debug("Mode: UI control of the position")
-		
+
 		# Initialize IPC between MC - PC - UI
 		Init_IPC()
 
 		# read messages from IPC
 		while 1:
+			Rx_IPC()
+			filter_Tx_PC_Cmd()
+			Tx_PC_Cmd(PCAN)
+			add_pos_sent_HDF5(str(datetime.datetime.now()))
+			update_display()
 			Rx_CAN(PCAN)
-		  	Rx_IPC()
-		  	filter_Tx_PC_Cmd()
-		  	Tx_PC_Cmd(PCAN)
-		  	update_display()
-		  	sleep(timeout)
+			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+			update_dset_HDF5()
+			sleep(timeout)
 
 	# Keyboard control of the position
 	#"""
@@ -423,10 +561,13 @@ def main():
 				print('eof')
 				exit(0)
 		else:
-			#Rx_CAN(PCAN)
-	  		update_display()
-	  		filter_Tx_PC_Cmd()
+			filter_Tx_PC_Cmd()
 	  		#Tx_PC_Cmd(PCAN)
+	  		add_pos_sent_HDF5(str(datetime.datetime.now()))
+	  		update_display()
+	  		#Rx_CAN(PCAN)
+			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+			update_dset_HDF5()
 	  		sleep(timeout)
 
 	#"""
@@ -437,8 +578,9 @@ try:
 	main()
 except KeyboardInterrupt:
 	print " "
+	Close_HDF5()
 	Uninit_PCAN(PCAN)
-
+	Uninit_IPC()
 
 
 ## Place to store cool shit

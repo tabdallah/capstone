@@ -28,6 +28,10 @@
 // CAN module errors
 #define CAN_ERR_NONE 0x00
 #define CAN_ERR_BUFFER_FULL 0x01
+#define CAN_ERR_TX 0x02
+
+// Max number of Tx attempts
+#define CAN_TX_LIMIT 1000
 
 // ID definition
 #define CAN_ID_MC_CMD_PC 0x100

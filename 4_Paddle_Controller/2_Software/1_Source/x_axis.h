@@ -36,12 +36,12 @@
 #define X_AXIS_TCTL4_INIT 0b00000001	// Capture on rising edge of TC0
 
 // Position control constants
-#define X_AXIS_LEFT_POS_LIMIT_TICKS 100		// Zero/Home position
-#define X_AXIS_RIGHT_POS_LIMIT_TICKS 4500	// Opposite edge of table, measured from home position
+#define X_AXIS_HOME_POS_ENC_TICKS 100	// Zero/Home position
+#define X_AXIS_LIMIT_ENC_TICKS 4500		// Opposite edge of table, measured from home position
 #define X_AXIS_POS_GAIN_P 10
 #define X_AXIS_ENC_TICKS_PER_REV 374
-#define X_AXIS_MM_PER_REV 40
-#define X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1000	// If encoder period drops below this for more than xx milliseconds, motor is blocked/overloaded
+#define X_AXIS_MM_PER_REV 60
+#define X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1000	// If encoder period is greater than this for more than xx milliseconds, motor is blocked/overloaded
 #define X_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 
 // Limit switch port setup and macros
@@ -65,5 +65,7 @@ static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm
 // Enumerated data types
 typedef enum {
 	x_axis_error_none = 0,
-	x_axis_error_dcm_overload = 1
+	x_axis_error_dcm_overload = 1,
+	x_axis_error_can_buffer_full = 2,
+	x_axis_error_can_tx = 3
 } x_axis_error_e;

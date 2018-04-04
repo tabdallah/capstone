@@ -49,9 +49,8 @@ void can_configure(void) {
 //;*                 can_tx(id, length, *txdata)
 //;*  Outputs a CAN frame using polling
 //;**************************************************************   
-unsigned char can_tx(unsigned long id,
-	unsigned char length, unsigned char *txdata) {
-
+unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txdata) {
+	unsigned int tx_count = 0;	// Count number of Tx attempts
 	unsigned char txbuffer;	// To store the selected buffer for transmitting
 	unsigned char index;    // Index into the data array
 
@@ -75,7 +74,13 @@ unsigned char can_tx(unsigned long id,
 	CANTXTBPR = 0x00;		// Set priority to highest always (not enough traffic to matter)
 	CANTFLG = txbuffer; 	// Start transmission
 
-	while ( (CANTFLG & txbuffer) != txbuffer);	// Wait for transmit to complete
+	// Wait for transmit to complete
+	while ( (CANTFLG & txbuffer) != txbuffer) {
+		tx_count ++;
+		if (tx_count >= CAN_TX_LIMIT) {
+			return CAN_ERR_TX;
+		}
+	}
 
 	return CAN_ERR_NONE;
 }

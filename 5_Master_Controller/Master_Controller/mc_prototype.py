@@ -149,12 +149,6 @@ if __debug__:
 		ptProcess.terminate()
 		logging.debug("Terminated Puck Tracker process")
 
-		# start child processes
-		uiProcess.start()
-		logging.debug("Started UI process")
-		ptProcess.start()
-		logging.debug("Started Puck Tracker process")
-
 ## end of method
 
 ##

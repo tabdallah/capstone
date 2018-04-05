@@ -11,7 +11,7 @@
 #include "x_axis.h"
 #include "can.h"
 
-static dcm_t x_axis = {X_AXIS_LEFT_POS_LIMIT_TICKS, X_AXIS_LEFT_POS_LIMIT_TICKS, 0,0,0,0,0,0,0,0,0,0,0,dcm_limit_switch_pressed,dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t x_axis = {X_AXIS_HOME_POS_ENC_TICKS, X_AXIS_HOME_POS_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static x_axis_error_e x_axis_error = x_axis_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
@@ -68,19 +68,10 @@ void x_axis_home(void)
 	// To Do: Should have some timeout here to handle broken switch
 	// For now broken switch handled by dcm overload check
 	while (X_AXIS_LIMIT_1 == dcm_limit_switch_unpressed) {};
-	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
-
-	// Stop motor
 	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 
-	// Move off the hard stop
-	x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, X_AXIS_PWM_DUTY_MAX);
-
-	while (x_axis.position_enc_ticks < 200) {};
-	x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;	
-
-	// Stop motor
-	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+	// Set target to center of table
+	x_axis.position_cmd_enc_ticks = ( (X_AXIS_LIMIT_ENC_TICKS - X_AXIS_HOME_POS_ENC_TICKS) / 2);
 
 	// Return control to position/velocity controllers
 	x_axis.ctrl_mode = ctrl_mode;
@@ -96,21 +87,21 @@ void x_axis_position_ctrl(void)
 	unsigned int error_p;
 
 	// Limit position commands to sane values
-	if (x_axis.position_cmd_enc_ticks > X_AXIS_RIGHT_POS_LIMIT_TICKS) {
-		x_axis.position_cmd_enc_ticks = X_AXIS_RIGHT_POS_LIMIT_TICKS;
+	if (x_axis.position_cmd_enc_ticks > X_AXIS_LIMIT_ENC_TICKS) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_ENC_TICKS;
 	}
-	if (x_axis.position_cmd_enc_ticks < X_AXIS_LEFT_POS_LIMIT_TICKS) {
-		x_axis.position_cmd_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+	if (x_axis.position_cmd_enc_ticks < X_AXIS_HOME_POS_ENC_TICKS) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_HOME_POS_ENC_TICKS;
 	}
 
 	// Read limit switch states
 	x_axis.limit_switch_1 = X_AXIS_LIMIT_1;
 	x_axis.limit_switch_2 = X_AXIS_LIMIT_2;
 	if (x_axis.limit_switch_1 == dcm_limit_switch_pressed) {
-		x_axis.position_enc_ticks = X_AXIS_LEFT_POS_LIMIT_TICKS;
+		x_axis.position_enc_ticks = X_AXIS_HOME_POS_ENC_TICKS;
 	}
 	if (x_axis.limit_switch_2 == dcm_limit_switch_pressed) {
-		x_axis.position_enc_ticks = X_AXIS_RIGHT_POS_LIMIT_TICKS;
+		x_axis.position_enc_ticks = X_AXIS_LIMIT_ENC_TICKS;
 	}
 
 	// Calculate position error
@@ -159,22 +150,51 @@ void x_axis_position_ctrl(void)
 //;**************************************************************
 void x_axis_send_status_can(void)
 {
+	static unsigned char count = 1;
+	static unsigned char error = 0;	// Set to non-zero to stop trying to send CAN messages
 	unsigned char data[2];
 	unsigned long pos_x_calc;
-	if (x_axis.position_enc_ticks < X_AXIS_LEFT_POS_LIMIT_TICKS) {
-		pos_x_calc = 0;
-	} else {
-		pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_LEFT_POS_LIMIT_TICKS) * 10;
+
+	// Return immediately if previous CAN error
+	if (error != 0) {
+		return;
 	}
-	pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
-	can_msg_pc_status.pos_x_mm = 0xFFFF & ((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10);
 
-	// This seems sloppy, fix this later.
-	data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
-	data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
+	// Only send message at 100Hz
+	if ((count % 10) == 0) {
+		if (x_axis.position_enc_ticks < X_AXIS_HOME_POS_ENC_TICKS) {
+			pos_x_calc = 0;
+		} else {
+			pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_HOME_POS_ENC_TICKS) * 10;
+		}
+		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
+		can_msg_pc_status.pos_x_mm = 0xFFFF & ((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10);
 
-	if (can_tx(CAN_ST_ID_PC_STATUS_X, CAN_DLC_PC_STATUS_X, &data[0]) != CAN_ERR_NONE) {
-		// ToDo: Handle CAN errors
+		// This seems sloppy, fix this later.
+		data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
+		data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
+
+		// Send message and handle errors
+		switch (can_tx(CAN_ST_ID_PC_STATUS_X, CAN_DLC_PC_STATUS_X, &data[0]))
+		{
+			case CAN_ERR_NONE:
+				break;
+			case CAN_ERR_BUFFER_FULL:
+				x_axis_error = x_axis_error_can_buffer_full;
+				error = 1;
+				break;
+			case CAN_ERR_TX:
+				x_axis_error = x_axis_error_can_tx;
+				error = 1;
+				break;
+		}
+	}
+
+	// Limit counter to max value of 10
+	if (count == 10) {
+		count = 1;
+	} else {
+		count ++;
 	}
 }
 
@@ -216,8 +236,8 @@ void x_axis_dcm_overload_check(void)
 }
 
 //;**************************************************************
-//;*                 x_axis_set_dcm_direction(void)
-//;*	Private helper function to set DC motor direction
+//;*                 x_axis_set_dcm_drive(void)
+//;*	Helper function to set DC motor direction and speed
 //;**************************************************************
 static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
 {
@@ -297,24 +317,15 @@ interrupt 8 void x_axis_encoder_a(void)
 //;**************************************************************
 interrupt 14 void timer_1kHz_loop(void)
 {
-	static unsigned char count = 1;
-
 	x_axis_dcm_overload_check();
 
 	if (x_axis.ctrl_mode == dcm_ctrl_mode_position) {
 		x_axis_position_ctrl();
 	}
 
-	// Send status message at 100Hz
-	if ((count % 10) == 0) {
-		x_axis_send_status_can();
-	}
-	if (count == 10) {
-		count = 1;
-	} else {
-		count ++;
-	}
-
+	// Send status message
+	x_axis_send_status_can();
+	
 	TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }
 
@@ -348,7 +359,8 @@ interrupt 38 void can_rx_handler(void) {
 
 	// Set motor position command in encoder ticks
 	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_x_mm * 10) / X_AXIS_MM_PER_REV;
-	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation * (X_AXIS_ENC_TICKS_PER_REV / 10) + X_AXIS_LEFT_POS_LIMIT_TICKS);
+	pos_cmd_calculation = (pos_cmd_calculation * X_AXIS_ENC_TICKS_PER_REV) / 10;
+	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + X_AXIS_HOME_POS_ENC_TICKS);
 
 	// Clear Rx flag
 	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);

@@ -4,6 +4,7 @@
 //; Date: 2018-03-19
 //;******************************************************************************
 #include "TA_Header_W2016.h"  /* my macros and constants */
+#include "dcm.h"
 
 // H-Bridge port setup and direction control macros
 #define Y_AXIS_H_BRIDGE_PORT PORTB
@@ -50,12 +51,31 @@
 #define Y_AXIS_TCTL4_INIT 0b00010001	// Capture on rising edge of TC0 and TC2
 
 // Position control constants
-#define Y_AXIS_ENC_OFFSET_TICKS 100		// Encoder offset to allow for closed loop control back to position zero
+#define Y_AXIS_HOME_POS_ENC_TICKS 100	// Zero/Home position
+#define Y_AXIS_LIMIT_ENC_TICKS 4500		// Opposite edge of table, measured from home position
 #define Y_AXIS_L_POS_GAIN_P 10
 #define Y_AXIS_R_POS_GAIN_P 10
-#define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 100		// Shut down system if left vs right motor position differs by more than this
+#define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 200		// Shut down system if left vs right motor position differs by more than this
 #define Y_AXIS_ENC_TICKS_PER_REV 374
-#define Y_AXIS_MM_PER_REV 40
+#define Y_AXIS_MM_PER_REV 60
+#define Y_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1500	// If encoder period is greater than this for more than xx milliseconds, motor is blocked/overloaded
+#define Y_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
+
+// Limit switch port setup and macros
+#define Y_AXIS_LIMIT_PORT PTAD
+#define Y_AXIS_LIMIT_DDR ATDDIEN
+#define Y_AXIS_L_LIMIT_1_PIN 0b01000000 // PAD06
+#define Y_AXIS_L_LIMIT_1_SHIFT 6
+#define Y_AXIS_L_LIMIT_1 ((Y_AXIS_LIMIT_PORT & Y_AXIS_L_LIMIT_1_PIN) >> Y_AXIS_L_LIMIT_1_SHIFT)
+#define Y_AXIS_L_LIMIT_2_PIN 0b10000000 // PAD07
+#define Y_AXIS_L_LIMIT_2_SHIFT 7
+#define Y_AXIS_L_LIMIT_2 ((Y_AXIS_LIMIT_PORT & Y_AXIS_L_LIMIT_2_PIN) >> Y_AXIS_L_LIMIT_2_SHIFT)
+#define Y_AXIS_R_LIMIT_1_PIN 0b00100000 // PAD05
+#define Y_AXIS_R_LIMIT_1_SHIFT 5
+#define Y_AXIS_R_LIMIT_1 ((Y_AXIS_LIMIT_PORT & Y_AXIS_R_LIMIT_1_PIN) >> Y_AXIS_R_LIMIT_1_SHIFT)
+#define Y_AXIS_R_LIMIT_2_PIN 0b00010000 // PAD04
+#define Y_AXIS_R_LIMIT_2_SHIFT 4
+#define Y_AXIS_R_LIMIT_2 ((Y_AXIS_LIMIT_PORT & Y_AXIS_R_LIMIT_2_PIN) >> Y_AXIS_R_LIMIT_2_SHIFT)
 
 // Function prototypes
 void y_axis_configure(void);
@@ -63,10 +83,14 @@ void y_axis_home(void);
 void y_axis_position_ctrl(void);
 void y_axis_send_status_can(void);
 void y_axis_dcm_overload_check(void);
+static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
+static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
 
 // Enumerated data types
 typedef enum {
 	y_axis_error_none = 0,
 	y_axis_error_dcm_overload = 1,
-	y_axis_error_lr_pos_mism = 2
+	y_axis_error_lr_pos_mism = 2,
+	y_axis_error_can_buffer_full = 3,
+	y_axis_error_can_tx = 4
 } y_axis_error_e;

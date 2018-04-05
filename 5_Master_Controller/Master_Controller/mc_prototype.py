@@ -1,6 +1,6 @@
-# PCAN_Test.py
-
-# Code for keyboard input from https://repolinux.wordpress.com/2012/10/09/non-blocking-read-from-stdin-in-python/
+# mc_prototype.py
+# Capstone Master Controller module
+# By Stanislav Rashevskyi, David Eelman, Thomas Abdallah
 
 from PCANBasic import *
 from time import sleep
@@ -22,7 +22,6 @@ if __debug__:
 	import user_interface as ui
 
 PCAN = PCANBasic() 		# Initialize an instance of the PCANBasic class
-read_list = [sys.stdin] # Files monitored for input
 
 ##############################################################################################
 ## Global data storage
@@ -32,6 +31,8 @@ read_list = [sys.stdin] # Files monitored for input
 log_fileName = "debug.log"		# File name for debug logging
 
 timeout = 0.5 			# Timeout for keyboard input in seconds
+
+operationMode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
 
 # PC positions
 mc_pos_cmd_x_mm = 0
@@ -58,6 +59,24 @@ hdf5_dset_stop_resize = False	# flag that indicates whether to continue dataset 
 hdf5_dset_count = 0				# count to track current element in hdf5 PC_data dataset
 hdf5_file_handle = 0			# handle to hdf5 file
 
+# puck prediction
+puckPositionMmX = 0
+puckPositionMmY = 0
+puckVelocityMmPerSx = 0
+puckVelocityMmPerSY = 0
+lastPuckPositionMmX = 0
+lastPuckPositionMmY = 0
+lastPuckVelocityMmPerSY = 0
+minPuckVelocityMmPerSY = -180
+puckPredictionAveragedWindowSize = 5
+puckPredictionAveragedArray = np.zeros(puckPredictionAveragedWindowSize)
+puckPredictionAveragedIndex = 0
+
+# Goal dimensions
+goalLeftPostMmX = 254		# beginning of the left "goalpost" on X-axis (Y=0)
+goalRightPostMmX = 511		# beginning of the right "goalpost" on X-axis (Y=0)
+goalPostToleranceMmX = 5	# indicate how many mm right or left we need to move to fully protect goal area on X-axis (Y=0)
+
 ##############################################################################################
 ## CAN protocol definition
 ## Refer to: https://github.com/tabdallah/capstone/blob/master/1_Planning/System_Interface_Design.xlsx
@@ -74,123 +93,51 @@ mask_pos_cmd_x_mm_b1 = 		0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
 mask_pos_cmd_y_mm_b2 = 		0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
 mask_pos_cmd_y_mm_b3 = 		0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
 
-# CAN signal value tables
-
 ##############################################################################################
-## Functions/methods
+## Command line output functions
 ##############################################################################################
 
-
 ##
-## Init_IPC() - Need to add error detection
-## Initialize multiprocessing between UI, Puck Tracker and MC
-## Create queues between those processes for IPC
-## start child processes
+## process_input()
+## Debug mode - allow user to set parameters and stuff
 ##
-if __debug__:
-	def Init_IPC():
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
-		global uiProcess
-		global ptProcess
+def process_input():
+	global mc_pos_cmd_x_mm
+	global mc_pos_cmd_y_mm
 
-		# create queues for bidirectional communication with other processes
-		dataToUI = multiprocessing.Queue()
-		dataFromUI = multiprocessing.Queue()
-		dataToPT = multiprocessing.Queue()
-		dataFromPT = multiprocessing.Queue()
-		logging.debug("Created IPC queues")
-
-		# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
-		uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
-		logging.debug("Created UI process with a queue")
-		ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
-		logging.debug("Created Puck Tracker process with a queue")
-
-		# start child processes
-		uiProcess.start()
-		logging.debug("Started UI process")
-		ptProcess.start()
-		logging.debug("Started Puck Tracker process")
-
-		#dataToPT.put("Calibrate")
-		#dataToPT.put("TrackPuck")
-		dataToUI.put("RunUI")
-
+	print "Air Hockey Command Input"
+	mc_pos_cmd_x_mm = input("Enter Position X: ")
+	logging.debug("New entered pos X: %s", mc_pos_cmd_x_mm)
+	mc_pos_cmd_y_mm = input("Enter Position Y: ")	
+	logging.debug("New entered pos Y: %s", mc_pos_cmd_y_mm)	
 ## end of method
 
+
 ##
-## Uninit_IPC() - Need to add error detection
-## Uninitialize multiprocessing between UI, Puck Tracker and MC
+## update_display()
+## Show elevator status and command
 ##
-if __debug__:
-	def Uninit_IPC():
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
-		global uiProcess
-		global ptProcess
+def update_display():
+	global mc_pos_cmd_x_mm
+	global mc_pos_cmd_y_mm
+	global pc_pos_status_x_mm
+	global pc_pos_status_y_mm
 
-		# close queues for bidirectional communication with other processes
-		dataToUI.close()
-		dataFromUI.close()
-		dataToPT.close()
-		dataFromPT.close()
-		logging.debug("Closed IPC queues")
-
-		time.sleep(0.5)
-
-		# terminate seperate processes for the UI and Puck Tracker 
-		uiProcess.terminate()
-		logging.debug("Terminated UI process")
-		ptProcess.terminate()
-		logging.debug("Terminated Puck Tracker process")
-
+	os.system('clear')
+	print("Air Hockey Robot Status")
+	print("---------------")
+	print "Position X Status: ", pc_pos_status_x_mm
+	print "Position Y Status: ", pc_pos_status_y_mm
+	print "Position X Command: ", mc_pos_cmd_x_mm
+	print "Position Y Command: ", mc_pos_cmd_y_mm
+	print " "
+	print "Press 'Enter' for debug mode (keyboard mode only)"
 ## end of method
 
-##
-## Rx_IPC() -  Need to add error detection
-## Receive any pending IPC Queue messages and populate global variables as necessary
-##
-if __debug__:
-	def Rx_IPC():
-		global mc_pos_cmd_x_mm
-		global mc_pos_cmd_y_mm
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
 
-		try:
-			ptData = dataFromPT.get(False)
-		except Queue.Empty:
-			ptData = 0
-		else:
-			logging.debug("ptData: %s", ptData)
-			if ptData == "Calibration Complete":
-				dataToPT.put("TrackPuck")
-
-		try:
-			uiData = dataFromUI.get(False)
-			logging.debug(str(uiData))
-			
-			#string manipulation
-			uiData = uiData.split(":")
-			if uiData[0] == "paddle_position_mm_x":
-				mc_pos_cmd_x_mm = uiData[1]
-			elif uiData[0] == "paddle_position_mm_y":
-				mc_pos_cmd_y_mm = uiData[1]
-
-		except Queue.Empty:
-			uiData = 0
-		else:
-			logging.debug(str(uiData))
-
-## end of method
-
+##############################################################################################
+## CAN functions
+##############################################################################################
 
 ##
 ## Init_PCAN()
@@ -231,6 +178,82 @@ def Uninit_PCAN(device):
 		exit
 
 ## end of method
+
+
+##
+## Rx_CAN(device)
+## Receive any pending CAN messages and populate global variables as necessary
+##
+def Rx_CAN(device):
+	global pc_pos_status_x_mm
+	global pc_pos_status_y_mm
+
+	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
+
+	# Keep reading messages until there aren't any more
+	while message[1].ID > 1:
+		# Process PC Status X message
+		if message[1].ID == ID_pc_status_x:
+			pc_pos_status_x_mm_b0 = message[1].DATA[0]
+			pc_pos_status_x_mm_b1 = message[1].DATA[1]
+			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
+			logging.debug("Incoming message from PC, Status X: %s", pc_pos_status_x_mm)
+
+		# Process PC Status Y message
+		elif message[1].ID == ID_pc_status_y:
+			pc_pos_status_y_mm_b0 = message[1].DATA[0]
+			pc_pos_status_y_mm_b1 = message[1].DATA[1]
+			pc_pos_status_y_mm = pc_pos_status_y_mm_b0 | (pc_pos_status_y_mm_b1 << 8)
+			logging.debug("Incoming message from PC, Status Y: %s", pc_pos_status_y_mm)
+
+		# Read next message
+		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
+
+## end of method
+
+
+## 
+## Tx_PC_Cmd(device)
+## Transmit the command message to the Paddcle Controller
+##
+def Tx_PC_Cmd(device):
+	global mc_pos_cmd_x_mm
+	global mc_pos_cmd_y_mm
+	global mc_pos_cmd_sent_x_mm
+	global mc_pos_cmd_sent_y_mm
+
+	message = TPCANMsg()
+
+	message.ID = ID_mc_cmd_pc
+	message.MSGTYPE = PCAN_MESSAGE_STANDARD
+	message.LEN = 4
+	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
+	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
+	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
+	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
+
+	# Save last sent position command
+	mc_pos_cmd_sent_x_mm = mc_pos_cmd_x_mm
+	mc_pos_cmd_sent_y_mm = mc_pos_cmd_y_mm
+
+	logging.debug("Transmitting message to PC: %s", message)
+
+	# Send the message and check if it was successful
+	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
+	if status > 0:
+		print "Error transmitting CAN message"
+		logging.error("Error transmitting CAN message")
+		print PCANBasic.GetErrorText(device, status, 0)
+		logging.error(PCANBasic.GetErrorText(device, status, 0))
+		exit()
+
+## end of method
+
+
+##############################################################################################
+## HDF5 functions
+##############################################################################################
+
 
 ##
 ## Create_HDF5()
@@ -374,6 +397,154 @@ def update_dset_HDF5():
 ## end of method
 
 
+##############################################################################################
+## IPC functions
+##############################################################################################
+
+##
+## Init_IPC() - Need to add error detection
+## Initialize multiprocessing between UI, Puck Tracker and MC
+## Create queues between those processes for IPC
+## start child processes
+##
+if __debug__:
+	def Init_IPC():
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
+		global uiProcess
+		global ptProcess
+
+		# create queues for bidirectional communication with other processes
+		dataToUI = multiprocessing.Queue()
+		dataFromUI = multiprocessing.Queue()
+		dataToPT = multiprocessing.Queue()
+		dataFromPT = multiprocessing.Queue()
+		logging.debug("Created IPC queues")
+
+		# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
+		uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
+		logging.debug("Created UI process with a queue")
+		ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
+		logging.debug("Created Puck Tracker process with a queue")
+
+		# start child processes
+		uiProcess.start()
+		logging.debug("Started UI process")
+		ptProcess.start()
+		logging.debug("Started Puck Tracker process")
+
+		#dataToPT.put("Calibrate")
+		#dataToPT.put("TrackPuck")
+		dataToUI.put("RunUI")
+
+## end of method
+
+##
+## Uninit_IPC() - Need to add error detection
+## Uninitialize multiprocessing between UI, Puck Tracker and MC
+##
+if __debug__:
+	def Uninit_IPC():
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
+		global uiProcess
+		global ptProcess
+
+		# close queues for bidirectional communication with other processes
+		dataToUI.close()
+		dataFromUI.close()
+		dataToPT.close()
+		dataFromPT.close()
+		logging.debug("Closed IPC queues")
+
+		time.sleep(0.5)
+
+		# terminate seperate processes for the UI and Puck Tracker 
+		uiProcess.terminate()
+		logging.debug("Terminated UI process")
+		ptProcess.terminate()
+		logging.debug("Terminated Puck Tracker process")
+
+## end of method
+
+##
+## Rx_IPC() -  Need to add error detection
+## Receive any pending IPC Queue messages and populate global variables as necessary
+##
+if __debug__:
+	def Rx_IPC():
+		global operationMode
+		global dataToUI
+		global dataFromUI
+		global dataToPT
+		global dataFromPT
+
+		global mc_pos_cmd_x_mm
+		global mc_pos_cmd_y_mm
+
+		global puckPositionMmX
+		global puckPositionMmY
+		global puckVelocityMmPerSX 
+		global puckVelocityMmPerSY
+
+		# get data from Puck tracker
+		try:
+			ptData = dataFromPT.get(False)
+			logging.debug(str(uiData))
+
+			# set flag that indicates we are in MC-decisions mode
+			operationMode = 0
+			logging.debug("We are in MC-decision control mode")
+			
+			#string manipulation
+			uiData = uiData.split(":")
+			if uiData[0] == "puck_position_mm_x":
+				puckPositionMmX = uiData[1]
+			elif uiData[0] == "puck_position_mm_y":
+				puckPositionMmY = uiData[1]
+			elif uiData[0] == "puck_velocity_mmps_x":
+				puckVelocityMmPerSX = uiData[1]
+			elif uiData[0] == "puck_velocity_mmps_y":
+				puckVelocityMmPerSY = uiData[1]
+
+		except Queue.Empty:
+			ptData = 0
+		else:
+			logging.debug("ptData: %s", ptData)
+			if ptData == "Calibration Complete":
+				dataToPT.put("TrackPuck")
+
+		# get data from UI
+		try:
+			uiData = dataFromUI.get(False)
+			logging.debug(str(uiData))
+
+			# set flag that indicates we are in UI mode
+			operationMode = 1 
+			logging.debug("We are in UI manual control mode")
+
+			#string manipulation
+			uiData = uiData.split(":")
+			if uiData[0] == "paddle_position_mm_x":
+				mc_pos_cmd_x_mm = uiData[1]
+			elif uiData[0] == "paddle_position_mm_y":
+				mc_pos_cmd_y_mm = uiData[1]
+
+		except Queue.Empty:
+			uiData = 0
+		else:
+			logging.debug(str(uiData))
+
+## end of method
+
+##############################################################################################
+## Decision Making/Logic functions
+##############################################################################################
+
 ##
 ## filter_Tx_PC_Cmd()
 ## filter new pos value if the distance from last sent pos
@@ -397,113 +568,98 @@ def filter_Tx_PC_Cmd():
 ## end of method
 
 
-##
-## process_input()
-## Debug mode - allow user to set parameters and stuff
-##
-def process_input():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-
-	print "Air Hockey Command Input"
-	mc_pos_cmd_x_mm = input("Enter Position X: ")
-	logging.debug("New entered pos X: %s", mc_pos_cmd_x_mm)
-	mc_pos_cmd_y_mm = input("Enter Position Y: ")	
-	logging.debug("New entered pos Y: %s", mc_pos_cmd_y_mm)	
-## end of method
-
-
-##
-## update_display()
-## Show elevator status and command
-##
-def update_display():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
-
-	os.system('clear')
-	print("Air Hockey Robot Status")
-	print("---------------")
-	print "Position X Status: ", pc_pos_status_x_mm
-	print "Position Y Status: ", pc_pos_status_y_mm
-	print "Position X Command: ", mc_pos_cmd_x_mm
-	print "Position Y Command: ", mc_pos_cmd_y_mm
-	print " "
-	print "Press 'Enter' for debug mode (keyboard mode only)"
-## end of method
-
-
-##
-## Rx_CAN(device)
-## Receive any pending CAN messages and populate global variables as necessary
-##
-def Rx_CAN(device):
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
-
-	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
-
-	# Keep reading messages until there aren't any more
-	while message[1].ID > 1:
-		# Process PC Status X message
-		if message[1].ID == ID_pc_status_x:
-			pc_pos_status_x_mm_b0 = message[1].DATA[0]
-			pc_pos_status_x_mm_b1 = message[1].DATA[1]
-			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
-			logging.debug("Incoming message from PC, Status X: %s", pc_pos_status_x_mm)
-
-		# Process PC Status Y message
-		elif message[1].ID == ID_pc_status_y:
-			pc_pos_status_y_mm_b0 = message[1].DATA[0]
-			pc_pos_status_y_mm_b1 = message[1].DATA[1]
-			pc_pos_status_y_mm = pc_pos_status_y_mm_b0 | (pc_pos_status_y_mm_b1 << 8)
-			logging.debug("Incoming message from PC, Status Y: %s", pc_pos_status_y_mm)
-
-		# Read next message
-		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
-
-## end of method
-
-
 ## 
-## Tx_PC_Cmd(device)
-## Transmit the command message to the Paddcle Controller
+## get_paddle_defense_position(device)
+## Calculates linear trajectory of the puck based on XY positions and Y velocity
+## Outputs XY (y=0) position for the paddle to defend goal from an oncoming puck
 ##
-def Tx_PC_Cmd(device):
-	global mc_pos_cmd_x_mm
+def get_paddle_defense_position():
+	global puckPositionMmX
+	global puckPositionMmY
+	global puckVelocityMmPerSX 
+	global puckVelocityMmPerSY
+	global lastPuckPositionMmX
+	global lastPuckPositionMmY
+	global lastPuckVelocityMmPerSY
+	global puckPredictionAveragedArray
+	global puckPredictionAveragedWindowSize
+	global puckPredictionAveragedIndex
+	global minPuckVelocityMmPerSY
+
+	global goalRightPostMmX
+	global goalLeftPostMmX
+	global goalPostToleranceMmX
+
+	global 	mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
-	global mc_pos_cmd_sent_x_mm
-	global mc_pos_cmd_sent_y_mm
+	
+	puckPredictionMmX = 0
+	puckPredictionAveragedMmX = 0
+	
+	# check if the puck is moving towards the robot
+	if puckVelocityMmPerSY < minPuckVelocityMmPerSY:
+		# using the equation of a line y = mx + b, find predicted x position when y = 0
+		vectorY = int(puckPositionMmY - lastPuckPositionMmY)
+		vectorX = int(puckPositionMmX - lastPuckPositionMmX)
+		
+		if vectorX == 0:
+			# avoid divide by zero
+			slope = 999999
+		else:
+			slope = vectorY/vectorX
+		
+		# b = y - mx
+		yIntercept = puckPositionMmY - (slope * puckPositionMmX)
+		
+		if slope != 0:
+			puckPredictionMmX = -yIntercept / slope
+		else:
+			puckPredictionMmX = 0
+			
+		# now that we have a predicted x position, take an average to improve accuracy  
+		puckPredictionAveragedArray[puckPredictionAveragedIndex] = puckPredictionMmX
+		numNonZeroValues = np.count_nonzero(puckPredictionAveragedArray)
+		
+		if numNonZeroValues != 0:
+			puckPredictionAveragedMmX = (np.sum(puckPredictionAveragedArray)) / numNonZeroValues
+		else:
+			puckPredictionAveragedMmX = 0
+		
+		# manage index for array
+		puckPredictionAveragedIndex += 1
+		if puckPredictionAveragedIndex < puckPredictionAveragedWindowSize:
+			pass
+		else:
+			puckPredictionAveragedIndex = 0
+			
+	if puckVelocityMmPerSY > minPuckVelocityMmPerSY and lastPuckVelocityMmPerSY < minPuckVelocityMmPerSY:
+		puckPredictionAveragedArray.fill(0)
+		puckPredictionAveragedIndex = 0
 
-	message = TPCANMsg()
+	lastPuckVelocityMmPerSY = puckVelocityMmPerSY
+	lastPuckPositionMmX = puckPositionMmX
+	lastPuckPositionMmY = puckPositionMmY
 
-	message.ID = ID_mc_cmd_pc
-	message.MSGTYPE = PCAN_MESSAGE_STANDARD
-	message.LEN = 4
-	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
-	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
-	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
-	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
+	logging.debug("Puck final trajectory position (before goalpost correction) is: %i,0", puckPredictionAveragedMmX)
+	
+	# Goal post correction
+	# puck pos before left goalpost then set to the left goalpost_pos-tolerance
+	if puckPredictionAveragedMmX < goalLeftPostMmX:
+		puckPredictionAveragedMmX = goalLeftPostMmX - goalPostToleranceMmX
+	# puck pos after right goalpost then set to the right goalpost_pos+tolerance
+	elif puckPredictionAveragedMmX > goalRightPostMmX:
+		puckPredictionAveragedMmX = goalRightPostMmX + goalPostToleranceMmX	
 
-	# Save last sent position command
-	mc_pos_cmd_sent_x_mm = mc_pos_cmd_x_mm
-	mc_pos_cmd_sent_y_mm = mc_pos_cmd_y_mm
+	logging.debug("Paddle defense position is: %i,0", puckPredictionAveragedMmX)
 
-	logging.debug("Transmitting message to PC: %s", message)
-
-	# Send the message and check if it was successful
-	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
-	if status > 0:
-		print "Error transmitting CAN message"
-		logging.error("Error transmitting CAN message")
-		print PCANBasic.GetErrorText(device, status, 0)
-		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit()
+	mc_pos_cmd_x_mm = puckPredictionAveragedMmX
+	mc_pos_cmd_y_mm = 0
 
 ## end of method
 
+##############################################################################################
+## MAIN() function
+##############################################################################################
 
 ## 
 ## main()
@@ -514,7 +670,7 @@ def main():
 	# Create and set format of the logging file
 	# If you want to disable the logger then set "level=logging.ERROR"
 	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG,
-	 					format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
+						format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Initialize device
 	Init_PCAN(PCAN)
@@ -532,7 +688,12 @@ def main():
 		# read messages from IPC
 		while 1:
 			Rx_IPC()
-			filter_Tx_PC_Cmd()
+			# get defense pos for paddle if in MC-decisions mode
+			if operationMode == 0:
+				get_paddle_defense_position()
+			# UI manual control mode (enable jitter filter)
+			elif operationMode == 1:
+				filter_Tx_PC_Cmd()
 			Tx_PC_Cmd(PCAN)
 			add_pos_sent_HDF5(str(datetime.datetime.now()))
 			update_display()
@@ -556,13 +717,13 @@ def main():
 				exit(0)
 		else:
 			filter_Tx_PC_Cmd()
-	  		#Tx_PC_Cmd(PCAN)
-	  		add_pos_sent_HDF5(str(datetime.datetime.now()))
-	  		update_display()
-	  		#Rx_CAN(PCAN)
+			#Tx_PC_Cmd(PCAN)
+			add_pos_sent_HDF5(str(datetime.datetime.now()))
+			update_display()
+			#Rx_CAN(PCAN)
 			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 			update_dset_HDF5()
-	  		sleep(timeout)
+			sleep(timeout)
 
 	#"""
 
@@ -577,7 +738,9 @@ except KeyboardInterrupt:
 	Uninit_IPC()
 
 
-## Place to store cool shit
+##############################################################################################
+## Garbage
+##############################################################################################
 def playground(device):
 
 	if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):

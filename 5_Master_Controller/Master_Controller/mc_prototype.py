@@ -494,22 +494,22 @@ if __debug__:
 		# get data from Puck tracker
 		try:
 			ptData = dataFromPT.get(False)
-			logging.debug(str(uiData))
+			logging.debug(str(ptData))
 
 			# set flag that indicates we are in MC-decisions mode
 			operationMode = 0
 			logging.debug("We are in MC-decision control mode")
 			
 			#string manipulation
-			uiData = uiData.split(":")
-			if uiData[0] == "puck_position_mm_x":
-				puckPositionMmX = uiData[1]
-			elif uiData[0] == "puck_position_mm_y":
-				puckPositionMmY = uiData[1]
-			elif uiData[0] == "puck_velocity_mmps_x":
-				puckVelocityMmPerSX = uiData[1]
-			elif uiData[0] == "puck_velocity_mmps_y":
-				puckVelocityMmPerSY = uiData[1]
+			ptData = ptData.split(":")
+			if ptData[0] == "puck_position_mm_x":
+				puckPositionMmX = int(ptData[1])
+			elif ptData[0] == "puck_position_mm_y":
+				puckPositionMmY = int(ptData[1])
+			elif ptData[0] == "puck_velocity_mmps_x":
+				puckVelocityMmPerSX = int(ptData[1])
+			elif ptData[0] == "puck_velocity_mmps_y":
+				puckVelocityMmPerSY = int(ptData[1])
 
 		except Queue.Empty:
 			ptData = 0
@@ -530,9 +530,9 @@ if __debug__:
 			#string manipulation
 			uiData = uiData.split(":")
 			if uiData[0] == "paddle_position_mm_x":
-				mc_pos_cmd_x_mm = uiData[1]
+				mc_pos_cmd_x_mm = int(uiData[1])
 			elif uiData[0] == "paddle_position_mm_y":
-				mc_pos_cmd_y_mm = uiData[1]
+				mc_pos_cmd_y_mm = int(uiData[1])
 
 		except Queue.Empty:
 			uiData = 0

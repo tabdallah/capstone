@@ -86,6 +86,11 @@ void x_axis_position_ctrl(void)
 {
 	unsigned int error_p;
 
+	// Sanity check control mode
+	if (x_axis.ctrl_mode != dcm_ctrl_mode_position) {
+		return;
+	}
+
 	// Limit position commands to stay inside the virtual limit
 	if (x_axis.position_cmd_enc_ticks > (X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_BOUNDARY_ENC_TICKS)) {
 		x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_BOUNDARY_ENC_TICKS;
@@ -309,24 +314,6 @@ interrupt 8 void x_axis_encoder_a(void)
 		- (x_axis.enc_a_edge_1_tcnt_ticks
 		+ (x_axis.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
-}
-
-//;**************************************************************
-//;*                 timer_1kHz_loop()
-//;*    1kHz loop triggered by timer channel 6
-//;**************************************************************
-interrupt 14 void timer_1kHz_loop(void)
-{
-	x_axis_dcm_overload_check();
-
-	if (x_axis.ctrl_mode == dcm_ctrl_mode_position) {
-		x_axis_position_ctrl();
-	}
-
-	// Send status message
-	x_axis_send_status_can();
-	
-	TC6 = TCNT + TCNT_mS;   // Delay 1mS
 }
 
 //;**************************************************************

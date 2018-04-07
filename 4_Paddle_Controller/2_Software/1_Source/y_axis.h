@@ -38,21 +38,21 @@
 // Encoder port setup and macros
 #define Y_AXIS_ENC_PORT PTT
 #define Y_AXIS_ENC_DDR DDRT
-#define Y_AXIS_L_ENC_A 0b00000001
-#define Y_AXIS_L_ENC_B 0b00000010
+#define Y_AXIS_L_ENC_A 0b00001000
+#define Y_AXIS_L_ENC_B 0b00000001
 #define Y_AXIS_R_ENC_A 0b00000100
-#define Y_AXIS_R_ENC_B 0b00001000
-#define Y_AXIS_L_ENC_A_TIMER TC0
-#define Y_AXIS_R_ENC_A_TIMER TC2
-#define Y_AXIS_L_ENC_A_TIOS_MASK TIOS_IOS0_MASK
-#define Y_AXIS_R_ENC_A_TIOS_MASK TIOS_IOS2_MASK
-#define Y_AXIS_L_ENC_A_TFLG1_MASK TFLG1_C0F_MASK
-#define Y_AXIS_R_ENC_A_TFLG1_MASK TFLG1_C2F_MASK
-#define Y_AXIS_TCTL4_INIT 0b00010001	// Capture on rising edge of TC0 and TC2
+#define Y_AXIS_R_ENC_B 0b00000010
+#define Y_AXIS_L_ENC_B_TIMER TC0
+#define Y_AXIS_R_ENC_B_TIMER TC1
+#define Y_AXIS_L_ENC_B_TIOS_MASK TIOS_IOS0_MASK
+#define Y_AXIS_R_ENC_B_TIOS_MASK TIOS_IOS1_MASK
+#define Y_AXIS_L_ENC_B_TFLG1_MASK TFLG1_C0F_MASK
+#define Y_AXIS_R_ENC_B_TFLG1_MASK TFLG1_C1F_MASK
+#define Y_AXIS_TCTL4_INIT 0b00000101	// Capture on rising edge of TC0 and TC1
 
 // Position control constants
 #define Y_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
-#define Y_AXIS_LIMIT_2_ENC_TICKS 4500	// Limit switch 2 position in encoder ticks
+#define Y_AXIS_LIMIT_2_ENC_TICKS 4300	// Limit switch 2 position in encoder ticks
 #define Y_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
 #define Y_AXIS_L_POS_GAIN_P 5
 #define Y_AXIS_R_POS_GAIN_P 5

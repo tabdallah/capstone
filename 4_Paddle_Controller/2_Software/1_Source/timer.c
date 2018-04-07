@@ -14,11 +14,6 @@ static unsigned char timer_tcnt_overflow = 0;
 void timer_configure(void) {
     TSCR1 = TSCR1_INIT; // Turn on timer module and enable fast-clear and freeze in debug
     TSCR2 = TSCR2_INIT; // Set pre-scaler to 4 for finest resolution @50Hz PWM frequency
-
-    TIOS |= TIOS_IOS6_MASK;       // Enable TC6 as OC for motor control loop
-    SET_OC_ACTION(6,OC_OFF);      // Set TC6 to not touch the port pin
-    TC6 = TCNT + TCNT_mS;         // Delay 1mS
-    TIE |= TIOS_IOS6_MASK;        // Enable interrupts on timer channel 6
 }
 
 //;**************************************************************

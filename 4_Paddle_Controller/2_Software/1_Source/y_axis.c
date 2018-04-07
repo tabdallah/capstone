@@ -44,15 +44,15 @@ void y_axis_configure(void)
 	Y_AXIS_R_ENABLE_PWM;
 
 	// Configure encoder port pins and input-capture interrupt.
-	CLEAR_BITS(Y_AXIS_ENC_DDR, Y_AXIS_L_ENC_B);	// B-Phase input is read during ISR for A-Phase
-	CLEAR_BITS(Y_AXIS_ENC_DDR, Y_AXIS_R_ENC_B);	// B-Phase input is read during ISR for A-Phase
-	CLEAR_BITS(TIOS, Y_AXIS_L_ENC_A_TIOS_MASK);	// Set A-Phase timer channel to input capture mode
-	CLEAR_BITS(TIOS, Y_AXIS_R_ENC_A_TIOS_MASK);	// Set A-Phase timer channel to input capture mode
+	CLEAR_BITS(Y_AXIS_ENC_DDR, Y_AXIS_L_ENC_A);	// A-Phase input is read during ISR for B-Phase
+	CLEAR_BITS(Y_AXIS_ENC_DDR, Y_AXIS_R_ENC_A);	// A-Phase input is read during ISR for B-Phase
+	CLEAR_BITS(TIOS, Y_AXIS_L_ENC_B_TIOS_MASK);	// Set B-Phase timer channel to input capture mode
+	CLEAR_BITS(TIOS, Y_AXIS_R_ENC_B_TIOS_MASK);	// Set B-Phase timer channel to input capture mode
 	TCTL4 = Y_AXIS_TCTL4_INIT;					// Capture on rising edges
-	SET_BITS(TIE, Y_AXIS_L_ENC_A_TIOS_MASK);	// Enable intterupts for A-Phase timer channel
-	SET_BITS(TIE, Y_AXIS_R_ENC_A_TIOS_MASK);	// Enable intterupts for A-Phase timer channel
-	TFLG1 = (Y_AXIS_L_ENC_A_TFLG1_MASK);		// Clear the flag in case anything is pending
-	TFLG1 = (Y_AXIS_R_ENC_A_TFLG1_MASK);		// Clear the flag in case anything is pending
+	SET_BITS(TIE, Y_AXIS_L_ENC_B_TIOS_MASK);	// Enable intterupts for B-Phase timer channel
+	SET_BITS(TIE, Y_AXIS_R_ENC_B_TIOS_MASK);	// Enable intterupts for B-Phase timer channel
+	TFLG1 = (Y_AXIS_L_ENC_B_TFLG1_MASK);		// Clear the flag in case anything is pending
+	TFLG1 = (Y_AXIS_R_ENC_B_TFLG1_MASK);		// Clear the flag in case anything is pending
 
 	// Configure limit switch port pins.
 	SET_BITS(Y_AXIS_LIMIT_DDR, (Y_AXIS_L_LIMIT_1_PIN | Y_AXIS_L_LIMIT_2_PIN));
@@ -108,6 +108,11 @@ void y_axis_home(void)
 void y_axis_position_ctrl(void)
 {	
 	unsigned int error_l_p, error_r_p, pwm_calc_l, pwm_calc_r;
+
+	// Sanity check control mode
+	if (y_axis_l.ctrl_mode != dcm_ctrl_mode_position) {
+    	return;
+	}
 
 	// Limit position commands to sane values
 	if (y_axis_l.position_cmd_enc_ticks > (Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS)) {
@@ -383,20 +388,20 @@ static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pw
 }
 
 //;**************************************************************
-//;*                 y_axis_l_encoder_a()
-//;*  Handles IC function for Y-Axis Left Motor Encoder A Phase
+//;*                 y_axis_l_encoder_b()
+//;*  Handles IC function for Y-Axis Left Motor Encoder B Phase
 //;**************************************************************
-interrupt 8 void y_axis_l_encoder_a(void)
+interrupt 8 void y_axis_l_encoder_b(void)
 {
 	// Track direction
-	if (Y_AXIS_ENC_PORT & Y_AXIS_L_ENC_B) {
-		// Phase B leads Phase A
+	if (Y_AXIS_ENC_PORT & Y_AXIS_L_ENC_A) {
+		// Phase A leads Phase B
 		y_axis_l.quadrature_direction = dcm_quad_dir_forward;
 		if (y_axis_l.position_enc_ticks < MAX_UINT) {
 			y_axis_l.position_enc_ticks ++;
 		}
 	} else {
-		// Phase A leads Phase B
+		// Phase B leads Phase A
 		y_axis_l.quadrature_direction = dcm_quad_dir_reverse;
 		if (y_axis_l.position_enc_ticks > 0) {
 			y_axis_l.position_enc_ticks --;
@@ -405,11 +410,11 @@ interrupt 8 void y_axis_l_encoder_a(void)
 
 	// Calculate Encoder A period for speed measurements
 	if (y_axis_l.enc_a_edge_tracker == 0) {
-		y_axis_l.enc_a_edge_1_tcnt_ticks = Y_AXIS_L_ENC_A_TIMER;
+		y_axis_l.enc_a_edge_1_tcnt_ticks = Y_AXIS_L_ENC_B_TIMER;
 		y_axis_l.enc_a_edge_1_tcnt_overflow = timer_get_overflow();
 		y_axis_l.enc_a_edge_tracker = 1;
 	} else {
-		y_axis_l.enc_a_edge_2_tcnt_ticks = Y_AXIS_L_ENC_A_TIMER;
+		y_axis_l.enc_a_edge_2_tcnt_ticks = Y_AXIS_L_ENC_B_TIMER;
 		y_axis_l.enc_a_edge_2_tcnt_overflow = timer_get_overflow();
 		y_axis_l.enc_a_edge_tracker = 0;
 		y_axis_l.period_tcnt_ticks = (y_axis_l.enc_a_edge_2_tcnt_ticks
@@ -418,37 +423,37 @@ interrupt 8 void y_axis_l_encoder_a(void)
 		+ (y_axis_l.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
 	
-	(void) Y_AXIS_L_ENC_A_TIMER;
+	(void) Y_AXIS_L_ENC_B_TIMER;
 }
 
 //;**************************************************************
-//;*                 y_axis_r_encoder_a()
-//;*  Handles IC function for Y-Axis Right Motor Encoder A Phase
+//;*                 y_axis_r_encoder_b()
+//;*  Handles IC function for Y-Axis Right Motor Encoder B Phase
 //;**************************************************************
-interrupt 10 void y_axis_r_encoder_a(void)
+interrupt 9 void y_axis_r_encoder_b(void)
 {
 	// Track direction and position
-	if (Y_AXIS_ENC_PORT & Y_AXIS_R_ENC_B) {
-		// Phase B leads Phase A
+	if (Y_AXIS_ENC_PORT & Y_AXIS_R_ENC_A) {
+		// Phase A leads Phase B
 		y_axis_r.quadrature_direction = dcm_quad_dir_reverse;
 		if (y_axis_r.position_enc_ticks > 0) {
 			y_axis_r.position_enc_ticks --;
-		}		
+		}
 	} else {
-		// Phase A leads Phase B
+		// Phase B leads Phase A
 		y_axis_r.quadrature_direction = dcm_quad_dir_forward;
 		if (y_axis_r.position_enc_ticks < MAX_UINT) {
 			y_axis_r.position_enc_ticks ++;
-		}		
+		}
 	}
 
 	// Calculate Encoder A period for speed measurements
 	if (y_axis_r.enc_a_edge_tracker == 0) {
-		y_axis_r.enc_a_edge_1_tcnt_ticks = Y_AXIS_R_ENC_A_TIMER;
+		y_axis_r.enc_a_edge_1_tcnt_ticks = Y_AXIS_R_ENC_B_TIMER;
 		y_axis_r.enc_a_edge_1_tcnt_overflow = timer_get_overflow();
 		y_axis_r.enc_a_edge_tracker = 1;
 	} else {
-		y_axis_r.enc_a_edge_2_tcnt_ticks = Y_AXIS_R_ENC_A_TIMER;
+		y_axis_r.enc_a_edge_2_tcnt_ticks = Y_AXIS_R_ENC_B_TIMER;
 		y_axis_r.enc_a_edge_2_tcnt_overflow = timer_get_overflow();
 		y_axis_r.enc_a_edge_tracker = 0;
 		y_axis_r.period_tcnt_ticks = (y_axis_r.enc_a_edge_2_tcnt_ticks
@@ -457,25 +462,7 @@ interrupt 10 void y_axis_r_encoder_a(void)
 		+ (y_axis_r.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
 
-	(void) Y_AXIS_R_ENC_A_TIMER;
-}
-
-//;**************************************************************
-//;*                 timer_1kHz_loop()
-//;*    1kHz loop triggered by timer channel 6
-//;**************************************************************
-interrupt 14 void timer_1kHz_loop(void)
-{
-	y_axis_dcm_overload_check();
-
-	if (y_axis_l.ctrl_mode == dcm_ctrl_mode_position) {
-    	y_axis_position_ctrl();
-	}
-
-	// Send status message
-	y_axis_send_status_can();
-
-    TC6 = TCNT + TCNT_mS;   // Delay 1mS
+	(void) Y_AXIS_R_ENC_B_TIMER;
 }
 
 //;**************************************************************

@@ -51,10 +51,12 @@
 #define Y_AXIS_TCTL4_INIT 0b00010001	// Capture on rising edge of TC0 and TC2
 
 // Position control constants
-#define Y_AXIS_HOME_POS_ENC_TICKS 100	// Zero/Home position
-#define Y_AXIS_LIMIT_ENC_TICKS 4500		// Opposite edge of table, measured from home position
-#define Y_AXIS_L_POS_GAIN_P 10
-#define Y_AXIS_R_POS_GAIN_P 10
+#define Y_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
+#define Y_AXIS_LIMIT_2_ENC_TICKS 4500	// Limit switch 2 position in encoder ticks
+#define Y_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
+#define Y_AXIS_L_POS_GAIN_P 5
+#define Y_AXIS_R_POS_GAIN_P 5
+#define Y_AXIS_LR_POS_GAIN_P 5
 #define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 200		// Shut down system if left vs right motor position differs by more than this
 #define Y_AXIS_ENC_TICKS_PER_REV 374
 #define Y_AXIS_MM_PER_REV 60
@@ -83,8 +85,8 @@ void y_axis_home(void);
 void y_axis_position_ctrl(void);
 void y_axis_send_status_can(void);
 void y_axis_dcm_overload_check(void);
-static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
-static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
+static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty);
+static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty);
 
 // Enumerated data types
 typedef enum {

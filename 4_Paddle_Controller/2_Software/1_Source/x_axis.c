@@ -11,7 +11,7 @@
 #include "x_axis.h"
 #include "can.h"
 
-static dcm_t x_axis = {X_AXIS_HOME_POS_ENC_TICKS, X_AXIS_HOME_POS_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t x_axis = {X_AXIS_LIMIT_1_ENC_TICKS, X_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static x_axis_error_e x_axis_error = x_axis_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
@@ -62,7 +62,7 @@ void x_axis_home(void)
 	x_axis.ctrl_mode = dcm_ctrl_mode_manual;
 
 	// Drive motor backwards
-	x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, X_AXIS_PWM_DUTY_MAX);
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, 75);
 
 	// Wait for limit switch to be hit
 	// To Do: Should have some timeout here to handle broken switch
@@ -71,7 +71,7 @@ void x_axis_home(void)
 	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 
 	// Set target to center of table
-	x_axis.position_cmd_enc_ticks = ( (X_AXIS_LIMIT_ENC_TICKS - X_AXIS_HOME_POS_ENC_TICKS) / 2);
+	x_axis.position_cmd_enc_ticks = ( (X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_LIMIT_1_ENC_TICKS) / 2);
 
 	// Return control to position/velocity controllers
 	x_axis.ctrl_mode = ctrl_mode;
@@ -86,22 +86,22 @@ void x_axis_position_ctrl(void)
 {
 	unsigned int error_p;
 
-	// Limit position commands to sane values
-	if (x_axis.position_cmd_enc_ticks > X_AXIS_LIMIT_ENC_TICKS) {
-		x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_ENC_TICKS;
+	// Limit position commands to stay inside the virtual limit
+	if (x_axis.position_cmd_enc_ticks > (X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_BOUNDARY_ENC_TICKS)) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_BOUNDARY_ENC_TICKS;
 	}
-	if (x_axis.position_cmd_enc_ticks < X_AXIS_HOME_POS_ENC_TICKS) {
-		x_axis.position_cmd_enc_ticks = X_AXIS_HOME_POS_ENC_TICKS;
+	if (x_axis.position_cmd_enc_ticks < X_AXIS_BOUNDARY_ENC_TICKS) {
+		x_axis.position_cmd_enc_ticks = X_AXIS_BOUNDARY_ENC_TICKS;
 	}
 
 	// Read limit switch states
 	x_axis.limit_switch_1 = X_AXIS_LIMIT_1;
 	x_axis.limit_switch_2 = X_AXIS_LIMIT_2;
 	if (x_axis.limit_switch_1 == dcm_limit_switch_pressed) {
-		x_axis.position_enc_ticks = X_AXIS_HOME_POS_ENC_TICKS;
+		x_axis.position_enc_ticks = X_AXIS_LIMIT_1_ENC_TICKS;
 	}
 	if (x_axis.limit_switch_2 == dcm_limit_switch_pressed) {
-		x_axis.position_enc_ticks = X_AXIS_LIMIT_ENC_TICKS;
+		x_axis.position_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS;
 	}
 
 	// Calculate position error
@@ -162,10 +162,10 @@ void x_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
-		if (x_axis.position_enc_ticks < X_AXIS_HOME_POS_ENC_TICKS) {
+		if (x_axis.position_enc_ticks < X_AXIS_BOUNDARY_ENC_TICKS) {
 			pos_x_calc = 0;
 		} else {
-			pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_HOME_POS_ENC_TICKS) * 10;
+			pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_BOUNDARY_ENC_TICKS) * 10;
 		}
 		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
 		can_msg_pc_status.pos_x_mm = 0xFFFF & ((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10);
@@ -360,7 +360,7 @@ interrupt 38 void can_rx_handler(void) {
 	// Set motor position command in encoder ticks
 	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_x_mm * 10) / X_AXIS_MM_PER_REV;
 	pos_cmd_calculation = (pos_cmd_calculation * X_AXIS_ENC_TICKS_PER_REV) / 10;
-	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + X_AXIS_HOME_POS_ENC_TICKS);
+	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + X_AXIS_LIMIT_1_ENC_TICKS);
 
 	// Clear Rx flag
 	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);

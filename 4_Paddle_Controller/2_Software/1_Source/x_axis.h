@@ -36,8 +36,9 @@
 #define X_AXIS_TCTL4_INIT 0b00000001	// Capture on rising edge of TC0
 
 // Position control constants
-#define X_AXIS_HOME_POS_ENC_TICKS 100	// Zero/Home position
-#define X_AXIS_LIMIT_ENC_TICKS 4500		// Opposite edge of table, measured from home position
+#define X_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
+#define X_AXIS_LIMIT_2_ENC_TICKS 3950	// Limit switch 2 position in encoder ticks
+#define X_AXIS_BOUNDARY_ENC_TICKS 150	// Virtual limit to the available travel
 #define X_AXIS_POS_GAIN_P 10
 #define X_AXIS_ENC_TICKS_PER_REV 374
 #define X_AXIS_MM_PER_REV 60

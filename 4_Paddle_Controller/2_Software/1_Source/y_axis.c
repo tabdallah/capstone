@@ -11,8 +11,8 @@
 #include "y_axis.h"
 #include "can.h"
 
-static dcm_t y_axis_l = {Y_AXIS_HOME_POS_ENC_TICKS, Y_AXIS_HOME_POS_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
-static dcm_t y_axis_r = {Y_AXIS_HOME_POS_ENC_TICKS, Y_AXIS_HOME_POS_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t y_axis_l = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t y_axis_r = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
 static signed int y_axis_lr_position_error_enc_ticks = 0;
 static y_axis_error_e y_axis_error = y_axis_error_none;
 static can_msg_raw_t can_msg_raw;
@@ -75,8 +75,8 @@ void y_axis_home(void)
 	y_axis_l.ctrl_mode = dcm_ctrl_mode_manual;
 
 	// Drive motors backwards
-	y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, Y_AXIS_PWM_DUTY_MAX);
-	y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, Y_AXIS_PWM_DUTY_MAX);
+	y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, 75);
+	y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, 75);
 
 	// Wait for limit switches to be hit
 	// To Do: Should have some timeout here to handle broken switch
@@ -91,8 +91,8 @@ void y_axis_home(void)
 		}
 
 		if ((Y_AXIS_L_LIMIT_1 == dcm_limit_switch_pressed) && (Y_AXIS_R_LIMIT_1 == dcm_limit_switch_unpressed)) {
-			y_axis_l.position_enc_ticks = Y_AXIS_HOME_POS_ENC_TICKS;
-			y_axis_r.position_enc_ticks = Y_AXIS_HOME_POS_ENC_TICKS;
+			y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
+			y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
 			break;
 		}
 	}
@@ -107,14 +107,14 @@ void y_axis_home(void)
 //;**************************************************************
 void y_axis_position_ctrl(void)
 {	
-	unsigned int error_l_p, error_r_p;
+	unsigned int error_l_p, error_r_p, pwm_calc_l, pwm_calc_r;
 
 	// Limit position commands to sane values
-	if (y_axis_l.position_cmd_enc_ticks > Y_AXIS_LIMIT_ENC_TICKS) {
-		y_axis_l.position_cmd_enc_ticks = Y_AXIS_LIMIT_ENC_TICKS;
+	if (y_axis_l.position_cmd_enc_ticks > (Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS)) {
+		y_axis_l.position_cmd_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS;
 	}
-	if (y_axis_l.position_cmd_enc_ticks < Y_AXIS_HOME_POS_ENC_TICKS) {
-		y_axis_l.position_cmd_enc_ticks = Y_AXIS_HOME_POS_ENC_TICKS;
+	if (y_axis_l.position_cmd_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
+		y_axis_l.position_cmd_enc_ticks = Y_AXIS_BOUNDARY_ENC_TICKS;
 	}
 
 	// Read limit switch states
@@ -123,16 +123,16 @@ void y_axis_position_ctrl(void)
 	y_axis_r.limit_switch_1 = Y_AXIS_R_LIMIT_1;
 	y_axis_r.limit_switch_2 = Y_AXIS_R_LIMIT_2;
 	if (y_axis_l.limit_switch_1 == dcm_limit_switch_pressed) {
-		y_axis_l.position_enc_ticks = Y_AXIS_HOME_POS_ENC_TICKS;
+		y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
 	}
 	if (y_axis_l.limit_switch_2 == dcm_limit_switch_pressed) {
-		y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_ENC_TICKS;
+		y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS;
 	}
 	if (y_axis_r.limit_switch_1 == dcm_limit_switch_unpressed) {
-		y_axis_r.position_enc_ticks = Y_AXIS_HOME_POS_ENC_TICKS;
+		y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
 	}
 	if (y_axis_r.limit_switch_2 == dcm_limit_switch_unpressed) {
-		y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_ENC_TICKS;
+		y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS;
 	}
 
 	// Always force right (slave) position command to match left (master) position command
@@ -161,11 +161,11 @@ void y_axis_position_ctrl(void)
 			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 		} else {
 			if (error_l_p > Y_AXIS_PWM_DUTY_MAX) {
-				y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+				pwm_calc_l = Y_AXIS_PWM_DUTY_MAX;
 			} else {
-				y_axis_l.pwm_duty = LOW(error_l_p);
+				pwm_calc_l = LOW(error_l_p);
 			}
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_l.pwm_duty);
+			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_forward, pwm_calc_l);
 		}
 	} else if (y_axis_l.position_error_ticks < 0) {
 		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_forward) {
@@ -173,21 +173,21 @@ void y_axis_position_ctrl(void)
 			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 		} else {
 			if (error_l_p > Y_AXIS_PWM_DUTY_MAX) {
-				y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
+				pwm_calc_l = Y_AXIS_PWM_DUTY_MAX;
 			} else {
-				y_axis_l.pwm_duty = LOW(error_l_p);
+				pwm_calc_l = LOW(error_l_p);
 			}
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_l.pwm_duty);
+			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, pwm_calc_l);
 		}
 	} else {
 		// Stop at desired position
 		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 	}
 
-	// Calculate error for right motor (slave)
+	// Calculate position error for right motor (slave)
 	y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
-	y_axis_r.position_error_ticks = MIN(y_axis_r.position_error_ticks, y_axis_lr_position_error_enc_ticks);
 	error_r_p = abs(y_axis_r.position_error_ticks) * Y_AXIS_R_POS_GAIN_P;
+	pwm_calc_r = MIN(Y_AXIS_PWM_DUTY_MAX, error_r_p);
 
 	// Drive right motor to desired position
 	if (y_axis_r.position_error_ticks > 0) {
@@ -195,24 +195,24 @@ void y_axis_position_ctrl(void)
 			// Stop before reversing direction
 			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 		} else {
-			if (error_r_p > Y_AXIS_PWM_DUTY_MAX) {
-				y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
-			} else {
-				y_axis_r.pwm_duty = LOW(error_r_p);
+			if (y_axis_r.position_error_ticks > Y_AXIS_BOUNDARY_ENC_TICKS) {
+				pwm_calc_r += (y_axis_lr_position_error_enc_ticks * Y_AXIS_LR_POS_GAIN_P);	
 			}
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_r.pwm_duty);
+			pwm_calc_r = MIN(Y_AXIS_PWM_DUTY_MAX, pwm_calc_r);
+			pwm_calc_r = LOW(pwm_calc_r);
+			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_forward, pwm_calc_r);
 		}
 	} else if (y_axis_r.position_error_ticks < 0) {
 		if (y_axis_r.h_bridge_direction == dcm_h_bridge_dir_forward) {
 			// Stop before reversing direction
 			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 		} else {
-			if (error_r_p > Y_AXIS_PWM_DUTY_MAX) {
-				y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MAX;
-			} else {
-				y_axis_r.pwm_duty = LOW(error_r_p);
+			if (y_axis_r.position_error_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
+				pwm_calc_r -= (y_axis_lr_position_error_enc_ticks * Y_AXIS_LR_POS_GAIN_P);
 			}
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_r.pwm_duty);
+			pwm_calc_r = MIN(Y_AXIS_PWM_DUTY_MAX, pwm_calc_r);
+			pwm_calc_r = LOW(pwm_calc_r);
+			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, pwm_calc_r);
 		}
 	} else {
 		// Stop at desired position
@@ -238,10 +238,10 @@ void y_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
-		if (y_axis_l.position_enc_ticks < Y_AXIS_HOME_POS_ENC_TICKS) {
+		if (y_axis_l.position_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
 			pos_y_calc = 0;
 		} else {
-			pos_y_calc = (y_axis_l.position_enc_ticks - Y_AXIS_HOME_POS_ENC_TICKS) * 10;
+			pos_y_calc = (y_axis_l.position_enc_ticks - Y_AXIS_LIMIT_1_ENC_TICKS) * 10;
 		}
 		pos_y_calc = pos_y_calc * Y_AXIS_MM_PER_REV;
 		can_msg_pc_status.pos_y_mm = 0xFFFF & ((pos_y_calc / Y_AXIS_ENC_TICKS_PER_REV) / 10);
@@ -318,31 +318,31 @@ void y_axis_dcm_overload_check(void)
 //;*                 y_axis_l_set_dcm_drive(void)
 //;*	Helper function to set left DC motor direction and speed
 //;**************************************************************
-static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty)
 {
 	switch (direction)
 	{
 		case dcm_h_bridge_dir_brake:
-			Y_AXIS_L_SET_PWM_DUTY(Y_AXIS_PWM_DUTY_MIN);
 			y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MIN;
+			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_L_H_BRIDGE_BRAKE;
 			break;
 		case dcm_h_bridge_dir_forward:
-			Y_AXIS_L_SET_PWM_DUTY(pwm_duty);
-			y_axis_l.pwm_duty = pwm_duty;
+			y_axis_l.pwm_duty = LOW(pwm_duty);
+			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_forward;
 			Y_AXIS_L_H_BRIDGE_FORWARD;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			Y_AXIS_L_SET_PWM_DUTY(pwm_duty);
-			y_axis_l.pwm_duty = pwm_duty;
+			y_axis_l.pwm_duty = LOW(pwm_duty);
+			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			Y_AXIS_L_H_BRIDGE_REVERSE;
 			break;
 		default:
-			Y_AXIS_L_SET_PWM_DUTY(Y_AXIS_PWM_DUTY_MIN);
 			y_axis_l.pwm_duty = Y_AXIS_PWM_DUTY_MIN;
+			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_L_H_BRIDGE_BRAKE;
 	}
@@ -352,31 +352,31 @@ static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char p
 //;*                 y_axis_r_set_dcm_drive(void)
 //;*	Helper function to set right DC motor direction and speed
 //;**************************************************************
-static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty)
 {
 	switch (direction)
 	{
 		case dcm_h_bridge_dir_brake:
-			Y_AXIS_R_SET_PWM_DUTY(Y_AXIS_PWM_DUTY_MIN);
 			y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MIN;
+			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_R_H_BRIDGE_BRAKE;
 			break;
 		case dcm_h_bridge_dir_forward:
-			Y_AXIS_R_SET_PWM_DUTY(pwm_duty);
-			y_axis_r.pwm_duty = pwm_duty;
+			y_axis_r.pwm_duty = LOW(pwm_duty);
+			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_forward;
 			Y_AXIS_R_H_BRIDGE_FORWARD;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			Y_AXIS_R_SET_PWM_DUTY(pwm_duty);
-			y_axis_r.pwm_duty = pwm_duty;
+			y_axis_r.pwm_duty = LOW(pwm_duty);
+			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			Y_AXIS_R_H_BRIDGE_REVERSE;
 			break;
 		default:
-			Y_AXIS_R_SET_PWM_DUTY(Y_AXIS_PWM_DUTY_MIN);
 			y_axis_r.pwm_duty = Y_AXIS_PWM_DUTY_MIN;
+			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			Y_AXIS_R_H_BRIDGE_BRAKE;
 	}
@@ -391,24 +391,17 @@ interrupt 8 void y_axis_l_encoder_a(void)
 	// Track direction
 	if (Y_AXIS_ENC_PORT & Y_AXIS_L_ENC_B) {
 		// Phase B leads Phase A
-		y_axis_l.quadrature_direction = dcm_quad_dir_forward;				
-	} else {
-		// Phase A leads Phase B
-		y_axis_l.quadrature_direction = dcm_quad_dir_reverse;
-	}
-
-	// Track position by encoder ticks
-	if (y_axis_l.quadrature_direction == dcm_quad_dir_forward) {
+		y_axis_l.quadrature_direction = dcm_quad_dir_forward;
 		if (y_axis_l.position_enc_ticks < MAX_UINT) {
 			y_axis_l.position_enc_ticks ++;
 		}
 	} else {
+		// Phase A leads Phase B
+		y_axis_l.quadrature_direction = dcm_quad_dir_reverse;
 		if (y_axis_l.position_enc_ticks > 0) {
 			y_axis_l.position_enc_ticks --;
 		}
 	}
-
-	(void) Y_AXIS_L_ENC_A_TIMER;
 
 	// Calculate Encoder A period for speed measurements
 	if (y_axis_l.enc_a_edge_tracker == 0) {
@@ -424,6 +417,8 @@ interrupt 8 void y_axis_l_encoder_a(void)
 		- (y_axis_l.enc_a_edge_1_tcnt_ticks
 		+ (y_axis_l.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
+	
+	(void) Y_AXIS_L_ENC_A_TIMER;
 }
 
 //;**************************************************************
@@ -432,27 +427,20 @@ interrupt 8 void y_axis_l_encoder_a(void)
 //;**************************************************************
 interrupt 10 void y_axis_r_encoder_a(void)
 {
-	// Track direction
+	// Track direction and position
 	if (Y_AXIS_ENC_PORT & Y_AXIS_R_ENC_B) {
 		// Phase B leads Phase A
-		y_axis_r.quadrature_direction = dcm_quad_dir_reverse;				
+		y_axis_r.quadrature_direction = dcm_quad_dir_reverse;
+		if (y_axis_r.position_enc_ticks > 0) {
+			y_axis_r.position_enc_ticks --;
+		}		
 	} else {
 		// Phase A leads Phase B
 		y_axis_r.quadrature_direction = dcm_quad_dir_forward;
-	}
-
-	// Track position by encoder ticks
-	if (y_axis_r.quadrature_direction == dcm_quad_dir_forward) {
 		if (y_axis_r.position_enc_ticks < MAX_UINT) {
 			y_axis_r.position_enc_ticks ++;
-		}
-	} else {
-		if (y_axis_r.position_enc_ticks > 0) {
-			y_axis_r.position_enc_ticks --;
-		}
+		}		
 	}
-
-	(void) Y_AXIS_R_ENC_A_TIMER;
 
 	// Calculate Encoder A period for speed measurements
 	if (y_axis_r.enc_a_edge_tracker == 0) {
@@ -468,6 +456,8 @@ interrupt 10 void y_axis_r_encoder_a(void)
 		- (y_axis_r.enc_a_edge_1_tcnt_ticks
 		+ (y_axis_r.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
+
+	(void) Y_AXIS_R_ENC_A_TIMER;
 }
 
 //;**************************************************************
@@ -519,7 +509,7 @@ interrupt 38 void can_rx_handler(void) {
 	// Set motor position command in encoder ticks
 	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_y_mm * 10) / Y_AXIS_MM_PER_REV;
 	pos_cmd_calculation = (pos_cmd_calculation * Y_AXIS_ENC_TICKS_PER_REV) / 10;
-	y_axis_l.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + Y_AXIS_HOME_POS_ENC_TICKS);
+	y_axis_l.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + Y_AXIS_LIMIT_1_ENC_TICKS);
 
 	// Clear Rx flag
 	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);

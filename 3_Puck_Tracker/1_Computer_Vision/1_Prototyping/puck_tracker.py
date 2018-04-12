@@ -124,8 +124,8 @@ def get_mm_per_pixel_factors(fiducial_coordinates):
     """Return the scaling factors for mm per pixel conversion"""
     (tl, tr, br, bl) = fiducial_coordinates
     
-    mm_per_pixel_x = int(table_length_mm/(br[0] - bl[0]))
-    mm_per_pixel_y = int(table_width_mm/(bl[1] - tl[1]))
+    mm_per_pixel_x = table_length_mm/(br[0] - bl[0])
+    mm_per_pixel_y = table_width_mm/(bl[1] - tl[1])
     
     return mm_per_pixel_x, mm_per_pixel_y
 
@@ -318,9 +318,9 @@ def pt_process(pt_rx, pt_tx):
 
             try:
                 pt_tx.get_nowait()
-                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
+                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(int(puck_position_mm_xy[1]), int(puck_position_mm_xy[0]), int(puck_velocity_mmps_xy[1]), int(puck_velocity_mmps_xy[0])))
             except Queue.Empty:
-                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
+                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(int(puck_position_mm_xy[1]), int(puck_position_mm_xy[0]), int(puck_velocity_mmps_xy[1]), int(puck_velocity_mmps_xy[0])))
 
             cv2.imshow('Table', frame)
 

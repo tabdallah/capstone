@@ -49,7 +49,7 @@ class UserInterfaceApp(App):
         mainWidget = ManualControlScreen(self.dataToUI, self.dataFromUI)
         return mainWidget
 
-def uiProcess(dataToUI, dataFromUI):
+def ui_process(dataToUI, dataFromUI):
     """All things user interface happen here. Communicates directly with master controller"""
     uiState = "Idle" 
 

@@ -5,37 +5,35 @@ import user_interface as ui
 
 if __name__ == '__main__':
     # create queues for bidirectional communication with other processes
-    dataToUI = multiprocessing.Queue()
-    dataFromUI = multiprocessing.Queue()
-    dataToPT = multiprocessing.Queue()
-    dataFromPT = multiprocessing.Queue()
+    ui_rx = multiprocessing.Queue()
+    ui_tx = multiprocessing.Queue()
+    pt_rx = multiprocessing.Queue()
+    pt_tx = multiprocessing.Queue()
     
     # create seperate processes for the UI and Puck Tracker and give them Queues for IPC
-    uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
-    ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
+    ui_process = multiprocessing.Process(target=ui.ui_process, name="ui", args=(ui_rx, ui_tx))
+    pt_process = multiprocessing.Process(target=pt.pt_process, name="pt", args=(pt_rx, pt_tx))
         
     # start child processes
-    uiProcess.start()
-    ptProcess.start()
+    ui_process.start()
+    pt_process.start()
     
-    #dataToPT.put("Calibrate")
-    #dataToPT.put("TrackPuck")
-    dataToUI.put("RunUI")
+    #pt_rx.put("pt_state_cmd_calibrate")
+    pt_rx.put("pt_state_cmd:track")
+    #ui_rx.put("RunUI")
     
     # read messages
     while True:
         try:
-            ptData = dataFromPT.get(False)
+            pt_data = pt_tx.get(False)
         except Queue.Empty:
-            ptData = 0
+            pt_data = 0
         else:
-            print ptData
-            if ptData == "Calibration Complete":
-                dataToPT.put("TrackPuck")
+            print pt_data
         
         try:
-            uiData = dataFromUI.get(False)
+            ui_data = ui_tx.get(False)
         except Queue.Empty:
-            uiData = 0
+            ui_data = 0
         else:
-            print uiData
+            print ui_data

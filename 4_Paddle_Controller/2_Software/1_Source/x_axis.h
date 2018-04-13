@@ -37,12 +37,14 @@
 
 // Position control constants
 #define X_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
-#define X_AXIS_LIMIT_2_ENC_TICKS 4250	// Limit switch 2 position in encoder ticks
+#define X_AXIS_LIMIT_1_MM 85
+#define X_AXIS_LIMIT_2_ENC_TICKS 3270	// Limit switch 2 position in encoder ticks minus 500 encoder ticks (width of paddle)
 #define X_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
+#define PUCK_RADIUS_MM 40
 #define X_AXIS_POS_GAIN_P 10
 #define X_AXIS_ENC_TICKS_PER_REV 374
 #define X_AXIS_MM_PER_REV 60
-#define X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1000	// If encoder period is greater than this for more than xx milliseconds, motor is blocked/overloaded
+#define X_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S 5		// If linaer speed is less than this for more than xx milliseconds, motor is blocked/overloaded
 #define X_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 
 // Limit switch port setup and macros
@@ -61,7 +63,9 @@ void x_axis_home(void);
 void x_axis_position_ctrl(void);
 void x_axis_send_status_can(void);
 void x_axis_dcm_overload_check(void);
-static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
+void x_axis_calculate_speed(void);
+//static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
+void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty);
 
 // Enumerated data types
 typedef enum {

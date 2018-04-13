@@ -49,8 +49,8 @@ typedef struct dcm_t {
 	unsigned char enc_a_edge_2_tcnt_overflow;	// Value of TCNT overflow counter at second rising edge
 	unsigned char enc_a_edge_tracker;			// 0 = first rising edge, 1 = second rising edge
 
-	unsigned long period_tcnt_ticks;			// Encoder period in TCNT ticks
-	unsigned int speed_mm_s;					// Linear speed in mm/s
+	unsigned int speed_enc_ticks_per_s;			// Rotational speed in encoder ticks per second
+	unsigned int speed_mm_per_s;				// Linear speed in millimetres per second
 	dcm_limit_switch_e limit_switch_1;			// Limit switch 1 state
 	dcm_limit_switch_e limit_switch_2;			// Limit switch 2 state
 	dcm_ctrl_mode_e ctrl_mode;					// Motor control mode

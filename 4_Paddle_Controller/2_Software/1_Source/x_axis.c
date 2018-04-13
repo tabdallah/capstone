@@ -17,6 +17,8 @@ static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
 static can_msg_pc_status_t can_msg_pc_status;
 
+unsigned int encoder_ticks = 0;
+
 //;**************************************************************
 //;*                 x_axis_configure(void)
 //;*	Configure H-Bridge direction control port pins.
@@ -71,7 +73,7 @@ void x_axis_home(void)
 	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
 
 	// Set target to center of table
-	x_axis.position_cmd_enc_ticks = ( (X_AXIS_LIMIT_2_ENC_TICKS - X_AXIS_LIMIT_1_ENC_TICKS) / 2);
+	x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS / 2;
 
 	// Return control to position/velocity controllers
 	x_axis.ctrl_mode = ctrl_mode;
@@ -167,13 +169,9 @@ void x_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
-		if (x_axis.position_enc_ticks < X_AXIS_BOUNDARY_ENC_TICKS) {
-			pos_x_calc = 0;
-		} else {
-			pos_x_calc = (x_axis.position_enc_ticks - X_AXIS_BOUNDARY_ENC_TICKS) * 10;
-		}
+		pos_x_calc = x_axis.position_enc_ticks * 10;
 		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
-		can_msg_pc_status.pos_x_mm = 0xFFFF & ((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10);
+		can_msg_pc_status.pos_x_mm = 0xFFFF & (((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10) + PUCK_RADIUS_MM + X_AXIS_LIMIT_1_MM);
 
 		// This seems sloppy, fix this later.
 		data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
@@ -225,9 +223,8 @@ void x_axis_dcm_overload_check(void)
 		return;
 	}
 
-	// Check for overload condition
-	if (x_axis.period_tcnt_ticks > X_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS) {
-		strike_counter ++;
+	if (x_axis.speed_mm_per_s < X_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S) {
+		//strike_counter ++;
 	} else {
 		strike_counter = 0;
 	}
@@ -241,10 +238,37 @@ void x_axis_dcm_overload_check(void)
 }
 
 //;**************************************************************
+//;*                 x_axis_calculate_speed(void)
+//;*	Calculate speed in mm per second
+//;**************************************************************
+void x_axis_calculate_speed(void)
+{
+	static unsigned int position_enc_ticks_old = 0; 
+	static unsigned char count = 1;
+	unsigned long speed_x_calc;
+
+	// Only calculate speed every 10 ms to get better accuracy
+	if ((count % 10) == 0) {
+		x_axis.speed_enc_ticks_per_s = 100 * abs(x_axis.position_enc_ticks - position_enc_ticks_old);
+		speed_x_calc = x_axis.speed_enc_ticks_per_s * X_AXIS_MM_PER_REV;
+		x_axis.speed_mm_per_s = 0xFFFF & ((speed_x_calc / X_AXIS_ENC_TICKS_PER_REV));
+		position_enc_ticks_old = x_axis.position_enc_ticks;
+	}
+
+	// Limit counter to max value of 10
+	if (count == 10) {
+		count = 1;
+	} else {
+		count ++;
+	}
+}
+
+//;**************************************************************
 //;*                 x_axis_set_dcm_drive(void)
 //;*	Helper function to set DC motor direction and speed
 //;**************************************************************
-static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+//static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
 {
 	switch (direction)
 	{
@@ -283,37 +307,19 @@ interrupt 8 void x_axis_encoder_a(void)
 	// Track direction
 	if (X_AXIS_ENC_PORT & X_AXIS_ENC_B) {
 		// Phase B leads Phase A
-		x_axis.quadrature_direction = dcm_quad_dir_reverse;				
-	} else {
-		// Phase A leads Phase B
-		x_axis.quadrature_direction = dcm_quad_dir_forward;
-	}
-
-	// Track position by encoder ticks
-	if (x_axis.quadrature_direction == dcm_quad_dir_forward) {
-		if (x_axis.position_enc_ticks < MAX_UINT) {
-			x_axis.position_enc_ticks ++;
-		}
-	} else {
+		x_axis.quadrature_direction = dcm_quad_dir_reverse;
 		if (x_axis.position_enc_ticks > 0) {
 			x_axis.position_enc_ticks --;
 		}
+	} else {
+		// Phase A leads Phase B
+		x_axis.quadrature_direction = dcm_quad_dir_forward;
+		if (x_axis.position_enc_ticks < MAX_UINT) {
+			x_axis.position_enc_ticks ++;
+		}
 	}
 
-	// Calculate Encoder A period for speed measurements
-	if (x_axis.enc_a_edge_tracker == 0) {
-		x_axis.enc_a_edge_1_tcnt_ticks = X_AXIS_ENC_A_TIMER;
-		x_axis.enc_a_edge_1_tcnt_overflow = timer_get_overflow();
-		x_axis.enc_a_edge_tracker = 1;
-	} else {
-		x_axis.enc_a_edge_2_tcnt_ticks = X_AXIS_ENC_A_TIMER;
-		x_axis.enc_a_edge_2_tcnt_overflow = timer_get_overflow();
-		x_axis.enc_a_edge_tracker = 0;
-		x_axis.period_tcnt_ticks = (x_axis.enc_a_edge_2_tcnt_ticks
-		+ (x_axis.enc_a_edge_2_tcnt_overflow * TNCT_OVF_FACTOR))
-		- (x_axis.enc_a_edge_1_tcnt_ticks
-		+ (x_axis.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
-	}
+	(void) X_AXIS_ENC_A_TIMER;
 }
 
 //;**************************************************************
@@ -345,9 +351,14 @@ interrupt 38 void can_rx_handler(void) {
 	}
 
 	// Set motor position command in encoder ticks
-	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_x_mm * 10) / X_AXIS_MM_PER_REV;
-	pos_cmd_calculation = (pos_cmd_calculation * X_AXIS_ENC_TICKS_PER_REV) / 10;
-	x_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + X_AXIS_LIMIT_1_ENC_TICKS);
+	if (can_msg_mc_cmd_pc.pos_cmd_x_mm > (X_AXIS_LIMIT_1_MM + PUCK_RADIUS_MM)) {
+		pos_cmd_calculation = can_msg_mc_cmd_pc.pos_cmd_x_mm - X_AXIS_LIMIT_1_MM - PUCK_RADIUS_MM;
+	} else {
+		pos_cmd_calculation = 0;
+	}
+	pos_cmd_calculation = pos_cmd_calculation * X_AXIS_ENC_TICKS_PER_REV;
+	pos_cmd_calculation = pos_cmd_calculation / X_AXIS_MM_PER_REV;
+	x_axis.position_cmd_enc_ticks = 0xFFFF & pos_cmd_calculation;
 
 	// Clear Rx flag
 	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);

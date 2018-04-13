@@ -302,10 +302,10 @@ void y_axis_dcm_overload_check(void)
 	}
 
 	// Check for overload condition
-	if (y_axis_l.period_tcnt_ticks > Y_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS) {
-		strike_counter ++;
-	} else if (y_axis_r.period_tcnt_ticks > Y_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS) {
-		strike_counter ++;
+	if (y_axis_l.speed_mm_per_s < Y_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S) {
+		//strike_counter ++;
+	//} else if (y_axis_r.period_tcnt_ticks > Y_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS) {
+	//	strike_counter ++;
 	} else {
 		strike_counter = 0;
 	}
@@ -316,6 +316,32 @@ void y_axis_dcm_overload_check(void)
 		y_axis_l.ctrl_mode = dcm_ctrl_mode_disable;
 		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
 		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_MIN);
+	}
+}
+
+//;**************************************************************
+//;*                 y_axis_calculate_speed(void)
+//;*	Calculate speed in mm per second
+//;**************************************************************
+void y_axis_calculate_speed(void)
+{
+	static unsigned int position_enc_ticks_old = 0; 
+	static unsigned char count = 1;
+	unsigned long speed_y_calc;
+
+	// Only calculate speed every 10 ms to get better accuracy
+	if ((count % 10) == 0) {
+		y_axis_l.speed_enc_ticks_per_s = 100 * abs(y_axis_l.position_enc_ticks - position_enc_ticks_old);
+		speed_y_calc = y_axis_l.speed_enc_ticks_per_s * Y_AXIS_MM_PER_REV;
+		y_axis_l.speed_mm_per_s = 0xFFFF & ((speed_y_calc / Y_AXIS_ENC_TICKS_PER_REV));
+		position_enc_ticks_old = y_axis_l.position_enc_ticks;
+	}
+
+	// Limit counter to max value of 10
+	if (count == 10) {
+		count = 1;
+	} else {
+		count ++;
 	}
 }
 
@@ -407,21 +433,6 @@ interrupt 8 void y_axis_l_encoder_b(void)
 			y_axis_l.position_enc_ticks --;
 		}
 	}
-
-	// Calculate Encoder A period for speed measurements
-	if (y_axis_l.enc_a_edge_tracker == 0) {
-		y_axis_l.enc_a_edge_1_tcnt_ticks = Y_AXIS_L_ENC_B_TIMER;
-		y_axis_l.enc_a_edge_1_tcnt_overflow = timer_get_overflow();
-		y_axis_l.enc_a_edge_tracker = 1;
-	} else {
-		y_axis_l.enc_a_edge_2_tcnt_ticks = Y_AXIS_L_ENC_B_TIMER;
-		y_axis_l.enc_a_edge_2_tcnt_overflow = timer_get_overflow();
-		y_axis_l.enc_a_edge_tracker = 0;
-		y_axis_l.period_tcnt_ticks = (y_axis_l.enc_a_edge_2_tcnt_ticks
-		+ (y_axis_l.enc_a_edge_2_tcnt_overflow * TNCT_OVF_FACTOR))
-		- (y_axis_l.enc_a_edge_1_tcnt_ticks
-		+ (y_axis_l.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
-	}
 	
 	(void) Y_AXIS_L_ENC_B_TIMER;
 }
@@ -445,21 +456,6 @@ interrupt 9 void y_axis_r_encoder_b(void)
 		if (y_axis_r.position_enc_ticks < MAX_UINT) {
 			y_axis_r.position_enc_ticks ++;
 		}
-	}
-
-	// Calculate Encoder A period for speed measurements
-	if (y_axis_r.enc_a_edge_tracker == 0) {
-		y_axis_r.enc_a_edge_1_tcnt_ticks = Y_AXIS_R_ENC_B_TIMER;
-		y_axis_r.enc_a_edge_1_tcnt_overflow = timer_get_overflow();
-		y_axis_r.enc_a_edge_tracker = 1;
-	} else {
-		y_axis_r.enc_a_edge_2_tcnt_ticks = Y_AXIS_R_ENC_B_TIMER;
-		y_axis_r.enc_a_edge_2_tcnt_overflow = timer_get_overflow();
-		y_axis_r.enc_a_edge_tracker = 0;
-		y_axis_r.period_tcnt_ticks = (y_axis_r.enc_a_edge_2_tcnt_ticks
-		+ (y_axis_r.enc_a_edge_2_tcnt_overflow * TNCT_OVF_FACTOR))
-		- (y_axis_r.enc_a_edge_1_tcnt_ticks
-		+ (y_axis_r.enc_a_edge_1_tcnt_overflow * TNCT_OVF_FACTOR));
 	}
 
 	(void) Y_AXIS_R_ENC_B_TIMER;

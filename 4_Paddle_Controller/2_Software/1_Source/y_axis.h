@@ -60,7 +60,7 @@
 #define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 200		// Shut down system if left vs right motor position differs by more than this
 #define Y_AXIS_ENC_TICKS_PER_REV 374
 #define Y_AXIS_MM_PER_REV 60
-#define Y_AXIS_DCM_OVERLOAD_LIMIT_TCNT_TICKS 1500	// If encoder period is greater than this for more than xx milliseconds, motor is blocked/overloaded
+#define Y_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S 5		// If linear speed is less than this for more than xx milliseconds, motor is blocked/overloaded
 #define Y_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 
 // Limit switch port setup and macros
@@ -85,6 +85,7 @@ void y_axis_home(void);
 void y_axis_position_ctrl(void);
 void y_axis_send_status_can(void);
 void y_axis_dcm_overload_check(void);
+void y_axis_calculate_speed(void);
 static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty);
 static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int pwm_duty);
 

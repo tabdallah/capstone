@@ -38,12 +38,12 @@
 // Position control constants
 #define X_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
 #define X_AXIS_LIMIT_1_MM 85
-#define X_AXIS_LIMIT_2_ENC_TICKS 3270	// Limit switch 2 position in encoder ticks minus 500 encoder ticks (width of paddle)
-#define X_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
+#define X_AXIS_LIMIT_2_ENC_TICKS 1650	// Limit switch 2 position in encoder ticks minus 500 encoder ticks (width of paddle)
+#define X_AXIS_BOUNDARY_ENC_TICKS 25	// Virtual limit to the available travel
 #define PUCK_RADIUS_MM 40
 #define X_AXIS_POS_GAIN_P 10
 #define X_AXIS_ENC_TICKS_PER_REV 374
-#define X_AXIS_MM_PER_REV 60
+#define X_AXIS_MM_PER_REV 120
 #define X_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S 5		// If linaer speed is less than this for more than xx milliseconds, motor is blocked/overloaded
 #define X_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 

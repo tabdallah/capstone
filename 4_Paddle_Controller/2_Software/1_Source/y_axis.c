@@ -128,23 +128,33 @@ void y_axis_position_ctrl(void)
 	y_axis_r.limit_switch_1 = Y_AXIS_R_LIMIT_1;
 	y_axis_r.limit_switch_2 = Y_AXIS_R_LIMIT_2;
 	if (y_axis_l.limit_switch_1 == dcm_limit_switch_pressed) {
+		DisableInterrupts();	// Start critical region
 		y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 	if (y_axis_l.limit_switch_2 == dcm_limit_switch_pressed) {
+		DisableInterrupts();	// Start critical region
 		y_axis_l.position_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 	if (y_axis_r.limit_switch_1 == dcm_limit_switch_unpressed) {
+		DisableInterrupts();	// Start critical region
 		y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_1_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 	if (y_axis_r.limit_switch_2 == dcm_limit_switch_unpressed) {
+		DisableInterrupts();	// Start critical region
 		y_axis_r.position_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 
 	// Always force right (slave) position command to match left (master) position command
 	y_axis_r.position_cmd_enc_ticks = y_axis_l.position_cmd_enc_ticks;
 
 	// Throw error and stop if left and right motor positions diverge
+	DisableInterrupts();	// Start critical region
 	y_axis_lr_position_error_enc_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
+	EnableInterrupts();	// End critical region
 	if ((y_axis_lr_position_error_enc_ticks >= Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS) ||
 		(y_axis_lr_position_error_enc_ticks <= -Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS)) {
 		if (y_axis_error == y_axis_error_none) {
@@ -156,7 +166,9 @@ void y_axis_position_ctrl(void)
 	}
 
 	// Calculate error for left motor (master)
+	DisableInterrupts();	// Start critical region
 	y_axis_l.position_error_ticks = y_axis_l.position_cmd_enc_ticks - y_axis_l.position_enc_ticks;
+	EnableInterrupts();	// End critical region
 	error_l_p = abs(y_axis_l.position_error_ticks) * Y_AXIS_L_POS_GAIN_P;
 	
 	// Drive left motor to desired position
@@ -190,7 +202,9 @@ void y_axis_position_ctrl(void)
 	}
 
 	// Calculate position error for right motor (slave)
+	DisableInterrupts();	// Start critical region
 	y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
+	EnableInterrupts();	// End critical region
 	error_r_p = abs(y_axis_r.position_error_ticks) * Y_AXIS_R_POS_GAIN_P;
 	pwm_calc_r = MIN(Y_AXIS_PWM_DUTY_MAX, error_r_p);
 
@@ -243,11 +257,13 @@ void y_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
+		DisableInterrupts();	// Start critical region
 		if (y_axis_l.position_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
 			pos_y_calc = 0;
 		} else {
 			pos_y_calc = (y_axis_l.position_enc_ticks - Y_AXIS_LIMIT_1_ENC_TICKS) * 10;
 		}
+		EnableInterrupts();	// End critical region
 		pos_y_calc = pos_y_calc * Y_AXIS_MM_PER_REV;
 		can_msg_pc_status.pos_y_mm = 0xFFFF & ((pos_y_calc / Y_AXIS_ENC_TICKS_PER_REV) / 10);
 

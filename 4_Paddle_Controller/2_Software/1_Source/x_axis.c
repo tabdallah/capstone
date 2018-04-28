@@ -105,14 +105,20 @@ void x_axis_position_ctrl(void)
 	x_axis.limit_switch_1 = X_AXIS_LIMIT_1;
 	x_axis.limit_switch_2 = X_AXIS_LIMIT_2;
 	if (x_axis.limit_switch_1 == dcm_limit_switch_pressed) {
+		DisableInterrupts();	// Start critical region
 		x_axis.position_enc_ticks = X_AXIS_LIMIT_1_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 	if (x_axis.limit_switch_2 == dcm_limit_switch_pressed) {
+		DisableInterrupts();	// Start critical region
 		x_axis.position_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS;
+		EnableInterrupts();	// End critical region
 	}
 
 	// Calculate position error
+	DisableInterrupts();	// Start critical region
 	x_axis.position_error_ticks = x_axis.position_cmd_enc_ticks - x_axis.position_enc_ticks;
+	EnableInterrupts();	// End critical region
 	error_p = abs(x_axis.position_error_ticks) * X_AXIS_POS_GAIN_P;
 
 	// Stop if at desired position
@@ -169,7 +175,9 @@ void x_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
+		DisableInterrupts();	// Start critical region
 		pos_x_calc = x_axis.position_enc_ticks * 10;
+		EnableInterrupts();	// End critical region
 		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
 		can_msg_pc_status.pos_x_mm = 0xFFFF & (((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10) + PUCK_RADIUS_MM + X_AXIS_LIMIT_1_MM);
 

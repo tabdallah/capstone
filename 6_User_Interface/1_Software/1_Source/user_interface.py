@@ -39,37 +39,40 @@ class ManualControlScreen(Widget):
         except Queue.Full:
             print "Queue Full?"
 
-class UserInterfaceApp(App):
-    def __init__(self, dataToUI, dataFromUI, **kwargs):
-        super(UserInterfaceApp, self).__init__(**kwargs)
-        self.dataToUI = dataToUI
-        self.dataFromUI = dataFromUI
+class user_interface_app(App):
+    def __init__(self, ui_rx, ui_tx, **kwargs):
+        super(user_interface_app, self).__init__(**kwargs)
+        self.ui_rx = ui_rx
+        self.ui_tx = ui_tx
     
     def build(self):
-        mainWidget = ManualControlScreen(self.dataToUI, self.dataFromUI)
+        mainWidget = ManualControlScreen(self.ui_rx, self.ui_tx)
         return mainWidget
 
-def ui_process(dataToUI, dataFromUI):
+def ui_process(ui_rx, ui_tx):
     """All things user interface happen here. Communicates directly with master controller"""
-    uiState = "Idle" 
+    ui_state = "idle" 
 
     while True:
         # retrieve commands from master controller
         try:
-            mcCmd = dataToUI.get(False)
+            mc_data = ui_rx.get(False)
+            mc_data = mc_data.split(":")
+            if mc_data[0] == "ui_state_cmd":
+                mc_cmd = mc_data[1]
+
         except Queue.Empty:
-            mcCmd = "Idle"
+            mc_cmd = "idle"
             
-        # set state of user interface to that commanded by mc    
-        if mcCmd == "RunUI":
-            uiDesiredState = "RunUI"
+        # set desired state of the user interface to that commanded by mc    
+        if mc_cmd == "run_ui":
+            ui_desired_state = "run_ui"
         else:
-            uiDesiredState = "Idle"
-    
+            ui_desired_state = "idle"
+
         # do the required setup to enter state requested by mc
-        if uiDesiredState == "RunUI" and uiState != "RunUI":
-            uiState = "RunUI"
-            uiDesiredState = "Idle"
-            app = UserInterfaceApp(dataToUI, dataFromUI)
-            app.run()
+        if ui_desired_state == "run_ui" and ui_state != "run_ui":
+            ui_state = "run_ui"
+            ui_desired_state = "idle"
+            user_interface_app(ui_rx, ui_tx).run()
             sys.exit(1)

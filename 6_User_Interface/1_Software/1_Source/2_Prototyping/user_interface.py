@@ -1,5 +1,7 @@
 import Queue
 import sys
+import time
+import cv2
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
@@ -15,6 +17,7 @@ from kivy.uix.label import Label
 from kivy.graphics import BorderImage
 from kivy.properties import ObjectProperty
 from kivy.uix.scatter import Scatter
+from kivy.graphics.texture import Texture
 from time import sleep
 from kivy.config import Config
 
@@ -31,6 +34,25 @@ class Paddle(Scatter):
         super(Paddle, self).__init__(**kwargs)
         self.paddle_image = Image(source='paddle.png', pos=self.pos)
         self.add_widget(self.paddle_image)
+
+class VisualizationData(Image):
+    def __init__(self, **kwargs):
+        super(VisualizationData, self).__init__(**kwargs)
+        Clock.schedule_interval(self.updateData, 0)
+
+    def updateData(self, *args):
+        print time.time()
+        try:
+            frame = self.parent.parent.parent.manager.visualization_data.get(False)
+        except Queue.Empty:
+            pass
+        else:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_flipped = cv2.flip(frame_rgb, 0)
+            frame_string = frame_flipped.tostring()
+            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+            image_texture.blit_buffer(frame_string, colorfmt='rgb', bufferfmt='ubyte')
+            self.texture = image_texture
 
 
 class SettingsScreen(BoxLayout, Screen):
@@ -70,7 +92,7 @@ class ManualControl(Widget):
 
         with self.canvas.before:
             BorderImage(source='hockeySurface.png',pos=self.pos,size=self.size)
-        Clock.schedule_interval(self.update_screen, 0)
+        #Clock.schedule_interval(self.update_screen, 0)
 
     def update_screen(self, *args):
         sleep(0.1)
@@ -122,7 +144,7 @@ class MainScreen(BoxLayout, Screen):
         self.menu = BoxLayout(orientation='vertical',size_hint=(0.2,1))
         self.visualization_and_menu.add_widget(self.visualization)
         self.visualization_and_menu.add_widget(self.menu)
-        self.visualization.add_widget(Label(name='TBD',text='TBD',font_size=40))
+        self.visualization.add_widget(VisualizationData())
         self.settings_button = Button(text="Settings",on_release=self.go_settings)
         self.menu.add_widget(self.settings_button)
         self.menu.add_widget(Button(text="Manual",on_release=self.go_manual))
@@ -146,10 +168,11 @@ class MainScreen(BoxLayout, Screen):
         App.get_running_app().stop()
 
 class ScreenManagement(ScreenManager):
-    def __init__(self, ui_rx, ui_tx, **kwargs):
+    def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
+        self.visualization_data = visualization_data
         self.transition = FadeTransition()
         self.add_widget(IntroScreen(name='intro'))
         self.add_widget(MainScreen(name='main',orientation='vertical'))
@@ -157,15 +180,16 @@ class ScreenManagement(ScreenManager):
         self.add_widget(ManualScreen(name='manual',orientation='vertical'))
 
 class UserInterfaceApp(App):
-    def __init__(self, ui_rx, ui_tx, **kwargs):
+    def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(UserInterfaceApp, self).__init__(**kwargs)
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
+        self.visualization_data = visualization_data
 
     def build(self):
-        return ScreenManagement(self.ui_rx, self.ui_tx, name='manager') #Builder.load_file("user_interface_kivy.kv")
+        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager') #Builder.load_file("user_interface_kivy.kv")
 
-def ui_process(ui_rx, ui_tx):
+def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
 
     ui_state = "idle" 
@@ -191,5 +215,5 @@ def ui_process(ui_rx, ui_tx):
         if ui_desired_state == "run_ui" and ui_state != "run_ui":
             ui_state = "run_ui"
             ui_desired_state = "idle"
-            UserInterfaceApp(ui_rx, ui_tx).run()
+            UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
             sys.exit(1)

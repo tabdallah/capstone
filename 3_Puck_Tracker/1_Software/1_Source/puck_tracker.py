@@ -1,5 +1,6 @@
 # import necessary modules
 import cv2
+import sys
 import numpy as np
 import Queue
 import json
@@ -237,7 +238,7 @@ def find_fiducials(frame, fiducial_lower_hsv, fiducial_upper_hsv):
 
 
 """----------------------------Puck Tracker Process--------------------------"""
-def pt_process(pt_rx, pt_tx):
+def pt_process(pt_rx, pt_tx, visualization_data):
     """All things puck tracker happen here. Communicates directly with master controller"""
     global camera_horizontal_resolution
     global camera_vertical_resolution
@@ -272,8 +273,11 @@ def pt_process(pt_rx, pt_tx):
             pt_desired_state = "calibrate"
         elif mc_cmd == "track":
             pt_desired_state = "track"
+        elif mc_cmd == "quit":
+            pt_desired_state = "quit"
         else:
             pt_desired_state = "idle"
+
     
         # do the required setup to enter state requested by mc
         if pt_desired_state == "calibrate" and pt_state != "calibrate":
@@ -291,6 +295,10 @@ def pt_process(pt_rx, pt_tx):
             mm_per_pixel_x, mm_per_pixel_y = get_mm_per_pixel_factors(fiducial_coordinates)
             perspective_transform_matrix, max_width, max_height = get_perspective_transform_matrix(fiducial_coordinates)
             
+        elif pt_desired_state == "quit" and pt_state != "quit":
+            pt_desired_state = "idle"
+            pt_state = "quit"
+              
         else:
             pass
             # stay in current state
@@ -313,7 +321,7 @@ def pt_process(pt_rx, pt_tx):
             if ret == False:
                 pt_tx.put("pt_error:camera")
 
-            frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_width, max_height), cv2.INTER_NEAREST)
+            frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_width, max_height), cv2.INTER_LINEAR)
             frame, puck_position_mm_xy = get_puck_position(frame_warped, puck_hsv[0], puck_hsv[1], mm_per_pixel_x, mm_per_pixel_y)
             puck_velocity_mmps_xy = get_puck_velocity(puck_position_mm_xy)
 
@@ -323,11 +331,23 @@ def pt_process(pt_rx, pt_tx):
             except Queue.Empty:
                 pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
 
-            cv2.imshow('Table', frame)
+            #cv2.imshow('Table', frame)
+            #frame = cv2.resize(frame, None, fx = 1.2, fy = 1.2, interpolation = cv2.INTER_LINEAR)
+            
+            try:
+                visualization_data.get_nowait()
+                visualization_data.put(frame)
+            except Queue.Empty:
+                visualization_data.put(frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-    
+
+        elif pt_state == "quit":
+            video_stream.release() 
+            cv2.destroyAllWindows()
+            sys.exit(1)
+
     # When everything done, release the capture
     video_stream.release()
     cv2.destroyAllWindows()

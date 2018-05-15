@@ -430,12 +430,13 @@ if __debug__:
 		data_from_ui = multiprocessing.Queue()
 		data_to_pt = multiprocessing.Queue()
 		data_from_pt = multiprocessing.Queue(1)
+		data_visualization = multiprocessing.Queue()
 		logging.debug("Created IPC queues")
 
 		# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
-		ui_process = multiprocessing.Process(target=ui.ui_process, name="ui", args=(data_to_ui, data_from_ui))
+		ui_process = multiprocessing.Process(target=ui.ui_process, name="ui", args=(data_to_ui, data_from_ui, data_visualization))
 		logging.debug("Created UI process with a queue")
-		pt_process = multiprocessing.Process(target=pt.pt_process, name="pt", args=(data_to_pt, data_from_pt))
+		pt_process = multiprocessing.Process(target=pt.pt_process, name="pt", args=(data_to_pt, data_from_pt, data_visualization))
 		logging.debug("Created Puck Tracker process with a queue")
 
 		# start child processes
@@ -445,8 +446,8 @@ if __debug__:
 		logging.debug("Started Puck Tracker process")
 
 		#data_to_pt.put("pt_state_cmd:calibrate")
+		data_to_ui.put("ui_state_cmd:run_ui")
 		data_to_pt.put("pt_state_cmd:track")
-		#data_to_ui.put("ui_state_cmd:run_ui")
 
 ## end of method
 
@@ -520,12 +521,8 @@ if __debug__:
 			ui_data = data_from_ui.get(False)
 			logging.debug(str(ui_data))
 
-			# parse data
-			ui_data = ui_data.split(":")
-			if ui_data[0] == "paddle_position_mm_x":
-				mc_pos_cmd_x_mm = int(ui_data[1])
-			elif ui_data[0] == "paddle_position_mm_y":
-				mc_pos_cmd_y_mm = int(ui_data[1])
+			if ui_data == "quit":
+				data_to_pt.put("pt_state_cmd:quit")
 
 		except Queue.Empty:
 			ui_data = 0

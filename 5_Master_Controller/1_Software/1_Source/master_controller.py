@@ -254,7 +254,6 @@ def Tx_PC_Cmd(device):
 		logging.error("Error transmitting CAN message")
 		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit()
 
 ## end of method
 
@@ -470,8 +469,6 @@ if __debug__:
 		data_to_pt.close()
 		data_from_pt.close()
 		logging.debug("Closed IPC queues")
-
-		time.sleep(0.5)
 
 		# terminate seperate processes for the UI and Puck Tracker 
 		ui_process.terminate()
@@ -696,12 +693,12 @@ def main():
 			# UI manual control mode (enable jitter filter)
 			elif operation_mode == 1:
 				filter_Tx_PC_Cmd()
-			Tx_PC_Cmd(PCAN)
-			add_pos_sent_HDF5(str(datetime.datetime.now()))
+			#Tx_PC_Cmd(PCAN)
+			#add_pos_sent_HDF5(str(datetime.datetime.now()))
 			#update_display()
-			Rx_CAN(PCAN)
-			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
-			update_dset_HDF5()
+			#Rx_CAN(PCAN)
+			#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+			#update_dset_HDF5()
 			sleep(timeout)
 
 	# Keyboard control of the position
@@ -736,7 +733,7 @@ try:
 except KeyboardInterrupt:
 	print " "
 	Close_HDF5()
-	Uninit_PCAN(PCAN)
+	#Uninit_PCAN(PCAN)
 	Uninit_IPC()
 
 

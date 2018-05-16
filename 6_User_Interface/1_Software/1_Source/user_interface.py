@@ -7,6 +7,7 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
 from kivy.clock import Clock
@@ -14,12 +15,13 @@ from kivy.core.audio import SoundLoader
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
-from kivy.graphics import BorderImage
+from kivy.graphics import BorderImage, Rectangle, Color
 from kivy.properties import ObjectProperty
 from kivy.uix.scatter import Scatter
 from kivy.graphics.texture import Texture
 from time import sleep
 from kivy.config import Config
+from kivy.uix.popup import Popup
 
 Config.set('graphics','width','1024')
 Config.set('graphics','height','600')
@@ -62,6 +64,8 @@ class SettingsScreen(BoxLayout, Screen):
         super(SettingsScreen, self).__init__(**kwargs)
         self.orientation = 'vertical'
 
+        self.game_length = 10
+        self.game_difficulty = 'medium'
         self.returnMenuBtn = Button(text='Home', on_release=self.change,size_hint=(1,0.1))
         self.add_widget(self.returnMenuBtn)        
         self.game_mode = BoxLayout(orientation='horizontal', size_hint=(1,0.1))
@@ -72,7 +76,7 @@ class SettingsScreen(BoxLayout, Screen):
         self.add_widget(self.game_mode)
     
     def change(self, *args):
-        self.manager.current = 'main'
+        self.manager.current = 'menu'
 
 class IntroScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
@@ -84,16 +88,18 @@ class IntroScreen(BoxLayout, Screen):
         Clock.schedule_once(self.end_intro, 1)
 
     def end_intro(self, *args):
-        self.manager.current = 'main'
+        self.manager.get_screen('visual').get_settings()
+        self.manager.current = 'menu'
 
-class ManualControl(Widget):
+"""class ManualControl(Widget):
     def __init__(self, **kwargs):
         super(ManualControl, self).__init__(**kwargs)
-        self.paddle_object = Paddle(center=self.center)
+        self.paddle_object = Paddle()
         self.add_widget(self.paddle_object)
 
-        with self.canvas.before:
-            BorderImage(source=(images_path + 'hockeySurface.png'),pos=self.pos,size=self.size)
+        #with self.canvas:
+        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
+            #BorderImage(source=(images_path + 'hockeySurface.png'), size_hint=(1,0.9))
         #Clock.schedule_interval(self.update_screen, 0)
 
     def update_screen(self, *args):
@@ -108,22 +114,26 @@ class ManualControl(Widget):
             except Queue.Full:
               print "Queue Full?"
         else:
-            pass
+            pass"""
 
-class ManualScreen(BoxLayout, Screen):
+class ManualScreen(Screen, FloatLayout):
     def __init__(self, **kwargs):
         super(ManualScreen, self).__init__(**kwargs)
-        paddle_widget = ManualControl()
-        self.return_btn = Button(text='Home', on_release=self.change,size_hint=(1,0.1))
-        self.add_widget(self.return_btn)  
-        self.add_widget(paddle_widget)     
 
-    def change(self, *args):
-        self.manager.current = 'main'
+        #with self.canvas.before:
+        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
 
-class MainScreen(BoxLayout, Screen):
+        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
+        
+        #self.paddle_object = Paddle(size=(100,100))
+        #self.add_widget(self.paddle_object)
+
+    def go_menu(self, *args):
+        self.manager.current = 'menu'
+
+class VisualScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
-        super(MainScreen, self).__init__(**kwargs)
+        super(VisualScreen, self).__init__(**kwargs)
 
         # scoreboard stuff
         self.scoreboard = BoxLayout(orientation='horizontal',size_hint=(1,0.2),color=(255,0,0))
@@ -135,7 +145,8 @@ class MainScreen(BoxLayout, Screen):
         self.scoreboard.add_widget(self.human)
         self.robot.add_widget(Label(name='name',text='roboMan',font_size=20))
         self.robot.add_widget(Label(name='score',text='0',font_size=40))
-        self.game_clock.add_widget(Label(name='game_clock',text='00:00',font_size=40))
+        self.clock_label = Label(name='game_clock',text='00:00',font_size=60)
+        self.game_clock.add_widget(self.clock_label)
         self.human.add_widget(Label(name='name',text='someGuy',font_size=20))
         self.human.add_widget(Label(name='score',text='0',font_size=40))
         self.add_widget(self.scoreboard)
@@ -147,27 +158,123 @@ class MainScreen(BoxLayout, Screen):
         self.visualization_and_menu.add_widget(self.visualization)
         self.visualization_and_menu.add_widget(self.menu)
         self.visualization.add_widget(VisualizationData())
-        self.settings_button = Button(text="Settings",on_release=self.go_settings)
-        self.menu.add_widget(self.settings_button)
-        self.menu.add_widget(Button(text="Manual",on_release=self.go_manual))
-        self.menu.add_widget(Button(text="Diagnostics",on_release=self.go_diagnostics))
-        self.menu.add_widget(Button(text="Quit",on_release=self.go_quit))
+        self.start_reset_game_button = Button(text="Start Game", on_release=self.start_reset_game)
+        self.pause_resume_game_button = Button(text="Pause Game", on_release=self.pause_resume_game)
+        self.menu.add_widget(self.start_reset_game_button)
+        self.menu.add_widget(self.pause_resume_game_button)
+        self.menu.add_widget(Button(text="Main Menu",on_release=self.go_menu))
         self.add_widget(self.visualization_and_menu)
+        self.pause_resume_game_button.disabled = True
+
+    def get_settings(self, *args):
+        self.game_length = self.manager.get_screen('settings').game_length
+        self.game_difficulty = self.manager.get_screen('settings').game_difficulty
+        
+        # update 
+        mins, secs = divmod(self.game_length, 60)
+        self.clock_label.text = '{:02d}:{:02d}'.format(mins,secs)
+        self.clock_label.value = self.game_length
+
+    def decrement_clock(self, *args):
+        self.clock_label.value -= 1
+        mins, secs = divmod(self.clock_label.value, 60)
+        timeformat = '{:02d}:{:02d}'.format(mins,secs)
+        self.clock_label.text = timeformat
+
+        if self.clock_label.value == 0:
+            Clock.unschedule(self.decrement_clock)
+            self.pause_resume_game_button.disabled = True
+
+    def start_reset_game(self, *args):
+        if self.start_reset_game_button.text == "Start Game":
+            Clock.schedule_interval(self.decrement_clock, 1)
+            self.pause_resume_game_button.disabled = False
+            self.start_reset_game_button.text = "Reset Game"
+
+        elif self.start_reset_game_button.text == "Reset Game":
+            mins, secs = divmod(self.game_length, 60)
+            self.clock_label.text = '{:02d}:{:02d}'.format(mins,secs)
+            self.clock_label.value = self.game_length
+            self.pause_resume_game_button.text = "Pause Game"
+            self.pause_resume_game_button.disabled = True
+            Clock.unschedule(self.decrement_clock)
+            self.start_reset_game_button.text = "Start Game"
+
+    def pause_resume_game(self, *args):
+        if self.pause_resume_game_button.text == "Pause Game":
+            Clock.unschedule(self.decrement_clock)
+            self.pause_resume_game_button.text = "Resume Game"
+
+        elif self.pause_resume_game_button.text == "Resume Game":
+            Clock.schedule_interval(self.decrement_clock, 1)
+            self.pause_resume_game_button.text = "Pause Game"
+
+    def go_menu(self, *args):
+        self.manager.current = 'menu'
+
+class MenuScreen(BoxLayout, Screen):
+    def __init__(self, **kwargs):
+        super(MenuScreen, self).__init__(**kwargs)
+        with self.canvas.before:
+            Rectangle(source=(images_path + 'menu_background.jpg'), pos=self.pos, size=self.size)
+        self.menu_label = Label(name='main_menu', text='Main Menu', size_hint=(1,0.2), font_size=40)
+        #with self.menu_label.canvas:
+        #    Color(0,1,0,0.5)
+        #    Rectangle(pos=self.menu_label.pos, size=self.menu_label.size)
+        menu_button_font_size = 30
+        menu_button_background_color = (0,0,0,0.6)
+        self.add_widget(self.menu_label)
+        self.menu_box = BoxLayout(orientation='horizontal')
+        self.menu_col_1 = BoxLayout(orientation='vertical')
+        self.menu_col_2 = BoxLayout(orientation='vertical')
+        self.menu_col_3 = BoxLayout(orientation='vertical')
+        self.menu_box.add_widget(self.menu_col_1)
+        self.menu_box.add_widget(self.menu_col_2)
+        self.menu_box.add_widget(self.menu_col_3)
+        self.menu_col_1.add_widget(Button(text="Visual", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_visual))
+        self.menu_col_1.add_widget(Button(text="Settings", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_settings))
+        self.menu_col_2.add_widget(Button(text="Manual", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_manual))
+        self.menu_col_2.add_widget(Button(text="About", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_about))
+        self.menu_col_3.add_widget(Button(text="Diagnostics", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_diagnostics))
+        self.menu_col_3.add_widget(Button(text="Quit", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_quit))
+        self.add_widget(self.menu_box)
+
+    def go_visual(self, *args):
+        self.manager.current = 'visual'
 
     def go_settings(self, *args):
         self.manager.current = 'settings'
-        self.manager.ui_tx.put("settingsRequest")
 
     def go_manual(self, *args):
         self.manager.current = 'manual'
-        self.manager.ui_tx.put("manualRequest")
+
+    def go_about(self, *args):
+        self.manager.current = 'about'
 
     def go_diagnostics(self, *args):
-        self.manager.ui_tx.put("diagnosticsRequest")
-
+        self.manager.current = 'diagnostics'
+    
     def go_quit(self, *args):
         self.manager.ui_tx.put("quit")
         App.get_running_app().stop()
+
+class AboutScreen(BoxLayout, Screen):
+    def __init__(self, **kwargs):
+        super(AboutScreen, self).__init__(**kwargs)
+        self.add_widget(Label(text='Blurb about us, the project, and what we accomplished'))
+        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
+
+    def go_menu(self, *args):
+        self.manager.current = 'menu'
+
+class DiagnosticsScreen(BoxLayout, Screen):
+    def __init__(self, **kwargs):
+        super(DiagnosticsScreen, self).__init__(**kwargs)
+        self.add_widget(Label(text='Relevant data'))
+        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
+
+    def go_menu(self, *args):
+        self.manager.current = 'menu'
 
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
@@ -177,9 +284,12 @@ class ScreenManagement(ScreenManager):
         self.visualization_data = visualization_data
         self.transition = FadeTransition()
         self.add_widget(IntroScreen(name='intro'))
-        self.add_widget(MainScreen(name='main',orientation='vertical'))
-        self.add_widget(SettingsScreen(name='settings'))
-        self.add_widget(ManualScreen(name='manual',orientation='vertical'))
+        self.add_widget(SettingsScreen(name='settings', orientation='vertical', size=self.size))
+        self.add_widget(MenuScreen(name='menu', orientation='vertical', size=self.size))
+        self.add_widget(VisualScreen(name='visual', orientation='vertical', size=self.size))
+        self.add_widget(ManualScreen(name='manual', size=self.size))
+        self.add_widget(AboutScreen(name='about', orientation='vertical', size=self.size))
+        self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
 
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
@@ -189,7 +299,7 @@ class UserInterfaceApp(App):
         self.visualization_data = visualization_data
 
     def build(self):
-        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager') #Builder.load_file("user_interface_kivy.kv")
+        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager', size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""

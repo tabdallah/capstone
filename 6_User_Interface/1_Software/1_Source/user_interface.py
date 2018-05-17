@@ -1,6 +1,7 @@
 import Queue
 import sys
 import time
+import json
 import cv2
 from kivy.app import App
 from kivy.lang import Builder
@@ -28,6 +29,7 @@ Config.set('graphics','height','600')
 
 images_path = "../../../6_User_Interface/1_Software/2_Images/"
 audio_path = "../../../6_User_Interface/1_Software/3_Audio/"
+settings_path = "../../../6_User_Interface/1_Software/4_Json/"
 
 # globals
 tableWidthMm = 660.4
@@ -62,21 +64,81 @@ class VisualizationData(Image):
 class SettingsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
-        self.orientation = 'vertical'
+       
+        # game difficulty setting
+        self.game_difficulty_layout = BoxLayout(orientation='horizontal')
+        self.game_difficulty_layout.add_widget(Label(text='Game Difficulty:'))
+        self.easy_button = ToggleButton(text='Easy', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
+        self.medium_button = ToggleButton(text='Medium', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
+        self.hard_button = ToggleButton(text='Hard', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
+        self.game_difficulty_layout.add_widget(self.easy_button)
+        self.game_difficulty_layout.add_widget(self.medium_button)
+        self.game_difficulty_layout.add_widget(self.hard_button)
 
-        self.game_length = 10
-        self.game_difficulty = 'medium'
-        self.returnMenuBtn = Button(text='Home', on_release=self.change,size_hint=(1,0.1))
-        self.add_widget(self.returnMenuBtn)        
-        self.game_mode = BoxLayout(orientation='horizontal', size_hint=(1,0.1))
-        self.game_mode.add_widget(Label(text='Game Difficulty:'))
-        self.game_mode.add_widget(ToggleButton(text='Easy',group='game_mode'))
-        self.game_mode.add_widget(ToggleButton(text='Medium',group='game_mode',state='down'))
-        self.game_mode.add_widget(ToggleButton(text='Hard',group='game_mode'))
-        self.add_widget(self.game_mode)
+        # game length setting
+        self.game_length_layout = BoxLayout(orientation='horizontal')
+        self.game_length_layout.add_widget(Label(text='Game Length:'))
+        self.one_min_button = ToggleButton(text='1:00', value=60, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
+        self.two_min_button = ToggleButton(text='2:00', value=120, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
+        self.five_min_button = ToggleButton(text='5:00', value=300, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
+        self.game_length_layout.add_widget(self.one_min_button)
+        self.game_length_layout.add_widget(self.two_min_button)
+        self.game_length_layout.add_widget(self.five_min_button)
+
+        self.add_widget(Button(text='Main Menu', on_release=self.go_menu, size_hint=(1,0.2))) 
+        self.add_widget(self.game_difficulty_layout)
+        self.add_widget(self.game_length_layout)
+
+        # load settings
+        with open((settings_path + 'settings.json'), 'r') as fp:
+            self.settings = json.load(fp)
+            fp.close()
+
+        self.game_difficulty = self.settings['user_interface']['game_difficulty']
+        self.game_length = self.settings['user_interface']['game_length']
+
+        if self.game_difficulty == "easy":
+            self.easy_button.state = 'down'
+        elif self.game_difficulty == "medium":
+            self.medium_button.state = 'down'
+        elif self.game_difficulty == "hard":
+            self.hard_button.state = 'down'
+
+        if self.game_length == 60:
+            self.one_min_button.state = 'down'
+        elif self.game_length == 120:
+            self.two_min_button.state = 'down'
+        elif self.game_length == 300:
+            self.five_min_button.state = 'down'
     
-    def change(self, *args):
+    def go_menu(self, *args):
         self.manager.current = 'menu'
+
+    def change_game_difficulty(self, *args):
+        if self.easy_button.state == 'down':
+            self.settings['user_interface']['game_difficulty'] = 'easy'
+        elif self.medium_button.state == 'down':
+            self.settings['user_interface']['game_difficulty'] = 'medium'
+        elif self.hard_button.state == 'down':
+            self.settings['user_interface']['game_difficulty'] = 'hard'
+
+    def change_game_length(self, *args):
+        if self.one_min_button.state == 'down':
+            self.settings['user_interface']['game_length'] = 60
+        elif self.two_min_button.state == 'down':
+            self.settings['user_interface']['game_length'] = 120
+        elif self.five_min_button.state == 'down':
+            self.settings['user_interface']['game_length'] = 300
+
+    def on_enter(self):
+        with open((settings_path + 'settings.json'), 'r') as fp:
+            self.settings = json.load(fp)
+            fp.close()
+
+    def on_leave(self):
+        with open((settings_path + 'settings.json'), 'w+') as fp:
+            json.dump(self.settings, fp, indent=4)
+            fp.close()
 
 class IntroScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):

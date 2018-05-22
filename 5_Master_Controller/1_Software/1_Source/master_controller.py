@@ -13,6 +13,7 @@ import logging
 import h5py
 import numpy as np
 import datetime
+import time
 
 # add file path for puck tracker and user interface modules
 sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')
@@ -497,7 +498,10 @@ if __debug__:
 
 		# get data from puck tracker
 		try:
+			start = time.time()
 			pt_data = data_from_pt.get(False)
+			end = time.time()
+			print "Time to Dequeue: ", (start-end)
 			logging.debug(str(pt_data))
 
 			# parse data
@@ -672,7 +676,7 @@ def main():
 						format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Initialize device
-	Init_PCAN(PCAN)
+	#Init_PCAN(PCAN)
 
 	# Create HDF5 file for logging PC position data
 	Create_HDF5()

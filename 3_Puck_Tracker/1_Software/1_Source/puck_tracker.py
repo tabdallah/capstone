@@ -256,6 +256,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx.put("pt_error:camera")
     
     pt_state = "idle"
+    calibration_attempts = 0
     
     while True:
         # retrieve commands from master controller
@@ -314,7 +315,20 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             
             if fiducials_found:
                 pt_state = "calibrated"
-            
+                calibration_attempts = 0
+            else:
+                calibration_attempts += 1
+
+            if calibration_attempts >= 5:
+                pt_state = "not_calibrated"
+                calibration_attempts = 0
+        
+        elif pt_state == "calibrated":
+            pass
+
+        elif pt_state == "not_calibrated":
+            pass
+
         elif pt_state == "track":
             ret, frame = video_stream.read()
 	   
@@ -332,7 +346,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
 
             #cv2.imshow('Table', frame)
-            #frame = cv2.resize(frame, None, fx = 1.2, fy = 1.2, interpolation = cv2.INTER_LINEAR)
+            frame = cv2.resize(frame, dsize=(900,600), interpolation = cv2.INTER_LINEAR)
             
             try:
                 visualization_data.get_nowait()

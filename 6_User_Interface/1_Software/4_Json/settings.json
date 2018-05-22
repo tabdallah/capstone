@@ -1,6 +1,6 @@
 {
     "user_interface": {
-        "game_difficulty": "hard", 
-        "game_length": 120
+        "game_difficulty": "easy", 
+        "game_length": 60
     }
 }

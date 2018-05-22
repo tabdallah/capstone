@@ -24,8 +24,11 @@ from time import sleep
 from kivy.config import Config
 from kivy.uix.popup import Popup
 
-Config.set('graphics','width','1024')
-Config.set('graphics','height','600')
+#Config.set('graphics','width','1024')
+#Config.set('graphics','height','600')
+
+Config.set('graphics', 'fullscreen', 'auto')
+Config.set('graphics', 'show_cursor', '1')
 
 images_path = "../../../6_User_Interface/1_Software/2_Images/"
 audio_path = "../../../6_User_Interface/1_Software/3_Audio/"
@@ -147,7 +150,7 @@ class IntroScreen(BoxLayout, Screen):
         self.sound = SoundLoader.load(audio_path + 'organ.wav')
         if self.sound:
             self.sound.play()
-        Clock.schedule_once(self.end_intro, 1)
+        Clock.schedule_once(self.end_intro, 0)
 
     def end_intro(self, *args):
         self.manager.get_screen('visual').get_settings()
@@ -216,7 +219,7 @@ class VisualScreen(BoxLayout, Screen):
         # visualization & menu
         self.visualization_and_menu = BoxLayout(orientation='horizontal',)
         self.visualization = BoxLayout(orientation='vertical')
-        self.menu = BoxLayout(orientation='vertical',size_hint=(0.2,1))
+        self.menu = BoxLayout(orientation='vertical', size_hint=(0.2,1))
         self.visualization_and_menu.add_widget(self.visualization)
         self.visualization_and_menu.add_widget(self.menu)
         self.visualization.add_widget(VisualizationData())
@@ -333,17 +336,26 @@ class DiagnosticsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(DiagnosticsScreen, self).__init__(**kwargs)
         self.add_widget(Label(text='Relevant data'))
-        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
+        self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
+        self.add_widget(Button(text='Main Menu', size_hint=(1,0.1), on_release=self.go_menu))
 
     def go_menu(self, *args):
         self.manager.current = 'menu'
 
+    def calibrate_pt(self, *args):
+        self.manager.ui_tx.put('pt_state_cmd:calibrate')
+    
+
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
+        # queue management
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
         self.visualization_data = visualization_data
+        Clock.schedule_interval(self.get_queue_data, 0.01)
+
+        # screen management
         self.transition = FadeTransition()
         self.add_widget(IntroScreen(name='intro'))
         self.add_widget(SettingsScreen(name='settings', orientation='vertical', size=self.size))
@@ -352,6 +364,16 @@ class ScreenManagement(ScreenManager):
         self.add_widget(ManualScreen(name='manual', size=self.size))
         self.add_widget(AboutScreen(name='about', orientation='vertical', size=self.size))
         self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
+
+    def get_queue_data(self, *args):
+        try:
+            mc_data = self.ui_rx.get(False)
+            mc_data = mc_data.split(":")
+            if mc_data[0] == "ui_state_cmd":
+                mc_cmd = mc_data[1]
+
+        except Queue.Empty:
+            mc_cmd = "idle"
 
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):

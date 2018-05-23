@@ -9,6 +9,7 @@ import math
 import matplotlib.pyplot as plt
 
 # define global variables
+settings_path = "../../../6_User_Interface/1_Software/4_Json/"
 settings_file_path = "../../../3_Puck_Tracker/1_Software/1_Source/puck_tracker_settings.json"
 last_puck_position_mm_x = 0
 last_puck_position_mm_y = 0
@@ -22,6 +23,11 @@ puck_maximum_radius = 20
 camera_vertical_resolution = 480
 camera_horizontal_resolution = 640
 camera_fps = 224
+pt_state_cmd_enum = 0
+pt_state_enum = 0
+pt_error_enum = 0
+pt_rx_enum = 0
+pt_tx_enum = 0
 
 def get_puck_tracker_settings():
     """Return the stored settings for the puck tracker"""
@@ -235,14 +241,44 @@ def find_fiducials(frame, fiducial_lower_hsv, fiducial_upper_hsv):
                     
     return ret
 
+def enum(list):
+    enums = dict(zip(list, range(len(list))))
+    return type('Enum', (), enums)
+
+def get_enums():
+    global pt_state_cmd_enum
+    global pt_state_enum
+    global pt_error_enum
+    global pt_rx_enum
+    global pt_tx_enum
+
+    # get settings from file
+    with open((settings_path + 'settings.json'), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+
+    pt_state_cmd_enum = enum(settings['enumerations']['pt_state_cmd'])
+    pt_state_enum = enum(settings['enumerations']['pt_state'])
+    pt_error_enum = enum(settings['enumerations']['pt_error'])   
+    pt_rx_enum = enum(settings['enumerations']['pt_rx'])
+    pt_tx_enum = enum(settings['enumerations']['pt_tx'])
 
 
 """----------------------------Puck Tracker Process--------------------------"""
-def pt_process(pt_rx, pt_tx, visualization_data):
+def pt_process(pt_rx, pt_tx, visualization_data_tx):
     """All things puck tracker happen here. Communicates directly with master controller"""
+    global pt_state_cmd_enum
+    global pt_state_enum
+    global pt_error_enum
+    global pt_rx_enum
+    global pt_tx_enum
+
     global camera_horizontal_resolution
     global camera_vertical_resolution
     global camera_fps
+
+    # collect enums
+    get_enums()
 
     while True:
         video_stream = cv2.VideoCapture(0)
@@ -253,114 +289,97 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             video_stream.set(cv2.CAP_PROP_FPS, camera_fps)
             break
         else:
-            pt_tx.put("pt_error:camera")
+            pt_tx[pt_tx_enum.error] = pt_error_enum.camera
     
-    pt_state = "idle"
+    pt_state = pt_state_enum.idle
+    pt_error = pt_error_enum.idle
     calibration_attempts = 0
     
     while True:
         # retrieve commands from master controller
-        try:
-            mc_data = pt_rx.get(False)
-            mc_data = mc_data.split(":")
-            if mc_data[0] == "pt_state_cmd":
-                mc_cmd = mc_data[1]
+        mc_cmd = int(pt_rx[pt_rx_enum.state_cmd])
 
-        except Queue.Empty:
-            mc_cmd = "idle"
-            
         # set desired state of puck tracker to that commanded by mc    
-        if mc_cmd == "calibrate":
-            pt_desired_state = "calibrate"
-        elif mc_cmd == "track":
-            pt_desired_state = "track"
-        elif mc_cmd == "quit":
-            pt_desired_state = "quit"
+        if mc_cmd == pt_state_cmd_enum.calibrate:
+            pt_desired_state = pt_state_cmd_enum.calibrate
+        elif mc_cmd == pt_state_cmd_enum.track:
+            pt_desired_state = pt_state_cmd_enum.track
+        elif mc_cmd == pt_state_cmd_enum.quit:
+            pt_desired_state = pt_state_cmd_enum.quit
         else:
-            pt_desired_state = "idle"
+            pt_desired_state = pt_state_cmd_enum.idle    
 
-    
         # do the required setup to enter state requested by mc
-        if pt_desired_state == "calibrate" and pt_state != "calibrate":
-            pt_desired_state = "idle"
-            pt_state = "calibrate"
+        if pt_desired_state == pt_state_cmd_enum.calibrate and pt_state != pt_state_enum.calibrate:
+            pt_desired_state = pt_state_cmd_enum.idle
+            pt_state = pt_state_enum.calibrate
             
             # retrieve fiducial_hsv range from settings file
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
-            
-        elif pt_desired_state == "track" and pt_state != "track":
-            pt_desired_state = "idle"
-            pt_state = "track"
+
+        elif pt_desired_state == pt_state_cmd_enum.track and pt_state != pt_state_enum.track:
+            pt_desired_state = pt_state_cmd_enum.idle
+            pt_state = pt_state_enum.track
             
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
             mm_per_pixel_x, mm_per_pixel_y = get_mm_per_pixel_factors(fiducial_coordinates)
             perspective_transform_matrix, max_width, max_height = get_perspective_transform_matrix(fiducial_coordinates)
             
-        elif pt_desired_state == "quit" and pt_state != "quit":
-            pt_desired_state = "idle"
-            pt_state = "quit"
+        elif pt_desired_state == pt_state_cmd_enum.quit and pt_state != pt_state_enum.quit:
+            pt_desired_state = pt_state_cmd_enum.idle
+            pt_state = pt_state_enum.quit
               
         else:
             pass
             # stay in current state
         
         # perform puck tracker state tasks
-        if pt_state == "calibrate":
+        if pt_state == pt_state_enum.calibrate:
             ret, frame = video_stream.read()
             
             if ret == False:
-                pt_tx.put("pt_error:camera")
+                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
                 
             fiducials_found = find_fiducials(frame, fiducial_hsv[0], fiducial_hsv[1])
             
             if fiducials_found:
-                pt_state = "calibrated"
+                pt_state = pt_state_enum.idle
                 calibration_attempts = 0
             else:
                 calibration_attempts += 1
 
             if calibration_attempts >= 5:
-                pt_state = "not_calibrated"
+                pt_state = pt_state_enum.idle
+                pt_error = pt_error_enum.calibration_failed
                 calibration_attempts = 0
-        
-        elif pt_state == "calibrated":
-            pass
 
-        elif pt_state == "not_calibrated":
-            pass
-
-        elif pt_state == "track":
+        elif pt_state == pt_state_enum.track:
             ret, frame = video_stream.read()
 	   
             if ret == False:
-                pt_tx.put("pt_error:camera")
+                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
 
             frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_width, max_height), cv2.INTER_LINEAR)
             frame, puck_position_mm_xy = get_puck_position(frame_warped, puck_hsv[0], puck_hsv[1], mm_per_pixel_x, mm_per_pixel_y)
             puck_velocity_mmps_xy = get_puck_velocity(puck_position_mm_xy)
 
-            try:
-                pt_tx.get_nowait()
-                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
-            except Queue.Empty:
-                pt_tx.put("pt_puck_data:{0}:{1}:{2}:{3}".format(puck_position_mm_xy[1], puck_position_mm_xy[0], puck_velocity_mmps_xy[1], puck_velocity_mmps_xy[0]))
+            pt_tx[pt_tx_enum.puck_position_x] = puck_position_mm_xy[1]
+            pt_tx[pt_tx_enum.puck_position_y] = puck_position_mm_xy[0]
+            pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
+            pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
 
-            #cv2.imshow('Table', frame)
-            frame = cv2.resize(frame, dsize=(900,600), interpolation = cv2.INTER_LINEAR)
-            
-            try:
-                visualization_data.get_nowait()
-                visualization_data.put(frame)
-            except Queue.Empty:
-                visualization_data.put(frame)
+            frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            visualization_data_tx.send(frame)
 
-        elif pt_state == "quit":
+        elif pt_state == pt_state_enum.quit:
             video_stream.release() 
             cv2.destroyAllWindows()
             sys.exit(1)
+
+        # update state/error
+        pt_tx[pt_tx_enum.error] = pt_error
+        pt_tx[pt_tx_enum.state] = pt_state
 
     # When everything done, release the capture
     video_stream.release()

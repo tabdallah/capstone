@@ -1,9 +1,57 @@
 {
-    "user_interface": {
-        "game_difficulty": "easy", 
-        "game_length": 60
-    },
     "enumerations": {
-    	"puck_tracker_state_enum": ["track","calibrate"]
+        "ui_state": [
+            "idle", 
+            "running", 
+            "quit"
+        ], 
+        "ui_state_cmd": [
+            "idle", 
+            "run"
+        ], 
+        "ui_rx": [
+            "state_cmd"
+        ], 
+        "pt_state_cmd": [
+            "idle", 
+            "calibrate", 
+            "track", 
+            "error", 
+            "quit"
+        ], 
+        "ui_tx": [
+            "state", 
+            "error"
+        ], 
+        "pt_state": [
+            "idle", 
+            "calibrate", 
+            "track", 
+            "error", 
+            "quit"
+        ], 
+        "pt_error": [
+        	"idle",
+            "camera",
+            "calibration_failed"
+        ], 
+        "pt_tx": [
+            "state", 
+            "error", 
+            "puck_position_x", 
+            "puck_position_y", 
+            "puck_velocity_x", 
+            "puck_velocity_y"
+        ], 
+        "pt_rx": [
+            "state_cmd"
+        ], 
+        "ui_error": [
+            "crashed"
+        ]
+    }, 
+    "user_interface": {
+        "game_difficulty": "medium", 
+        "game_length": 120
     }
 }

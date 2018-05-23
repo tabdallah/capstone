@@ -1,3 +1,4 @@
+# modules
 import Queue
 import sys
 import time
@@ -24,12 +25,13 @@ from time import sleep
 from kivy.config import Config
 from kivy.uix.popup import Popup
 
+# customize screen size/cursor visibility
 #Config.set('graphics','width','1024')
 #Config.set('graphics','height','600')
-
 Config.set('graphics', 'fullscreen', 'auto')
 Config.set('graphics', 'show_cursor', '1')
 
+# paths to import external files
 images_path = "../../../6_User_Interface/1_Software/2_Images/"
 audio_path = "../../../6_User_Interface/1_Software/3_Audio/"
 settings_path = "../../../6_User_Interface/1_Software/4_Json/"
@@ -38,12 +40,37 @@ settings_path = "../../../6_User_Interface/1_Software/4_Json/"
 tableWidthMm = 660.4
 tableHalfLengthMm = 846.1
 
-# class definitions
+# miscellaneous class definitions
 class Paddle(Scatter):
     def __init__(self, **kwargs):
         super(Paddle, self).__init__(**kwargs)
         self.paddle_image = Image(source=(images_path + 'paddle.png'), pos=self.pos)
         self.add_widget(self.paddle_image)
+
+"""class ManualControl(Widget):
+    def __init__(self, **kwargs):
+        super(ManualControl, self).__init__(**kwargs)
+        self.paddle_object = Paddle()
+        self.add_widget(self.paddle_object)
+
+        #with self.canvas:
+        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
+            #BorderImage(source=(images_path + 'hockeySurface.png'), size_hint=(1,0.9))
+        #Clock.schedule_interval(self.update_screen, 0)
+
+    def update_screen(self, *args):
+        sleep(0.1)
+        paddleCoordinates = self.paddle_object.center
+        scalingFactorWidth = tableWidthMm/self.width
+        scalingFactorLength = tableHalfLengthMm/self.height
+        if self.parent.manager.current == 'manual':
+            try:
+                self.parent.manager.ui_tx.put("paddle_position_mm_x:{0:.0f}".format(paddleCoordinates[0]*scalingFactorWidth))
+                self.parent.manager.ui_tx.put("paddle_position_mm_y:{0:.0f}".format(paddleCoordinates[1]*scalingFactorLength))
+            except Queue.Full:
+              print "Queue Full?"
+        else:
+            pass"""
 
 class VisualizationData(Image):
     def __init__(self, **kwargs):
@@ -51,11 +78,8 @@ class VisualizationData(Image):
         Clock.schedule_interval(self.updateData, 0)
 
     def updateData(self, *args):
-        try:
-            frame = self.parent.parent.parent.manager.visualization_data.get(False)
-        except Queue.Empty:
-            pass
-        else:
+        while(self.parent.parent.parent.manager.visualization_data.poll()):
+            frame = self.parent.parent.parent.manager.visualization_data.recv()
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_flipped = cv2.flip(frame_rgb, 0)
             frame_string = frame_flipped.tostring()
@@ -63,6 +87,19 @@ class VisualizationData(Image):
             image_texture.blit_buffer(frame_string, colorfmt='rgb', bufferfmt='ubyte')
             self.texture = image_texture
 
+# screen class definitions
+class IntroScreen(BoxLayout, Screen):
+    def __init__(self, **kwargs):
+        super(IntroScreen, self).__init__(**kwargs)
+        self.add_widget(Image(source=(images_path + 'logo.png'),allow_stretch=True))
+        self.sound = SoundLoader.load(audio_path + 'organ.wav')
+        if self.sound:
+            self.sound.play()
+        Clock.schedule_once(self.end_intro, 0)
+
+    def end_intro(self, *args):
+        self.manager.get_screen('visual').get_settings()
+        self.manager.current = 'menu'
 
 class SettingsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
@@ -142,44 +179,6 @@ class SettingsScreen(BoxLayout, Screen):
         with open((settings_path + 'settings.json'), 'w+') as fp:
             json.dump(self.settings, fp, indent=4)
             fp.close()
-
-class IntroScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(IntroScreen, self).__init__(**kwargs)
-        self.add_widget(Image(source=(images_path + 'logo.png'),allow_stretch=True))
-        self.sound = SoundLoader.load(audio_path + 'organ.wav')
-        if self.sound:
-            self.sound.play()
-        Clock.schedule_once(self.end_intro, 0)
-
-    def end_intro(self, *args):
-        self.manager.get_screen('visual').get_settings()
-        self.manager.current = 'menu'
-
-"""class ManualControl(Widget):
-    def __init__(self, **kwargs):
-        super(ManualControl, self).__init__(**kwargs)
-        self.paddle_object = Paddle()
-        self.add_widget(self.paddle_object)
-
-        #with self.canvas:
-        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
-            #BorderImage(source=(images_path + 'hockeySurface.png'), size_hint=(1,0.9))
-        #Clock.schedule_interval(self.update_screen, 0)
-
-    def update_screen(self, *args):
-        sleep(0.1)
-        paddleCoordinates = self.paddle_object.center
-        scalingFactorWidth = tableWidthMm/self.width
-        scalingFactorLength = tableHalfLengthMm/self.height
-        if self.parent.manager.current == 'manual':
-            try:
-                self.parent.manager.ui_tx.put("paddle_position_mm_x:{0:.0f}".format(paddleCoordinates[0]*scalingFactorWidth))
-                self.parent.manager.ui_tx.put("paddle_position_mm_y:{0:.0f}".format(paddleCoordinates[1]*scalingFactorLength))
-            except Queue.Full:
-              print "Queue Full?"
-        else:
-            pass"""
 
 class ManualScreen(Screen, FloatLayout):
     def __init__(self, **kwargs):
@@ -320,7 +319,7 @@ class MenuScreen(BoxLayout, Screen):
         self.manager.current = 'diagnostics'
     
     def go_quit(self, *args):
-        self.manager.ui_tx.put("quit")
+        self.manager.ui_tx[0] = 2
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
@@ -343,9 +342,9 @@ class DiagnosticsScreen(BoxLayout, Screen):
         self.manager.current = 'menu'
 
     def calibrate_pt(self, *args):
-        self.manager.ui_tx.put('pt_state_cmd:calibrate')
+        pass #self.manager.ui_tx.put('pt_state_cmd:calibrate')
     
-
+# screen manager (also does IPC)
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
@@ -366,15 +365,9 @@ class ScreenManagement(ScreenManager):
         self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
 
     def get_queue_data(self, *args):
-        try:
-            mc_data = self.ui_rx.get(False)
-            mc_data = mc_data.split(":")
-            if mc_data[0] == "ui_state_cmd":
-                mc_cmd = mc_data[1]
+        pass
 
-        except Queue.Empty:
-            mc_cmd = "idle"
-
+# main app
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(UserInterfaceApp, self).__init__(**kwargs)
@@ -385,31 +378,49 @@ class UserInterfaceApp(App):
     def build(self):
         return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager', size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
 
+# enum creator
+def enum(list_of_enums):
+    enums = dict(zip(list_of_enums, range(len(list_of_enums))))
+    return type('Enum', (), enums)
+
+# enum retriever
+def get_enums():
+    global ui_state_cmd_enum
+    global ui_state_enum
+    global ui_error_enum
+    global ui_rx_enum
+    global ui_tx_enum
+
+    # get settings from file
+    with open((settings_path + 'settings.json'), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+
+    ui_state_cmd_enum = enum(settings['enumerations']['ui_state_cmd'])
+    ui_state_enum = enum(settings['enumerations']['ui_state'])
+    ui_error_enum = enum(settings['enumerations']['ui_error'])   
+    ui_rx_enum = enum(settings['enumerations']['ui_rx'])
+    ui_tx_enum = enum(settings['enumerations']['ui_tx'])
+
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
+    get_enums()
 
-    ui_state = "idle" 
+    ui_state = ui_state_enum.idle
 
     while True:
         # retrieve commands from master controller
-        try:
-            mc_data = ui_rx.get(False)
-            mc_data = mc_data.split(":")
-            if mc_data[0] == "ui_state_cmd":
-                mc_cmd = mc_data[1]
-
-        except Queue.Empty:
-            mc_cmd = "idle"
+        mc_cmd = int(ui_rx[ui_rx_enum.state_cmd])
             
         # set desired state of the user interface to that commanded by mc    
-        if mc_cmd == "run_ui":
-            ui_desired_state = "run_ui"
+        if mc_cmd == ui_state_cmd_enum.run:
+            ui_desired_state = ui_state_cmd_enum.run
         else:
-            ui_desired_state = "idle"
+            ui_desired_state = ui_state_cmd_enum.idle
 
         # do the required setup to enter state requested by mc
-        if ui_desired_state == "run_ui" and ui_state != "run_ui":
-            ui_state = "run_ui"
-            ui_desired_state = "idle"
+        if ui_desired_state == ui_state_cmd_enum.run and ui_state != ui_state_enum.running:
+            ui_state = ui_state_enum.running
+            ui_desired_state = ui_state_cmd_enum.idle
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
             sys.exit(1)

@@ -498,10 +498,7 @@ if __debug__:
 
 		# get data from puck tracker
 		try:
-			start = time.time()
 			pt_data = data_from_pt.get(False)
-			end = time.time()
-			print "Time to Dequeue: ", (start-end)
 			logging.debug(str(pt_data))
 
 			# parse data

@@ -1,10 +1,9 @@
 import multiprocessing as mp 
-from enum import Enum
 import json
 
 def enum(list):
     enums = dict(zip(list, range(len(list))))
-    return type('Enu', (), enums)
+    return type('Enum', (), enums)
 
 
 if __name__ == "__main__":

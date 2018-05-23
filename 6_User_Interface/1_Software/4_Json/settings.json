@@ -2,5 +2,8 @@
     "user_interface": {
         "game_difficulty": "easy", 
         "game_length": 60
+    },
+    "enumerations": {
+    	"puck_tracker_state_enum": ["track","calibrate"]
     }
 }

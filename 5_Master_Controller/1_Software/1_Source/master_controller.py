@@ -48,12 +48,12 @@ pt_state_enum = 0
 pt_error_enum = 0
 pt_rx_enum = 0
 pt_tx_enum = 0
-
 ui_state_cmd_enum = 0
 ui_state_enum = 0
 ui_error_enum = 0
 ui_rx_enum = 0
 ui_tx_enum = 0
+ui_diagnostic_request_enum = 0
 
 settings = 0
 
@@ -90,6 +90,13 @@ paddle_radius_mm = 40
 goal_center_mm_x = 387.35
 goal_left_post_mm_x = 257.35
 goal_right_post_mm_x = 517.35
+
+# general
+pt_state = 0
+pt_error = 0
+ui_state = 0
+ui_error = 0
+ui_diagnostic_request = 0
 
 # puck prediction
 puck_position_mm_x = 0
@@ -149,6 +156,7 @@ def get_enums():
 	global ui_error_enum
 	global ui_rx_enum
 	global ui_tx_enum
+	global ui_diagnostic_request_enum
 
 	global settings
 
@@ -168,6 +176,7 @@ def get_enums():
 	ui_error_enum = enum(settings['enumerations']['ui_error'])   
 	ui_rx_enum = enum(settings['enumerations']['ui_rx'])
 	ui_tx_enum = enum(settings['enumerations']['ui_tx'])
+	ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
 
 ##############################################################################################
 ## Command line output functions
@@ -243,15 +252,11 @@ def Init_PCAN(device):
 def Uninit_PCAN(device):
 	status = PCANBasic.Uninitialize(device, PCAN_USBBUS1)
 	if status > 0:
-		print "Error Uninitializing PCAN USB"
 		logging.error("Error Uninitializing PCAN USB")
-		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit
 	else:
 		print "PCAN USB Uninitialized"
 		logging.debug("PCAN USB Uninitialized")
-		exit
 
 ## end of method
 
@@ -542,14 +547,15 @@ def Uninit_IPC():
 ## Receive any pending IPC Queue messages and populate global variables as necessary
 ##
 def Rx_IPC():
-	global ui_tx
-	global ui_tx_enum
-	global pt_tx
-	global pt_tx_enum
 	global puck_position_mm_x
 	global puck_position_mm_y
 	global puck_velocity_mmps_x 
 	global puck_velocity_mmps_y
+	global pt_state
+	global pt_error
+	global ui_state
+	global ui_error
+	global ui_diagnostic_request
 
 	# get data from puck tracker
 	pt_state = pt_tx[pt_tx_enum.state]
@@ -562,10 +568,7 @@ def Rx_IPC():
 	# get data from user interface
 	ui_state = ui_tx[ui_tx_enum.state]
 	ui_error = ui_tx[ui_tx_enum.error]
-
-	# this hack is for quitting, to be fixed
-	if int(ui_tx[0]) == 2:
-		pt_rx[0] = 3
+	ui_diagnostic_request = ui_tx[ui_tx_enum.diagnostic_request]
 
 ## end of method
 
@@ -697,6 +700,20 @@ def get_paddle_defense_position():
 
 ## end of method
 
+def make_decisions():
+	# go through steps of shutting down if UI requests
+	if int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
+		Close_HDF5()
+		#Uninit_PCAN(PCAN)
+
+	# check if all conditions for quitting are met
+	if (int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit and
+	    int(pt_tx[pt_tx_enum.state]) == pt_state_enum.quit):
+	   	quit(0)
+
+
+
 ##############################################################################################
 ## MAIN() function
 ##############################################################################################
@@ -716,7 +733,7 @@ def main():
 	get_enums()
 
 	# Initialize PCAN device
-	Init_PCAN(PCAN)
+	#Init_PCAN(PCAN)
 
 	# Create HDF5 file for logging PC position data
 	Create_HDF5()
@@ -727,12 +744,13 @@ def main():
 	# Master Controller State Machine
 	while True:
 		Rx_IPC()
-		Rx_CAN(PCAN)
-		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		#Rx_CAN(PCAN)
+		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		get_paddle_defense_position()
-		Tx_PC_Cmd(PCAN)
-		add_pos_sent_HDF5(str(datetime.datetime.now()))
-		update_dset_HDF5()
+		make_decisions()
+		#Tx_PC_Cmd(PCAN)
+		#add_pos_sent_HDF5(str(datetime.datetime.now()))
+		#update_dset_HDF5()
 		sleep(timeout)
 
 ## end of method

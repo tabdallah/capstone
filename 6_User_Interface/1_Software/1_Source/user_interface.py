@@ -26,9 +26,9 @@ from kivy.config import Config
 from kivy.uix.popup import Popup
 
 # customize screen size/cursor visibility
-#Config.set('graphics','width','1024')
-#Config.set('graphics','height','600')
-Config.set('graphics', 'fullscreen', 'auto')
+Config.set('graphics','width','1024')
+Config.set('graphics','height','600')
+#Config.set('graphics', 'fullscreen', 'auto')
 Config.set('graphics', 'show_cursor', '1')
 
 # paths to import external files
@@ -39,6 +39,12 @@ settings_path = "../../../6_User_Interface/1_Software/4_Json/"
 # globals
 tableWidthMm = 660.4
 tableHalfLengthMm = 846.1
+ui_state_cmd_enum = 0
+ui_diagnostic_request_enum = 0
+ui_state_enum = 0
+ui_error_enum = 0
+ui_rx_enum = 0
+ui_tx_enum = 0
 
 # miscellaneous class definitions
 class Paddle(Scatter):
@@ -319,7 +325,8 @@ class MenuScreen(BoxLayout, Screen):
         self.manager.current = 'diagnostics'
     
     def go_quit(self, *args):
-        self.manager.ui_tx[0] = 2
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
+        self.manager.visualization_data.send(0)
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
@@ -342,7 +349,7 @@ class DiagnosticsScreen(BoxLayout, Screen):
         self.manager.current = 'menu'
 
     def calibrate_pt(self, *args):
-        pass #self.manager.ui_tx.put('pt_state_cmd:calibrate')
+        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_pt
     
 # screen manager (also does IPC)
 class ScreenManagement(ScreenManager):
@@ -386,6 +393,7 @@ def enum(list_of_enums):
 # enum retriever
 def get_enums():
     global ui_state_cmd_enum
+    global ui_diagnostic_request_enum
     global ui_state_enum
     global ui_error_enum
     global ui_rx_enum
@@ -401,6 +409,7 @@ def get_enums():
     ui_error_enum = enum(settings['enumerations']['ui_error'])   
     ui_rx_enum = enum(settings['enumerations']['ui_rx'])
     ui_tx_enum = enum(settings['enumerations']['ui_tx'])
+    ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
@@ -423,4 +432,4 @@ def ui_process(ui_rx, ui_tx, visualization_data):
             ui_state = ui_state_enum.running
             ui_desired_state = ui_state_cmd_enum.idle
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
-            sys.exit(1)
+            quit(0)

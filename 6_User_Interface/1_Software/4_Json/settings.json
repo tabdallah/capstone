@@ -21,7 +21,8 @@
         ], 
         "ui_tx": [
             "state", 
-            "error"
+            "error", 
+            "diagnostic_request"
         ], 
         "pt_state": [
             "idle", 
@@ -31,8 +32,8 @@
             "quit"
         ], 
         "pt_error": [
-        	"idle",
-            "camera",
+            "idle", 
+            "camera", 
             "calibration_failed"
         ], 
         "pt_tx": [
@@ -42,6 +43,10 @@
             "puck_position_y", 
             "puck_velocity_x", 
             "puck_velocity_y"
+        ], 
+        "ui_diagnostic_request": [
+            "idle", 
+            "calibrate_pt"
         ], 
         "pt_rx": [
             "state_cmd"

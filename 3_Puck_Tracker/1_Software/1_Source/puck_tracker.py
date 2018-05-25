@@ -265,7 +265,7 @@ def get_enums():
 
 
 """----------------------------Puck Tracker Process--------------------------"""
-def pt_process(pt_rx, pt_tx, visualization_data_tx):
+def pt_process(pt_rx, pt_tx, visualization_data):
     """All things puck tracker happen here. Communicates directly with master controller"""
     global pt_state_cmd_enum
     global pt_state_enum
@@ -370,17 +370,18 @@ def pt_process(pt_rx, pt_tx, visualization_data_tx):
 
             frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
 
-            visualization_data_tx.send(frame)
+            if visualization_data.poll():
+                if visualization_data.recv() == 0:
+                    visualization_data.close()
+            else:
+                visualization_data.send(frame)
 
         elif pt_state == pt_state_enum.quit:
+            pt_tx[pt_tx_enum.state] = pt_state_enum.quit
             video_stream.release() 
             cv2.destroyAllWindows()
-            sys.exit(1)
+            quit(0)
 
         # update state/error
         pt_tx[pt_tx_enum.error] = pt_error
         pt_tx[pt_tx_enum.state] = pt_state
-
-    # When everything done, release the capture
-    video_stream.release()
-    cv2.destroyAllWindows()

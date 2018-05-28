@@ -13,15 +13,23 @@ import logging
 import h5py
 import numpy as np
 import datetime
+import time
+import json
 
-if __debug__:
-	# libraries for IPC with UI and PC
-	import multiprocessing
-	import Queue
-	import puck_tracker as pt
-	import user_interface as ui
+# add file path for puck tracker and user interface modules
+sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')
+sys.path.insert(0, '../../../6_User_Interface/1_Software/1_Source/')
 
-PCAN = PCANBasic() 		# Initialize an instance of the PCANBasic class
+# path to settings file
+settings_path = "../../../6_User_Interface/1_Software/4_Json/"
+
+# libraries for IPC with UI and PC
+import multiprocessing
+import puck_tracker as pt
+import user_interface as ui
+
+# Initialize an instance of the PCANBasic class
+PCAN = PCANBasic() 		
 
 ##############################################################################################
 ## Global data storage
@@ -30,9 +38,24 @@ PCAN = PCANBasic() 		# Initialize an instance of the PCANBasic class
 
 log_fileName = "debug.log"		# File name for debug logging
 
-timeout = 0.5 			# Timeout for keyboard input in seconds
+timeout = 0.01 			# Timeout for keyboard input in seconds
 
-operationMode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
+operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
+
+# enums
+pt_state_cmd_enum = 0
+pt_state_enum = 0
+pt_error_enum = 0
+pt_rx_enum = 0
+pt_tx_enum = 0
+ui_state_cmd_enum = 0
+ui_state_enum = 0
+ui_error_enum = 0
+ui_rx_enum = 0
+ui_tx_enum = 0
+ui_diagnostic_request_enum = 0
+
+settings = 0
 
 # PC positions
 mc_pos_cmd_x_mm = 0
@@ -44,12 +67,12 @@ pc_pos_status_y_mm = 0
 filter_pos_value_mm = 5		# Threshold filter value for the UI position control
 
 # IPC 
-dataToUI = 0
-dataFromUI = 0
-dataToPT = 0
-dataFromPT = 0
-uiProcess = 0
-ptProcess = 0
+ui_rx = 0
+ui_tx = 0
+pt_rx = 0
+pt_tx = 0
+ui_process = 0
+pt_process = 0
 
 # hdf5
 hdf5_fileName = "PC_positions.hdf5"		# File name for hdf5 with PC positions
@@ -59,23 +82,35 @@ hdf5_dset_stop_resize = False	# flag that indicates whether to continue dataset 
 hdf5_dset_count = 0				# count to track current element in hdf5 PC_data dataset
 hdf5_file_handle = 0			# handle to hdf5 file
 
-# puck prediction
-puckPositionMmX = 0
-puckPositionMmY = 0
-puckVelocityMmPerSx = 0
-puckVelocityMmPerSY = 0
-lastPuckPositionMmX = 0
-lastPuckPositionMmY = 0
-lastPuckVelocityMmPerSY = 0
-minPuckVelocityMmPerSY = -180
-puckPredictionAveragedWindowSize = 5
-puckPredictionAveragedArray = np.zeros(puckPredictionAveragedWindowSize)
-puckPredictionAveragedIndex = 0
+# object dimensions & distances
+table_width_mm = 774.7
+table_length_mm = 1692.3
+puck_radius_mm = 31.75
+paddle_radius_mm = 40
+goal_center_mm_x = 387.35
+goal_left_post_mm_x = 257.35
+goal_right_post_mm_x = 517.35
 
-# Goal dimensions
-goalLeftPostMmX = 254		# beginning of the left "goalpost" on X-axis (Y=0)
-goalRightPostMmX = 511		# beginning of the right "goalpost" on X-axis (Y=0)
-goalPostToleranceMmX = 5	# indicate how many mm right or left we need to move to fully protect goal area on X-axis (Y=0)
+# general
+pt_state = 0
+pt_error = 0
+ui_state = 0
+ui_error = 0
+ui_diagnostic_request = 0
+
+# puck prediction
+puck_position_mm_x = 0
+puck_position_mm_y = 0
+puck_velocity_mmps_x = 0
+puck_velocity_mmps_y = 0
+last_puck_position_mm_x = 0
+last_puck_position_mm_y = 0
+last_puck_velocity_mmps_y = 0
+last_puck_prediction_averaged_mm_x = goal_center_mm_x
+min_puck_velocity_mmps_y = -250
+puck_prediction_averaged_window_size = 4
+puck_prediction_averaged_array = np.zeros(puck_prediction_averaged_window_size)
+puck_prediction_averaged_index = 0
 
 ##############################################################################################
 ## CAN protocol definition
@@ -92,6 +127,56 @@ mask_pos_cmd_x_mm_b0 = 		0x00FF		# Hex mask for pos_cmd_x_mm signal (msg byte0)
 mask_pos_cmd_x_mm_b1 = 		0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
 mask_pos_cmd_y_mm_b2 = 		0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
 mask_pos_cmd_y_mm_b3 = 		0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
+
+##############################################################################################
+## Enumeration functions
+##############################################################################################
+
+##
+## enum(list)
+## Creates an enumeration for a list of elements
+##
+def enum(list):
+	enums = dict(zip(list, range(len(list))))
+	return type('Enum', (), enums)
+
+##
+## get_enums()
+## Retrieve all enums from settings file
+##
+def get_enums():
+	global pt_state_cmd_enum
+	global pt_state_enum
+	global pt_error_enum
+	global pt_rx_enum
+	global pt_tx_enum
+
+	global ui_state_cmd_enum
+	global ui_state_enum
+	global ui_error_enum
+	global ui_rx_enum
+	global ui_tx_enum
+	global ui_diagnostic_request_enum
+
+	global settings
+
+	# get settings from file
+	with open((settings_path + 'settings.json'), 'r') as fp:
+		settings = json.load(fp)
+		fp.close()
+
+	pt_state_cmd_enum = enum(settings['enumerations']['pt_state_cmd'])
+	pt_state_enum = enum(settings['enumerations']['pt_state'])
+	pt_error_enum = enum(settings['enumerations']['pt_error'])   
+	pt_rx_enum = enum(settings['enumerations']['pt_rx'])
+	pt_tx_enum = enum(settings['enumerations']['pt_tx'])
+
+	ui_state_cmd_enum = enum(settings['enumerations']['ui_state_cmd'])
+	ui_state_enum = enum(settings['enumerations']['ui_state'])
+	ui_error_enum = enum(settings['enumerations']['ui_error'])   
+	ui_rx_enum = enum(settings['enumerations']['ui_rx'])
+	ui_tx_enum = enum(settings['enumerations']['ui_tx'])
+	ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
 
 ##############################################################################################
 ## Command line output functions
@@ -115,7 +200,7 @@ def process_input():
 
 ##
 ## update_display()
-## Show elevator status and command
+## Show master controller status and command
 ##
 def update_display():
 	global mc_pos_cmd_x_mm
@@ -167,15 +252,11 @@ def Init_PCAN(device):
 def Uninit_PCAN(device):
 	status = PCANBasic.Uninitialize(device, PCAN_USBBUS1)
 	if status > 0:
-		print "Error Uninitializing PCAN USB"
 		logging.error("Error Uninitializing PCAN USB")
-		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit
 	else:
 		print "PCAN USB Uninitialized"
 		logging.debug("PCAN USB Uninitialized")
-		exit
 
 ## end of method
 
@@ -245,7 +326,6 @@ def Tx_PC_Cmd(device):
 		logging.error("Error transmitting CAN message")
 		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit()
 
 ## end of method
 
@@ -333,7 +413,7 @@ def add_pos_sent_HDF5(time_rcvd):
 
 	i = hdf5_dset_count
 
-	# store received positions with a timestamp
+	# store received positions with a puck_position_mm_xtimestamp
 	hdf5_file_handle['/PC_data/pos_sent_x'][i] = mc_pos_cmd_sent_x_mm
 	hdf5_file_handle['/PC_data/pos_sent_y'][i] = mc_pos_cmd_sent_y_mm
 	hdf5_file_handle['/PC_data/time_sent'][i] = time_rcvd
@@ -404,40 +484,45 @@ def update_dset_HDF5():
 ##
 ## Init_IPC() - Need to add error detection
 ## Initialize multiprocessing between UI, Puck Tracker and MC
-## Create queues between those processes for IPC
+## Create arrays between those processes for IPC
 ## start child processes
 ##
-if __debug__:
-	def Init_IPC():
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
-		global uiProcess
-		global ptProcess
+def Init_IPC():
+	global ui_rx
+	global ui_tx
+	global ui_rx_enum
+	global ui_tx_enum
+	global ui_state_cmd_enum
+	global ui_process
+	global pt_rx
+	global pt_tx
+	global pt_rx_enum
+	global pt_tx_enum
+	global pt_state_cmd_enum
+	global pt_process
 
-		# create queues for bidirectional communication with other processes
-		dataToUI = multiprocessing.Queue()
-		dataFromUI = multiprocessing.Queue()
-		dataToPT = multiprocessing.Queue()
-		dataFromPT = multiprocessing.Queue()
-		logging.debug("Created IPC queues")
+	# create arrays for bidirectional communication with other processes
+	ui_rx = multiprocessing.Array('f', len(settings['enumerations']['ui_rx']))
+	ui_tx = multiprocessing.Array('f', len(settings['enumerations']['ui_tx']))
+	pt_rx = multiprocessing.Array('f', len(settings['enumerations']['pt_rx']))
+	pt_tx = multiprocessing.Array('f', len(settings['enumerations']['pt_tx']))
+	data_visualization_rx, data_visualization_tx = multiprocessing.Pipe()
+	logging.debug("Created IPC Arrays & Pipe")
 
-		# create seperate processes for the UI and Puck Tracker and give them Queues for IPC
-		uiProcess = multiprocessing.Process(target=ui.uiProcess, name="ui", args=(dataToUI, dataFromUI))
-		logging.debug("Created UI process with a queue")
-		ptProcess = multiprocessing.Process(target=pt.ptProcess, name="pt", args=(dataToPT, dataFromPT))
-		logging.debug("Created Puck Tracker process with a queue")
+	# create seperate processes for the User Interface and Puck Tracker and give them Arrays & Pipe for IPC
+	ui_process = multiprocessing.Process(target=ui.ui_process, name="ui", args=(ui_rx, ui_tx, data_visualization_rx))
+	logging.debug("Created User Interface process with Arrays and a Pipe")
+	pt_process = multiprocessing.Process(target=pt.pt_process, name="pt", args=(pt_rx, pt_tx, data_visualization_tx))
+	logging.debug("Created Puck Tracker process with Arrays and a Pipe")
 
-		# start child processes
-		uiProcess.start()
-		logging.debug("Started UI process")
-		ptProcess.start()
-		logging.debug("Started Puck Tracker process")
+	# start child processes
+	ui_process.start()
+	logging.debug("Started User Interface process")
+	pt_process.start()
+	logging.debug("Started Puck Tracker process")
 
-		#dataToPT.put("Calibrate")
-		#dataToPT.put("TrackPuck")
-		dataToUI.put("RunUI")
+	ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.run
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
 
 ## end of method
 
@@ -445,29 +530,15 @@ if __debug__:
 ## Uninit_IPC() - Need to add error detection
 ## Uninitialize multiprocessing between UI, Puck Tracker and MC
 ##
-if __debug__:
-	def Uninit_IPC():
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
-		global uiProcess
-		global ptProcess
+def Uninit_IPC():
+	global ui_process
+	global pt_process
 
-		# close queues for bidirectional communication with other processes
-		dataToUI.close()
-		dataFromUI.close()
-		dataToPT.close()
-		dataFromPT.close()
-		logging.debug("Closed IPC queues")
-
-		time.sleep(0.5)
-
-		# terminate seperate processes for the UI and Puck Tracker 
-		uiProcess.terminate()
-		logging.debug("Terminated UI process")
-		ptProcess.terminate()
-		logging.debug("Terminated Puck Tracker process")
+	# terminate seperate processes User Interface and Puck Tracker 
+	ui_process.terminate()
+	logging.debug("Terminated User Interface process")
+	pt_process.terminate()
+	logging.debug("Terminated Puck Tracker process")
 
 ## end of method
 
@@ -475,69 +546,29 @@ if __debug__:
 ## Rx_IPC() -  Need to add error detection
 ## Receive any pending IPC Queue messages and populate global variables as necessary
 ##
-if __debug__:
-	def Rx_IPC():
-		global operationMode
-		global dataToUI
-		global dataFromUI
-		global dataToPT
-		global dataFromPT
+def Rx_IPC():
+	global puck_position_mm_x
+	global puck_position_mm_y
+	global puck_velocity_mmps_x 
+	global puck_velocity_mmps_y
+	global pt_state
+	global pt_error
+	global ui_state
+	global ui_error
+	global ui_diagnostic_request
 
-		global mc_pos_cmd_x_mm
-		global mc_pos_cmd_y_mm
+	# get data from puck tracker
+	pt_state = pt_tx[pt_tx_enum.state]
+	pt_error = pt_tx[pt_tx_enum.error]
+	puck_position_mm_x = pt_tx[pt_tx_enum.puck_position_x]
+	puck_position_mm_y = pt_tx[pt_tx_enum.puck_position_y]
+	puck_velocity_mmps_x = pt_tx[pt_tx_enum.puck_velocity_x]
+	puck_velocity_mmps_y = pt_tx[pt_tx_enum.puck_velocity_y]
 
-		global puckPositionMmX
-		global puckPositionMmY
-		global puckVelocityMmPerSX 
-		global puckVelocityMmPerSY
-
-		# get data from Puck tracker
-		try:
-			ptData = dataFromPT.get(False)
-			logging.debug(str(ptData))
-
-			# set flag that indicates we are in MC-decisions mode
-			operationMode = 0
-			logging.debug("We are in MC-decision control mode")
-			
-			#string manipulation
-			ptData = ptData.split(":")
-			if ptData[0] == "puck_position_mm_x":
-				puckPositionMmX = int(ptData[1])
-			elif ptData[0] == "puck_position_mm_y":
-				puckPositionMmY = int(ptData[1])
-			elif ptData[0] == "puck_velocity_mmps_x":
-				puckVelocityMmPerSX = int(ptData[1])
-			elif ptData[0] == "puck_velocity_mmps_y":
-				puckVelocityMmPerSY = int(ptData[1])
-
-		except Queue.Empty:
-			ptData = 0
-		else:
-			logging.debug("ptData: %s", ptData)
-			if ptData == "Calibration Complete":
-				dataToPT.put("TrackPuck")
-
-		# get data from UI
-		try:
-			uiData = dataFromUI.get(False)
-			logging.debug(str(uiData))
-
-			# set flag that indicates we are in UI mode
-			operationMode = 1 
-			logging.debug("We are in UI manual control mode")
-
-			#string manipulation
-			uiData = uiData.split(":")
-			if uiData[0] == "paddle_position_mm_x":
-				mc_pos_cmd_x_mm = int(uiData[1])
-			elif uiData[0] == "paddle_position_mm_y":
-				mc_pos_cmd_y_mm = int(uiData[1])
-
-		except Queue.Empty:
-			uiData = 0
-		else:
-			logging.debug(str(uiData))
+	# get data from user interface
+	ui_state = ui_tx[ui_tx_enum.state]
+	ui_error = ui_tx[ui_tx_enum.error]
+	ui_diagnostic_request = ui_tx[ui_tx_enum.diagnostic_request]
 
 ## end of method
 
@@ -565,8 +596,8 @@ def filter_Tx_PC_Cmd():
 						mc_pos_cmd_y_mm, pos_diff_mm, filter_pos_value_mm, mc_pos_cmd_sent_x_mm, mc_pos_cmd_sent_y_mm)
 		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
 		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
-## end of method
 
+## end of method
 
 ## 
 ## get_paddle_defense_position(device)
@@ -574,88 +605,114 @@ def filter_Tx_PC_Cmd():
 ## Outputs XY (y=0) position for the paddle to defend goal from an oncoming puck
 ##
 def get_paddle_defense_position():
-	global puckPositionMmX
-	global puckPositionMmY
-	global puckVelocityMmPerSX 
-	global puckVelocityMmPerSY
-	global lastPuckPositionMmX
-	global lastPuckPositionMmY
-	global lastPuckVelocityMmPerSY
-	global puckPredictionAveragedArray
-	global puckPredictionAveragedWindowSize
-	global puckPredictionAveragedIndex
-	global minPuckVelocityMmPerSY
-
-	global goalRightPostMmX
-	global goalLeftPostMmX
-	global goalPostToleranceMmX
-
-	global 	mc_pos_cmd_x_mm
+	global puck_position_mm_x
+	global puck_position_mm_y
+	global puck_velocity_mmps_y
+	global last_puck_position_mm_x
+	global last_puck_position_mm_y
+	global last_puck_velocity_mmps_y
+	global last_puck_prediction_averaged_mm_x
+	global puck_prediction_averaged_array
+	global puck_prediction_averaged_window_size
+	global puck_prediction_averaged_index
+	global min_puck_velocity_mmps_y
+	global goal_center_mm_x
+	global goal_left_post_mm_x
+	global goal_right_post_mm_x
+	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
 	
-	puckPredictionMmX = 0
-	puckPredictionAveragedMmX = 0
+	puck_prediction_mm_x = 0
+	puck_prediction_averaged_mm_x = last_puck_prediction_averaged_mm_x
 	
-	# check if the puck is moving towards the robot
-	if puckVelocityMmPerSY < minPuckVelocityMmPerSY:
+	# check if the puck is moving towards the robot, if yes: DEFEND!
+	if puck_velocity_mmps_y < min_puck_velocity_mmps_y:
 		# using the equation of a line y = mx + b, find predicted x position when y = 0
-		vectorY = int(puckPositionMmY - lastPuckPositionMmY)
-		vectorX = int(puckPositionMmX - lastPuckPositionMmX)
+		vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
+		vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
 		
-		if vectorX == 0:
+		if vector_mm_x == 0:
 			# avoid divide by zero
 			slope = 999999
 		else:
-			slope = vectorY/vectorX
+			slope = vector_mm_y/vector_mm_x
 		
 		# b = y - mx
-		yIntercept = puckPositionMmY - (slope * puckPositionMmX)
+		intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
 		
-		if slope != 0:
-			puckPredictionMmX = -yIntercept / slope
-		else:
-			puckPredictionMmX = 0
-			
+		# x = (y - b)/m
+		puck_prediction_mm_x = -intercept_mm_y / slope
+
+		# predict bounces and get a real x prediction
+		while True:
+			if (table_width_mm - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
+				break
+
+			elif puck_prediction_mm_x < puck_radius_mm:
+				bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
+				slope = -slope
+				intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
+				puck_prediction_mm_x = (paddle_radius_mm - intercept_mm_y) / slope
+
+			elif puck_prediction_mm_x > (table_width_mm - puck_radius_mm):
+				bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
+				slope = -slope
+				intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
+				puck_prediction_mm_x = (paddle_radius_mm - intercept_mm_y) / slope
+
+
 		# now that we have a predicted x position, take an average to improve accuracy  
-		puckPredictionAveragedArray[puckPredictionAveragedIndex] = puckPredictionMmX
-		numNonZeroValues = np.count_nonzero(puckPredictionAveragedArray)
-		
-		if numNonZeroValues != 0:
-			puckPredictionAveragedMmX = (np.sum(puckPredictionAveragedArray)) / numNonZeroValues
+		puck_prediction_averaged_array[puck_prediction_averaged_index] = puck_prediction_mm_x
+		number_non_zero_values = np.count_nonzero(puck_prediction_averaged_array)
+		if number_non_zero_values != 0:
+			puck_prediction_averaged_mm_x = (np.sum(puck_prediction_averaged_array)) / number_non_zero_values
 		else:
-			puckPredictionAveragedMmX = 0
+			puck_prediction_averaged_mm_x = 0
 		
 		# manage index for array
-		puckPredictionAveragedIndex += 1
-		if puckPredictionAveragedIndex < puckPredictionAveragedWindowSize:
+		puck_prediction_averaged_index += 1
+		if puck_prediction_averaged_index < puck_prediction_averaged_window_size:
 			pass
 		else:
-			puckPredictionAveragedIndex = 0
-			
-	if puckVelocityMmPerSY > minPuckVelocityMmPerSY and lastPuckVelocityMmPerSY < minPuckVelocityMmPerSY:
-		puckPredictionAveragedArray.fill(0)
-		puckPredictionAveragedIndex = 0
+			puck_prediction_averaged_index = 0
+		
+		# Goal post correction
+		if puck_prediction_averaged_mm_x < goal_left_post_mm_x:
+			puck_prediction_averaged_mm_x = goal_left_post_mm_x
+		# puck pos after right goalpost then set to the right goalpost_pos+tolerance
+		elif puck_prediction_averaged_mm_x > goal_right_post_mm_x:
+			puck_prediction_averaged_mm_x = goal_right_post_mm_x
 
-	lastPuckVelocityMmPerSY = puckVelocityMmPerSY
-	lastPuckPositionMmX = puckPositionMmX
-	lastPuckPositionMmY = puckPositionMmY
+	if (puck_velocity_mmps_y > min_puck_velocity_mmps_y) and (last_puck_velocity_mmps_y < min_puck_velocity_mmps_y):
+		puck_prediction_averaged_array.fill(0)
+		puck_prediction_averaged_index = 0
+		puck_prediction_averaged_mm_x = goal_center_mm_x
 
-	logging.debug("Puck final trajectory position (before goalpost correction) is: %i,0", puckPredictionAveragedMmX)
-	
-	# Goal post correction
-	# puck pos before left goalpost then set to the left goalpost_pos-tolerance
-	if puckPredictionAveragedMmX < goalLeftPostMmX:
-		puckPredictionAveragedMmX = goalLeftPostMmX - goalPostToleranceMmX
-	# puck pos after right goalpost then set to the right goalpost_pos+tolerance
-	elif puckPredictionAveragedMmX > goalRightPostMmX:
-		puckPredictionAveragedMmX = goalRightPostMmX + goalPostToleranceMmX	
+	last_puck_velocity_mmps_y = puck_velocity_mmps_y
+	last_puck_position_mm_x = puck_position_mm_x
+	last_puck_position_mm_y = puck_position_mm_y
+	last_puck_prediction_averaged_mm_x = puck_prediction_averaged_mm_x
 
-	logging.debug("Paddle defense position is: %i,0", puckPredictionAveragedMmX)
+	logging.debug("Paddle defense position is: %i,0", puck_prediction_averaged_mm_x)
 
-	mc_pos_cmd_x_mm = puckPredictionAveragedMmX
+	mc_pos_cmd_x_mm = int(puck_prediction_averaged_mm_x)
 	mc_pos_cmd_y_mm = 0
 
 ## end of method
+
+def make_decisions():
+	# go through steps of shutting down if UI requests
+	if int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
+		Close_HDF5()
+		#Uninit_PCAN(PCAN)
+
+	# check if all conditions for quitting are met
+	if (int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit and
+	    int(pt_tx[pt_tx_enum.state]) == pt_state_enum.quit):
+	   	quit(0)
+
+
 
 ##############################################################################################
 ## MAIN() function
@@ -672,60 +729,29 @@ def main():
 	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG,
 						format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
-	# Initialize device
-	Init_PCAN(PCAN)
+	# Create enums
+	get_enums()
+
+	# Initialize PCAN device
+	#Init_PCAN(PCAN)
 
 	# Create HDF5 file for logging PC position data
 	Create_HDF5()
 
-	# UI control of the position
-	if __debug__:
-		logging.debug("Mode: UI control of the position")
+	# Initialize IPC between MC - PC - UI
+	Init_IPC()
 
-		# Initialize IPC between MC - PC - UI
-		Init_IPC()
-
-		# read messages from IPC
-		while 1:
-			Rx_IPC()
-			# get defense pos for paddle if in MC-decisions mode
-			if operationMode == 0:
-				get_paddle_defense_position()
-			# UI manual control mode (enable jitter filter)
-			elif operationMode == 1:
-				filter_Tx_PC_Cmd()
-			Tx_PC_Cmd(PCAN)
-			add_pos_sent_HDF5(str(datetime.datetime.now()))
-			update_display()
-			Rx_CAN(PCAN)
-			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
-			update_dset_HDF5()
-			sleep(timeout)
-
-	# Keyboard control of the position
-	#"""
-	logging.debug("Mode: Keyboard control of the position")
-
-	while 1:
-		# Wait for keyboard input, or do other stuff
-		while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-			line = sys.stdin.readline()
-			if line:
-				process_input()
-			else: 
-				print('eof')
-				exit(0)
-		else:
-			filter_Tx_PC_Cmd()
-			#Tx_PC_Cmd(PCAN)
-			add_pos_sent_HDF5(str(datetime.datetime.now()))
-			update_display()
-			#Rx_CAN(PCAN)
-			add_pos_rcvd_HDF5(str(datetime.datetime.now()))
-			update_dset_HDF5()
-			sleep(timeout)
-
-	#"""
+	# Master Controller State Machine
+	while True:
+		Rx_IPC()
+		#Rx_CAN(PCAN)
+		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		get_paddle_defense_position()
+		make_decisions()
+		#Tx_PC_Cmd(PCAN)
+		#add_pos_sent_HDF5(str(datetime.datetime.now()))
+		#update_dset_HDF5()
+		sleep(timeout)
 
 ## end of method
 

@@ -1,5 +1,10 @@
 import multiprocessing
 import Queue
+import sys
+
+# add user interface and puck tracker module paths
+sys.path.insert(0, '../')
+sys.path.insert(0, '../../../../8_User_Interface/1_Software/1_Source/')
 import puck_tracker as pt
 import user_interface as ui
 

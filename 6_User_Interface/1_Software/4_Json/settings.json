@@ -24,6 +24,9 @@
             "error", 
             "diagnostic_request"
         ], 
+        "ui_error": [
+            "crashed"
+        ], 
         "pt_state": [
             "idle", 
             "calibrate", 
@@ -44,19 +47,16 @@
             "puck_velocity_x", 
             "puck_velocity_y"
         ], 
-        "ui_diagnostic_request": [
-            "idle", 
-            "calibrate_pt"
-        ], 
         "pt_rx": [
             "state_cmd"
         ], 
-        "ui_error": [
-            "crashed"
+        "ui_diagnostic_request": [
+            "idle", 
+            "calibrate_pt"
         ]
     }, 
     "user_interface": {
         "game_difficulty": "medium", 
-        "game_length": 120
+        "game_length": 60
     }
 }

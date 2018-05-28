@@ -368,7 +368,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
             pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
 
-            frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
+            frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
 
             if visualization_data.poll():
                 if visualization_data.recv() == 0:

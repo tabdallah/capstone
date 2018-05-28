@@ -760,7 +760,7 @@ try:
 except KeyboardInterrupt:
 	print " "
 	Close_HDF5()
-	Uninit_PCAN(PCAN)
+	#Uninit_PCAN(PCAN)
 	Uninit_IPC()
 
 

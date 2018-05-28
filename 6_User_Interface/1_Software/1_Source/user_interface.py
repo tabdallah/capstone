@@ -2,6 +2,7 @@
 import Queue
 import sys
 import time
+import copy
 import json
 import cv2
 from kivy.app import App
@@ -142,6 +143,7 @@ class SettingsScreen(BoxLayout, Screen):
 
         self.game_difficulty = self.settings['user_interface']['game_difficulty']
         self.game_length = self.settings['user_interface']['game_length']
+        self.updated_settings = True
 
         if self.game_difficulty == "easy":
             self.easy_button.state = 'down'
@@ -179,12 +181,19 @@ class SettingsScreen(BoxLayout, Screen):
     def on_enter(self):
         with open((settings_path + 'settings.json'), 'r') as fp:
             self.settings = json.load(fp)
+            self.old_settings = copy.deepcopy(self.settings)
             fp.close()
 
     def on_leave(self):
         with open((settings_path + 'settings.json'), 'w+') as fp:
             json.dump(self.settings, fp, indent=4)
             fp.close()
+
+        self.game_length = self.settings['user_interface']['game_length']
+        self.game_difficulty = self.settings['user_interface']['game_difficulty']
+
+        if self.old_settings != self.settings:
+            self.updated_settings = True
 
 class ManualScreen(Screen, FloatLayout):
     def __init__(self, **kwargs):
@@ -206,30 +215,31 @@ class VisualScreen(BoxLayout, Screen):
         super(VisualScreen, self).__init__(**kwargs)
 
         # scoreboard stuff
-        self.scoreboard = BoxLayout(orientation='horizontal',size_hint=(1,0.2),color=(255,0,0))
+        self.scoreboard = BoxLayout(orientation='horizontal')
         self.robot = BoxLayout(orientation='vertical')
         self.game_clock = BoxLayout(orientation='vertical')
         self.human = BoxLayout(orientation='vertical')
         self.scoreboard.add_widget(self.robot)
         self.scoreboard.add_widget(self.game_clock)
         self.scoreboard.add_widget(self.human)
-        self.robot.add_widget(Label(name='name',text='roboMan',font_size=20))
-        self.robot.add_widget(Label(name='score',text='0',font_size=40))
-        self.clock_label = Label(name='game_clock',text='00:00',font_size=60)
+        #self.robot.add_widget(Label(name='name',text='roboMan',font_size=20))
+        #self.robot.add_widget(Label(name='score',text='0',font_size=40))
+        self.clock_label = Label(name='game_clock',text='00:00',font_size=80)
         self.game_clock.add_widget(self.clock_label)
-        self.human.add_widget(Label(name='name',text='someGuy',font_size=20))
-        self.human.add_widget(Label(name='score',text='0',font_size=40))
-        self.add_widget(self.scoreboard)
+        #self.human.add_widget(Label(name='name',text='someGuy',font_size=20))
+        #self.human.add_widget(Label(name='score',text='0',font_size=40))
+        #self.add_widget(self.scoreboard)
 
         # visualization & menu
-        self.visualization_and_menu = BoxLayout(orientation='horizontal',)
+        self.visualization_and_menu = BoxLayout(orientation='horizontal')
         self.visualization = BoxLayout(orientation='vertical')
-        self.menu = BoxLayout(orientation='vertical', size_hint=(0.2,1))
+        self.menu = BoxLayout(orientation='vertical', size_hint=(0.3,1))
         self.visualization_and_menu.add_widget(self.visualization)
         self.visualization_and_menu.add_widget(self.menu)
         self.visualization.add_widget(VisualizationData())
         self.start_reset_game_button = Button(text="Start Game", on_release=self.start_reset_game)
         self.pause_resume_game_button = Button(text="Pause Game", on_release=self.pause_resume_game)
+        self.menu.add_widget(self.scoreboard)
         self.menu.add_widget(self.start_reset_game_button)
         self.menu.add_widget(self.pause_resume_game_button)
         self.menu.add_widget(Button(text="Main Menu",on_release=self.go_menu))
@@ -279,6 +289,16 @@ class VisualScreen(BoxLayout, Screen):
             Clock.schedule_interval(self.decrement_clock, 1)
             self.pause_resume_game_button.text = "Pause Game"
 
+    def on_enter(self):
+        if self.manager.get_screen('settings').updated_settings == True:
+            self.get_settings()
+            self.manager.get_screen('settings').updated_settings = False
+
+    def on_leave(self):
+        if self.pause_resume_game_button.text == "Pause Game":
+            Clock.unschedule(self.decrement_clock)
+            self.pause_resume_game_button.text = "Resume Game"
+
     def go_menu(self, *args):
         self.manager.current = 'menu'
 
@@ -301,9 +321,9 @@ class MenuScreen(BoxLayout, Screen):
         self.menu_box.add_widget(self.menu_col_1)
         self.menu_box.add_widget(self.menu_col_2)
         self.menu_box.add_widget(self.menu_col_3)
-        self.menu_col_1.add_widget(Button(text="Visual", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_visual))
+        self.menu_col_1.add_widget(Button(text="Play Against Robot", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_visual))
         self.menu_col_1.add_widget(Button(text="Settings", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_settings))
-        self.menu_col_2.add_widget(Button(text="Manual", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_manual))
+        self.menu_col_2.add_widget(Button(text="Play Using Robot", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_manual))
         self.menu_col_2.add_widget(Button(text="About", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_about))
         self.menu_col_3.add_widget(Button(text="Diagnostics", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_diagnostics))
         self.menu_col_3.add_widget(Button(text="Quit", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_quit))
@@ -342,7 +362,7 @@ class DiagnosticsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(DiagnosticsScreen, self).__init__(**kwargs)
         self.add_widget(Label(text='Relevant data'))
-        self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
+        #self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
         self.add_widget(Button(text='Main Menu', size_hint=(1,0.1), on_release=self.go_menu))
 
     def go_menu(self, *args):

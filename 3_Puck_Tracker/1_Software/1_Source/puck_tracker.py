@@ -366,15 +366,10 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
             pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
 
-            #frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
-
-            if visualization_data.poll():
-                if visualization_data.recv() == 0:
-                    visualization_data.close()
-            else:
-                visualization_data.send(frame)
+            visualization_data.send(frame)
 
         elif pt_state == pt_state_enum.quit:
+            print "hey"
             pt_tx[pt_tx_enum.state] = pt_state_enum.quit
             video_stream.release() 
             cv2.destroyAllWindows()

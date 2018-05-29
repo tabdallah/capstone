@@ -25,6 +25,7 @@ from kivy.graphics.texture import Texture
 from time import sleep
 from kivy.config import Config
 from kivy.uix.popup import Popup
+from kivy.animation import Animation
 
 # customize screen size/cursor visibility
 Config.set('graphics','width','1024')
@@ -215,34 +216,40 @@ class VisualScreen(BoxLayout, Screen):
         super(VisualScreen, self).__init__(**kwargs)
 
         # scoreboard stuff
-        self.scoreboard = BoxLayout(orientation='horizontal')
+        self.scoreboard = BoxLayout(orientation='vertical', size_hint=(1,1.5))
+        
+        self.clock_label = Label(text='00:00', font_size=80, color=(1,0,0,1))
+        self.scoreboard.add_widget(self.clock_label)
+        
+        self.score = BoxLayout(orientation='horizontal')
         self.robot = BoxLayout(orientation='vertical')
-        self.game_clock = BoxLayout(orientation='vertical')
         self.human = BoxLayout(orientation='vertical')
-        self.scoreboard.add_widget(self.robot)
-        self.scoreboard.add_widget(self.game_clock)
-        self.scoreboard.add_widget(self.human)
-        #self.robot.add_widget(Label(name='name',text='roboMan',font_size=20))
-        #self.robot.add_widget(Label(name='score',text='0',font_size=40))
-        self.clock_label = Label(name='game_clock',text='00:00',font_size=80)
-        self.game_clock.add_widget(self.clock_label)
-        #self.human.add_widget(Label(name='name',text='someGuy',font_size=20))
-        #self.human.add_widget(Label(name='score',text='0',font_size=40))
-        #self.add_widget(self.scoreboard)
+        
+        self.robot.add_widget(Label(text='Robot',font_size=20, size_hint=(1,0.4)))
+        self.robot_score = Label(text='0', font_size=50)
+        self.robot.add_widget(self.robot_score)
+
+        self.human.add_widget(Label(text='Human',font_size=20, size_hint=(1,0.4)))
+        self.human_score = Label(text='0', font_size=50)
+        self.human.add_widget(self.human_score)
+
+        self.score.add_widget(self.robot)
+        self.score.add_widget(self.human)
+        self.scoreboard.add_widget(self.score)
 
         # visualization & menu
         self.visualization_and_menu = BoxLayout(orientation='horizontal')
         self.visualization = BoxLayout(orientation='vertical')
-        self.menu = BoxLayout(orientation='vertical', size_hint=(0.3,1))
+        self.menu = BoxLayout(orientation='vertical', size_hint=(0.29,1))
         self.visualization_and_menu.add_widget(self.visualization)
         self.visualization_and_menu.add_widget(self.menu)
         self.visualization.add_widget(VisualizationData())
-        self.start_reset_game_button = Button(text="Start Game", on_release=self.start_reset_game)
-        self.pause_resume_game_button = Button(text="Pause Game", on_release=self.pause_resume_game)
+        self.start_reset_game_button = Button(text="Start Game", font_size=30, on_release=self.start_reset_game)
+        self.pause_resume_game_button = Button(text="Pause Game", font_size=30, on_release=self.pause_resume_game)
         self.menu.add_widget(self.scoreboard)
         self.menu.add_widget(self.start_reset_game_button)
         self.menu.add_widget(self.pause_resume_game_button)
-        self.menu.add_widget(Button(text="Main Menu",on_release=self.go_menu))
+        self.menu.add_widget(Button(text="Main Menu", font_size=30, on_release=self.go_menu))
         self.add_widget(self.visualization_and_menu)
         self.pause_resume_game_button.disabled = True
 
@@ -267,6 +274,7 @@ class VisualScreen(BoxLayout, Screen):
 
     def start_reset_game(self, *args):
         if self.start_reset_game_button.text == "Start Game":
+            self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.playing
             Clock.schedule_interval(self.decrement_clock, 1)
             self.pause_resume_game_button.disabled = False
             self.start_reset_game_button.text = "Reset Game"
@@ -277,29 +285,32 @@ class VisualScreen(BoxLayout, Screen):
             self.clock_label.value = self.game_length
             self.pause_resume_game_button.text = "Pause Game"
             self.pause_resume_game_button.disabled = True
+            self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.start_reset_game_button.text = "Start Game"
 
     def pause_resume_game(self, *args):
         if self.pause_resume_game_button.text == "Pause Game":
+            self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.pause_resume_game_button.text = "Resume Game"
 
         elif self.pause_resume_game_button.text == "Resume Game":
+            self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.playing
             Clock.schedule_interval(self.decrement_clock, 1)
             self.pause_resume_game_button.text = "Pause Game"
 
     def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
         if self.manager.get_screen('settings').updated_settings == True:
             self.get_settings()
             self.manager.get_screen('settings').updated_settings = False
 
-    def on_leave(self):
+    def go_menu(self, *args):
         if self.pause_resume_game_button.text == "Pause Game":
+            self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.pause_resume_game_button.text = "Resume Game"
-
-    def go_menu(self, *args):
         self.manager.current = 'menu'
 
 class MenuScreen(BoxLayout, Screen):
@@ -344,9 +355,11 @@ class MenuScreen(BoxLayout, Screen):
     def go_diagnostics(self, *args):
         self.manager.current = 'diagnostics'
     
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.menu
+
     def go_quit(self, *args):
         self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
-        self.manager.visualization_data.send(0)
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
@@ -375,11 +388,10 @@ class DiagnosticsScreen(BoxLayout, Screen):
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
-        # queue management
+        # IPC management
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
         self.visualization_data = visualization_data
-        Clock.schedule_interval(self.get_queue_data, 0.01)
 
         # screen management
         self.transition = FadeTransition()
@@ -391,9 +403,6 @@ class ScreenManagement(ScreenManager):
         self.add_widget(AboutScreen(name='about', orientation='vertical', size=self.size))
         self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
 
-    def get_queue_data(self, *args):
-        pass
-
 # main app
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
@@ -403,7 +412,7 @@ class UserInterfaceApp(App):
         self.visualization_data = visualization_data
 
     def build(self):
-        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager', size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
+        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
 
 # enum creator
 def enum(list_of_enums):
@@ -418,6 +427,8 @@ def get_enums():
     global ui_error_enum
     global ui_rx_enum
     global ui_tx_enum
+    global ui_game_state_enum
+    global ui_screen_enum
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
@@ -430,6 +441,8 @@ def get_enums():
     ui_rx_enum = enum(settings['enumerations']['ui_rx'])
     ui_tx_enum = enum(settings['enumerations']['ui_tx'])
     ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
+    ui_game_state_enum = enum(settings['enumerations']['ui_game_state'])
+    ui_screen_enum = enum(settings['enumerations']['ui_screen'])
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
@@ -440,16 +453,11 @@ def ui_process(ui_rx, ui_tx, visualization_data):
     while True:
         # retrieve commands from master controller
         mc_cmd = int(ui_rx[ui_rx_enum.state_cmd])
+        ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.idle
             
         # set desired state of the user interface to that commanded by mc    
         if mc_cmd == ui_state_cmd_enum.run:
-            ui_desired_state = ui_state_cmd_enum.run
-        else:
-            ui_desired_state = ui_state_cmd_enum.idle
-
-        # do the required setup to enter state requested by mc
-        if ui_desired_state == ui_state_cmd_enum.run and ui_state != ui_state_enum.running:
-            ui_state = ui_state_enum.running
-            ui_desired_state = ui_state_cmd_enum.idle
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
             quit(0)
+            
+        

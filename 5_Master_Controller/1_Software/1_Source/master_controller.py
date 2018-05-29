@@ -39,7 +39,7 @@ PCAN = PCANBasic()
 
 log_fileName = "debug.log"		# File name for debug logging
 
-timeout = 0.01 			# Timeout for keyboard input in seconds
+timeout = 0.005 			# Timeout for keyboard input in seconds
 
 operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
 
@@ -100,7 +100,7 @@ pt_error = 0
 ui_state = 0
 ui_error = 0
 ui_diagnostic_request = 0
-game_mode = 1
+game_mode = 0
 
 # puck prediction
 puck_position_mm_x = 0
@@ -163,6 +163,8 @@ def get_enums():
 	global ui_rx_enum
 	global ui_tx_enum
 	global ui_diagnostic_request_enum
+	global ui_game_state_enum
+	global ui_screen_enum
 
 	global settings
 
@@ -183,6 +185,8 @@ def get_enums():
 	ui_rx_enum = enum(settings['enumerations']['ui_rx'])
 	ui_tx_enum = enum(settings['enumerations']['ui_tx'])
 	ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
+	ui_game_state_enum = enum(settings['enumerations']['ui_game_state'])
+	ui_screen_enum = enum(settings['enumerations']['ui_screen'])
 
 ##############################################################################################
 ## Command line output functions
@@ -565,19 +569,23 @@ def Rx_IPC():
 	global ui_state
 	global ui_error
 	global ui_diagnostic_request
+	global ui_game_state
+	global ui_screen
 
 	# get data from puck tracker
-	pt_state = pt_tx[pt_tx_enum.state]
-	pt_error = pt_tx[pt_tx_enum.error]
+	pt_state = int(pt_tx[pt_tx_enum.state])
+	pt_error = int(pt_tx[pt_tx_enum.error])
 	puck_position_mm_x = pt_tx[pt_tx_enum.puck_position_x]
 	puck_position_mm_y = pt_tx[pt_tx_enum.puck_position_y]
 	puck_velocity_mmps_x = pt_tx[pt_tx_enum.puck_velocity_x]
 	puck_velocity_mmps_y = pt_tx[pt_tx_enum.puck_velocity_y]
 
 	# get data from user interface
-	ui_state = ui_tx[ui_tx_enum.state]
-	ui_error = ui_tx[ui_tx_enum.error]
-	ui_diagnostic_request = ui_tx[ui_tx_enum.diagnostic_request]
+	ui_state = int(ui_tx[ui_tx_enum.state])
+	ui_error = int(ui_tx[ui_tx_enum.error])
+	ui_diagnostic_request = int(ui_tx[ui_tx_enum.diagnostic_request])
+	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
+	ui_screen = int(ui_tx[ui_tx_enum.screen])
 
 ## end of method
 
@@ -745,6 +753,7 @@ def get_paddle_position():
 
 	# send frame
 	if frame_received:
+		frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
 		ui_visualization_tx.send(frame)
 	
 	last_puck_velocity_mmps_y = puck_velocity_mmps_y
@@ -760,16 +769,35 @@ def get_paddle_position():
 ## end of method
 
 def make_decisions():
+	get_paddle_position()
+	# check which UI screen we are on, this dictates a large part of what state we'll be in
+	if ui_screen == ui_screen_enum.idle:
+		pass
+	elif ui_screen == ui_screen_enum.intro:
+		pass
+	elif ui_screen == ui_screen_enum.menu:
+		pass
+	elif ui_screen == ui_screen_enum.visual:
+		if ui_game_state == ui_game_state_enum.idle:
+			pass
+		elif ui_game_state == ui_game_state_enum.playing:
+			Tx_PC_Cmd(PCAN)
+		elif ui_game_state == ui_game_state_enum.stopped:
+			pass
+	
 	# go through steps of shutting down if UI requests
-	if int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit:
+	if ui_state == ui_state_enum.quit:
+		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
+	print ui_process.exitcode, pt_process.exitcode
+
 	# check if all conditions for quitting are met
-	if (int(ui_tx[ui_tx_enum.state]) == ui_state_enum.quit and
-	    int(pt_tx[pt_tx_enum.state]) == pt_state_enum.quit):
+	if (ui_state == ui_state_enum.quit and
+		pt_state == pt_state_enum.quit):
 		Close_HDF5()
 		Uninit_PCAN(PCAN)
-	   	quit(0)
+		quit(0)
 
 
 
@@ -804,12 +832,11 @@ def main():
 	while True:
 		Rx_IPC()
 		Rx_CAN(PCAN)
-		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
-		get_paddle_position()
+		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		make_decisions()
-		Tx_PC_Cmd(PCAN)
-		add_pos_sent_HDF5(str(datetime.datetime.now()))
-		update_dset_HDF5()
+		#Tx_PC_Cmd(PCAN)
+		#add_pos_sent_HDF5(str(datetime.datetime.now()))
+		#update_dset_HDF5()
 		sleep(timeout)
 
 ## end of method

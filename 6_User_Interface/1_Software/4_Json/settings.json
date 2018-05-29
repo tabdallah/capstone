@@ -5,12 +5,23 @@
             "running", 
             "quit"
         ], 
+        "ui_screen": [
+            "idle", 
+            "intro", 
+            "menu", 
+            "visual", 
+            "manual", 
+            "diagnostic", 
+            "about", 
+            "settings"
+        ], 
         "ui_state_cmd": [
             "idle", 
-            "run"
+            "run", 
+            "quit"
         ], 
         "ui_rx": [
-            "idle",
+            "idle", 
             "state_cmd"
         ], 
         "pt_state_cmd": [
@@ -20,14 +31,13 @@
             "error", 
             "quit"
         ], 
-        "ui_tx": [
-            "idle",
-            "state", 
-            "error", 
-            "diagnostic_request"
+        "ui_game_state": [
+            "idle", 
+            "playing", 
+            "stopped"
         ], 
         "ui_error": [
-            "idle",
+            "idle", 
             "crashed"
         ], 
         "pt_state": [
@@ -42,8 +52,16 @@
             "camera", 
             "calibration_failed"
         ], 
+        "ui_tx": [
+            "idle", 
+            "state", 
+            "error", 
+            "game_state", 
+            "screen", 
+            "diagnostic_request"
+        ], 
         "pt_tx": [
-            "idle",
+            "idle", 
             "state", 
             "error", 
             "puck_position_x", 
@@ -52,7 +70,7 @@
             "puck_velocity_y"
         ], 
         "pt_rx": [
-            "idle",
+            "idle", 
             "state_cmd"
         ], 
         "ui_diagnostic_request": [
@@ -62,6 +80,6 @@
     }, 
     "user_interface": {
         "game_difficulty": "medium", 
-        "game_length": 60
+        "game_length": 120
     }
 }

@@ -134,7 +134,7 @@ def get_mm_per_pixel_factors(fiducial_coordinates):
     
     mm_per_pixel_x = table_length_mm/(br[0] - bl[0])
     mm_per_pixel_y = table_width_mm/(bl[1] - tl[1])
-    
+
     return mm_per_pixel_x, mm_per_pixel_y
 
 def get_perspective_transform_matrix(fiducial_coordinates):
@@ -173,8 +173,6 @@ def get_perspective_transform_matrix(fiducial_coordinates):
 
 def find_fiducials(frame, fiducial_lower_hsv, fiducial_upper_hsv):
     ret = False
-    global camera_vertical_resolution
-    global camera_horizontal_resolution
     
     # array to hold the 4 fiducial coordinates (x, y)
     #fiducials = np.zeros((4, 2), dtype =  "int16")
@@ -368,7 +366,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
             pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
 
-            frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
+            #frame = cv2.resize(frame, dsize=(900,600), interpolation=cv2.INTER_LINEAR)
 
             if visualization_data.poll():
                 if visualization_data.recv() == 0:

@@ -61,7 +61,7 @@
         ]
     }, 
     "user_interface": {
-        "game_difficulty": "easy", 
+        "game_difficulty": "medium", 
         "game_length": 60
     }
 }

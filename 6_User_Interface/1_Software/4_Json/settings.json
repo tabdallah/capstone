@@ -10,6 +10,7 @@
             "run"
         ], 
         "ui_rx": [
+            "idle",
             "state_cmd"
         ], 
         "pt_state_cmd": [
@@ -20,9 +21,14 @@
             "quit"
         ], 
         "ui_tx": [
+            "idle",
             "state", 
             "error", 
             "diagnostic_request"
+        ], 
+        "ui_error": [
+            "idle",
+            "crashed"
         ], 
         "pt_state": [
             "idle", 
@@ -37,6 +43,7 @@
             "calibration_failed"
         ], 
         "pt_tx": [
+            "idle",
             "state", 
             "error", 
             "puck_position_x", 
@@ -44,19 +51,17 @@
             "puck_velocity_x", 
             "puck_velocity_y"
         ], 
+        "pt_rx": [
+            "idle",
+            "state_cmd"
+        ], 
         "ui_diagnostic_request": [
             "idle", 
             "calibrate_pt"
-        ], 
-        "pt_rx": [
-            "state_cmd"
-        ], 
-        "ui_error": [
-            "crashed"
         ]
     }, 
     "user_interface": {
-        "game_difficulty": "medium", 
-        "game_length": 120
+        "game_difficulty": "easy", 
+        "game_length": 60
     }
 }

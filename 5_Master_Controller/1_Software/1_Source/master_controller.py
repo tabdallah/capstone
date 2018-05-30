@@ -10,6 +10,8 @@ import math
 import select
 import os
 import logging
+logging.basicConfig(filename='example.log', level=logging.DEBUG)
+logging.debug('Test')
 import h5py
 import numpy as np
 import datetime
@@ -55,6 +57,9 @@ ui_error_enum = 0
 ui_rx_enum = 0
 ui_tx_enum = 0
 ui_diagnostic_request_enum = 0
+ui_game_state = 0
+ui_screen = 0
+ui_goal_enum = 0
 
 settings = 0
 
@@ -165,6 +170,7 @@ def get_enums():
 	global ui_diagnostic_request_enum
 	global ui_game_state_enum
 	global ui_screen_enum
+	global ui_goal_enum
 
 	global settings
 
@@ -173,20 +179,21 @@ def get_enums():
 		settings = json.load(fp)
 		fp.close()
 
-	pt_state_cmd_enum = enum(settings['enumerations']['pt_state_cmd'])
-	pt_state_enum = enum(settings['enumerations']['pt_state'])
-	pt_error_enum = enum(settings['enumerations']['pt_error'])   
-	pt_rx_enum = enum(settings['enumerations']['pt_rx'])
-	pt_tx_enum = enum(settings['enumerations']['pt_tx'])
+	pt_state_cmd_enum = enum(settings['puck_tracker']['enumerations']['pt_state_cmd'])
+	pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
+	pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])   
+	pt_rx_enum = enum(settings['puck_tracker']['enumerations']['pt_rx'])
+	pt_tx_enum = enum(settings['puck_tracker']['enumerations']['pt_tx'])
 
-	ui_state_cmd_enum = enum(settings['enumerations']['ui_state_cmd'])
-	ui_state_enum = enum(settings['enumerations']['ui_state'])
-	ui_error_enum = enum(settings['enumerations']['ui_error'])   
-	ui_rx_enum = enum(settings['enumerations']['ui_rx'])
-	ui_tx_enum = enum(settings['enumerations']['ui_tx'])
-	ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
-	ui_game_state_enum = enum(settings['enumerations']['ui_game_state'])
-	ui_screen_enum = enum(settings['enumerations']['ui_screen'])
+	ui_state_cmd_enum = enum(settings['user_interface']['enumerations']['ui_state_cmd'])
+	ui_state_enum = enum(settings['user_interface']['enumerations']['ui_state'])
+	ui_error_enum = enum(settings['user_interface']['enumerations']['ui_error'])   
+	ui_rx_enum = enum(settings['user_interface']['enumerations']['ui_rx'])
+	ui_tx_enum = enum(settings['user_interface']['enumerations']['ui_tx'])
+	ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
+	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
+	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
+	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
 
 ##############################################################################################
 ## Command line output functions
@@ -243,13 +250,9 @@ def Init_PCAN(device):
 	status = PCANBasic.Initialize(device, PCAN_USBBUS1, PCAN_BAUD_125K)
 	PCANBasic.Reset(device, PCAN_USBBUS1)
 	if status > 0:
-		print "Error Initializing PCAN USB"
 		logging.error("Error Initializing PCAN USB")
-		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
-		exit
 	else:
-		print "PCAN USB Initialized"
 		logging.debug("PCAN USB Initialized")
 
 ## end of method
@@ -265,7 +268,6 @@ def Uninit_PCAN(device):
 		logging.error("Error Uninitializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 	else:
-		print "PCAN USB Uninitialized"
 		logging.debug("PCAN USB Uninitialized")
 
 ## end of method
@@ -514,10 +516,10 @@ def Init_IPC():
 	global pt_visualization_rx
 
 	# create arrays for bidirectional communication with other processes
-	ui_rx = multiprocessing.Array('f', len(settings['enumerations']['ui_rx']))
-	ui_tx = multiprocessing.Array('f', len(settings['enumerations']['ui_tx']))
-	pt_rx = multiprocessing.Array('f', len(settings['enumerations']['pt_rx']))
-	pt_tx = multiprocessing.Array('f', len(settings['enumerations']['pt_tx']))
+	ui_rx = multiprocessing.Array('f', len(settings['user_interface']['enumerations']['ui_rx']))
+	ui_tx = multiprocessing.Array('f', len(settings['user_interface']['enumerations']['ui_tx']))
+	pt_rx = multiprocessing.Array('f', len(settings['puck_tracker']['enumerations']['pt_rx']))
+	pt_tx = multiprocessing.Array('f', len(settings['puck_tracker']['enumerations']['pt_tx']))
 	pt_visualization_rx, pt_visualization_tx = multiprocessing.Pipe()
 	ui_visualization_rx, ui_visualization_tx = multiprocessing.Pipe()
 	logging.debug("Created IPC Arrays & Pipe")
@@ -755,7 +757,7 @@ def get_paddle_position():
 	if frame_received:
 		frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
 		ui_visualization_tx.send(frame)
-	
+
 	last_puck_velocity_mmps_y = puck_velocity_mmps_y
 	last_puck_position_mm_x = puck_position_mm_x
 	last_puck_position_mm_y = puck_position_mm_y
@@ -769,37 +771,42 @@ def get_paddle_position():
 ## end of method
 
 def make_decisions():
+	
 	get_paddle_position()
+
+	# TODO get real data for these vars
+	mc_state = 0
+	mc_error = 0
+	pc_state = 0
+	pc_error = 0
+
+	# pass state data to the UI
+	ui_rx[ui_rx_enum.pt_state] = pt_state
+	ui_rx[ui_rx_enum.pt_error] = pt_error
+	ui_rx[ui_rx_enum.mc_state] = mc_state
+	ui_rx[ui_rx_enum.mc_error] = mc_error
+	ui_rx[ui_rx_enum.pc_state] = pc_state
+	ui_rx[ui_rx_enum.pc_error] = pc_error
+
 	# check which UI screen we are on, this dictates a large part of what state we'll be in
-	if ui_screen == ui_screen_enum.idle:
-		pass
-	elif ui_screen == ui_screen_enum.intro:
-		pass
-	elif ui_screen == ui_screen_enum.menu:
-		pass
-	elif ui_screen == ui_screen_enum.visual:
-		if ui_game_state == ui_game_state_enum.idle:
-			pass
-		elif ui_game_state == ui_game_state_enum.playing:
+	if ui_screen == ui_screen_enum.visual:
+		if ui_game_state == ui_game_state_enum.playing:
 			Tx_PC_Cmd(PCAN)
 		elif ui_game_state == ui_game_state_enum.stopped:
 			pass
-	
+
 	# go through steps of shutting down if UI requests
 	if ui_state == ui_state_enum.quit:
-		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
-	print ui_process.exitcode, pt_process.exitcode
+	if pt_state == pt_state_enum.quit:
+		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 
-	# check if all conditions for quitting are met
 	if (ui_state == ui_state_enum.quit and
 		pt_state == pt_state_enum.quit):
 		Close_HDF5()
 		Uninit_PCAN(PCAN)
 		quit(0)
-
-
 
 ##############################################################################################
 ## MAIN() function
@@ -813,8 +820,7 @@ def main():
 
 	# Create and set format of the logging file
 	# If you want to disable the logger then set "level=logging.ERROR"
-	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG,
-						format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
+	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Create enums
 	get_enums()
@@ -844,7 +850,7 @@ def main():
 try:
 	main()
 except KeyboardInterrupt:
-	print " "
+	pass
 	#Close_HDF5()
 	#Uninit_PCAN(PCAN)
 	#Uninit_IPC()

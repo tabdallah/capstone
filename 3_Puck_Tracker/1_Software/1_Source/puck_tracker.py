@@ -255,11 +255,11 @@ def get_enums():
         settings = json.load(fp)
         fp.close()
 
-    pt_state_cmd_enum = enum(settings['enumerations']['pt_state_cmd'])
-    pt_state_enum = enum(settings['enumerations']['pt_state'])
-    pt_error_enum = enum(settings['enumerations']['pt_error'])   
-    pt_rx_enum = enum(settings['enumerations']['pt_rx'])
-    pt_tx_enum = enum(settings['enumerations']['pt_tx'])
+    pt_state_cmd_enum = enum(settings['puck_tracker']['enumerations']['pt_state_cmd'])
+    pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
+    pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])   
+    pt_rx_enum = enum(settings['puck_tracker']['enumerations']['pt_rx'])
+    pt_tx_enum = enum(settings['puck_tracker']['enumerations']['pt_tx'])
 
 
 """----------------------------Puck Tracker Process--------------------------"""
@@ -271,22 +271,18 @@ def pt_process(pt_rx, pt_tx, visualization_data):
     global pt_rx_enum
     global pt_tx_enum
 
-    global camera_horizontal_resolution
-    global camera_vertical_resolution
-    global camera_fps
-
     # collect enums
     get_enums()
 
     while True:
         video_stream = cv2.VideoCapture(0)
-        
         if video_stream.isOpened() == True:
             video_stream.set(cv2.CAP_PROP_FRAME_WIDTH, camera_horizontal_resolution)
             video_stream.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_vertical_resolution)
             video_stream.set(cv2.CAP_PROP_FPS, camera_fps)
             break
         else:
+            pt_tx[pt_tx_enum.state] = pt_state_enum.error
             pt_tx[pt_tx_enum.error] = pt_error_enum.camera
     
     pt_state = pt_state_enum.idle
@@ -294,7 +290,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
     calibration_attempts = 0
     
     while True:
-        # retrieve commands from master controller
+        # retrieve commands from master controller and clear
         mc_cmd = int(pt_rx[pt_rx_enum.state_cmd])
 
         # set desired state of puck tracker to that commanded by mc    
@@ -315,9 +311,9 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             # retrieve fiducial_hsv range from settings file
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
 
-        elif pt_desired_state == pt_state_cmd_enum.track and pt_state != pt_state_enum.track:
+        elif pt_desired_state == pt_state_cmd_enum.track and pt_state != pt_state_enum.tracking:
             pt_desired_state = pt_state_cmd_enum.idle
-            pt_state = pt_state_enum.track
+            pt_state = pt_state_enum.tracking
             
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
             mm_per_pixel_x, mm_per_pixel_y = get_mm_per_pixel_factors(fiducial_coordinates)
@@ -351,7 +347,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 pt_error = pt_error_enum.calibration_failed
                 calibration_attempts = 0
 
-        elif pt_state == pt_state_enum.track:
+        elif pt_state == pt_state_enum.tracking:
             ret, frame = video_stream.read()
 	   
             if ret == False:
@@ -365,11 +361,10 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.puck_position_y] = puck_position_mm_xy[0]
             pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
             pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
-
+            
             visualization_data.send(frame)
-
+            
         elif pt_state == pt_state_enum.quit:
-            print "hey"
             pt_tx[pt_tx_enum.state] = pt_state_enum.quit
             video_stream.release() 
             cv2.destroyAllWindows()

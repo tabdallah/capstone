@@ -26,11 +26,12 @@ from time import sleep
 from kivy.config import Config
 from kivy.uix.popup import Popup
 from kivy.animation import Animation
+from kivy.graphics import Line
 
 # customize screen size/cursor visibility
-Config.set('graphics','width','1024')
-Config.set('graphics','height','600')
-#Config.set('graphics', 'fullscreen', 'auto')
+#Config.set('graphics','width','1024')
+#Config.set('graphics','height','600')
+Config.set('graphics', 'fullscreen', 'auto')
 Config.set('graphics', 'show_cursor', '1')
 
 # paths to import external files
@@ -47,7 +48,8 @@ ui_state_enum = 0
 ui_error_enum = 0
 ui_rx_enum = 0
 ui_tx_enum = 0
-
+ui_state = 0
+ui_error = 0
 # miscellaneous class definitions
 class Paddle(Scatter):
     def __init__(self, **kwargs):
@@ -100,9 +102,9 @@ class IntroScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(IntroScreen, self).__init__(**kwargs)
         self.add_widget(Image(source=(images_path + 'logo.png'),allow_stretch=True))
-        self.sound = SoundLoader.load(audio_path + 'organ.wav')
-        if self.sound:
-            self.sound.play()
+        #self.sound = SoundLoader.load(audio_path + 'organ.wav')
+        #if self.sound:
+        #    self.sound.play()
         Clock.schedule_once(self.end_intro, 0)
 
     def end_intro(self, *args):
@@ -112,7 +114,15 @@ class IntroScreen(BoxLayout, Screen):
 class SettingsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
-       
+
+        # game strategy setting
+        self.game_strategy_layout = BoxLayout(orientation='horizontal')
+        self.game_strategy_layout.add_widget(Label(text='Game Strategy:'))
+        self.offense_button = ToggleButton(text='Offense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
+        self.defense_button = ToggleButton(text='Defense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
+        self.game_strategy_layout.add_widget(self.offense_button)
+        self.game_strategy_layout.add_widget(self.defense_button)
+
         # game difficulty setting
         self.game_difficulty_layout = BoxLayout(orientation='horizontal')
         self.game_difficulty_layout.add_widget(Label(text='Game Difficulty:'))
@@ -134,6 +144,7 @@ class SettingsScreen(BoxLayout, Screen):
         self.game_length_layout.add_widget(self.five_min_button)
 
         self.add_widget(Button(text='Main Menu', on_release=self.go_menu, size_hint=(1,0.2))) 
+        self.add_widget(self.game_strategy_layout)
         self.add_widget(self.game_difficulty_layout)
         self.add_widget(self.game_length_layout)
 
@@ -142,8 +153,9 @@ class SettingsScreen(BoxLayout, Screen):
             self.settings = json.load(fp)
             fp.close()
 
-        self.game_difficulty = self.settings['user_interface']['game_difficulty']
-        self.game_length = self.settings['user_interface']['game_length']
+        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
+        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
+        self.game_length = self.settings['user_interface']['settings']['game_length']
         self.updated_settings = True
 
         if self.game_difficulty == "easy":
@@ -159,25 +171,36 @@ class SettingsScreen(BoxLayout, Screen):
             self.two_min_button.state = 'down'
         elif self.game_length == 300:
             self.five_min_button.state = 'down'
-    
+
+        if self.game_strategy == "defense":
+            self.defense_button.state = "down"
+        elif self.game_strategy == "offense":
+            self.offense_button.state = "down"
+
     def go_menu(self, *args):
         self.manager.current = 'menu'
 
     def change_game_difficulty(self, *args):
         if self.easy_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'easy'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'easy'
         elif self.medium_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'medium'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'medium'
         elif self.hard_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'hard'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'hard'
 
     def change_game_length(self, *args):
         if self.one_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 60
+            self.settings['user_interface']['settings']['game_length'] = 60
         elif self.two_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 120
+            self.settings['user_interface']['settings']['game_length'] = 120
         elif self.five_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 300
+            self.settings['user_interface']['settings']['game_length'] = 300
+
+    def change_game_strategy(self, *args):
+        if self.defense_button.state == "down":
+            self.settings['user_interface']['settings']['game_strategy'] = "defense"
+        elif self.offense_button.state == "down":
+            self.settings['user_interface']['settings']['game_strategy'] = "offense"
 
     def on_enter(self):
         with open((settings_path + 'settings.json'), 'r') as fp:
@@ -190,8 +213,9 @@ class SettingsScreen(BoxLayout, Screen):
             json.dump(self.settings, fp, indent=4)
             fp.close()
 
-        self.game_length = self.settings['user_interface']['game_length']
-        self.game_difficulty = self.settings['user_interface']['game_difficulty']
+        self.game_length = self.settings['user_interface']['settings']['game_length']
+        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
+        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
 
         if self.old_settings != self.settings:
             self.updated_settings = True
@@ -215,22 +239,28 @@ class VisualScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(VisualScreen, self).__init__(**kwargs)
 
+        #with self.canvas.after:
+        #    Color(1,0,0,0.3)
+        #    Rectangle(pos=self.pos, size=self.size)
+        
         # scoreboard stuff
         self.scoreboard = BoxLayout(orientation='vertical', size_hint=(1,1.5))
         
         self.clock_label = Label(text='00:00', font_size=80, color=(1,0,0,1))
         self.scoreboard.add_widget(self.clock_label)
-        
+
         self.score = BoxLayout(orientation='horizontal')
         self.robot = BoxLayout(orientation='vertical')
         self.human = BoxLayout(orientation='vertical')
         
         self.robot.add_widget(Label(text='Robot',font_size=20, size_hint=(1,0.4)))
         self.robot_score = Label(text='0', font_size=50)
+        self.robot_score.value = 0
         self.robot.add_widget(self.robot_score)
 
         self.human.add_widget(Label(text='Human',font_size=20, size_hint=(1,0.4)))
         self.human_score = Label(text='0', font_size=50)
+        self.human_score.value = 0
         self.human.add_widget(self.human_score)
 
         self.score.add_widget(self.robot)
@@ -307,21 +337,33 @@ class VisualScreen(BoxLayout, Screen):
             self.manager.get_screen('settings').updated_settings = False
 
     def go_menu(self, *args):
-        if self.pause_resume_game_button.text == "Pause Game":
+        if self.pause_resume_game_button.text == "Pause Game" and self.pause_resume_game_button.disabled == False:
             self.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.pause_resume_game_button.text = "Resume Game"
         self.manager.current = 'menu'
 
+    def add_goal(self, goal_scorer):
+        if self.pause_resume_game_button.text == "Pause Game" and self.pause_resume_game_button.disabled == False:
+            if goal_scorer == ui_goal_enum.human:
+                self.human_score.value += 1
+                self.human_score.text = str(self.human_score.value)
+            elif goal_scorer == ui_goal_enum.robot:
+                self.robot_score.value += 1
+                self.robot_score.text = str(self.robot_score.value)
+            self.sound = SoundLoader.load(audio_path + 'goal_horn.mp3')
+            if self.sound:
+                self.sound.play()
+
 class MenuScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(MenuScreen, self).__init__(**kwargs)
+        
+        # add background image
         with self.canvas.before:
             Rectangle(source=(images_path + 'menu_background.jpg'), pos=self.pos, size=self.size)
+
         self.menu_label = Label(name='main_menu', text='Main Menu', size_hint=(1,0.2), font_size=40)
-        #with self.menu_label.canvas:
-        #    Color(0,1,0,0.5)
-        #    Rectangle(pos=self.menu_label.pos, size=self.menu_label.size)
         menu_button_font_size = 30
         menu_button_background_color = (0,0,0,0.6)
         self.add_widget(self.menu_label)
@@ -360,6 +402,8 @@ class MenuScreen(BoxLayout, Screen):
 
     def go_quit(self, *args):
         self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
+
+    def okay_to_quit(self, *args):
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
@@ -374,9 +418,65 @@ class AboutScreen(BoxLayout, Screen):
 class DiagnosticsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(DiagnosticsScreen, self).__init__(**kwargs)
-        self.add_widget(Label(text='Relevant data'))
-        #self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
-        self.add_widget(Button(text='Main Menu', size_hint=(1,0.1), on_release=self.go_menu))
+
+        # font size
+        diagnostic_font_size = 30
+        label_size_hint = (1.5,1)
+
+        # add background image
+        with self.canvas.before:
+            Color(1,1,1,0.3)
+            Rectangle(source=(images_path + 'menu_background.jpg'), pos=self.pos, size=self.size)
+
+        # top label
+        self.add_widget(Label(text='Diagnostics', font_size=40))
+        # all diagnostic data in this layout
+        self.diagnostic_data_layout = BoxLayout(orientation='vertical')
+        # ui state/error diagnostics
+        self.ui_state_error_layout = BoxLayout(orientation='horizontal')
+        self.ui_state_error_layout.add_widget(Label(text='User Interface', font_size=diagnostic_font_size, size_hint=label_size_hint))
+        self.ui_state_error_layout.add_widget(Label(text='State:', font_size=diagnostic_font_size))
+        self.ui_state_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.ui_state_error_layout.add_widget(self.ui_state_data)
+        self.ui_state_error_layout.add_widget(Label(text='Error:', font_size=diagnostic_font_size))
+        self.ui_error_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.ui_state_error_layout.add_widget(self.ui_error_data)
+        # pt state/error
+        self.pt_state_error_layout = BoxLayout(orientation='horizontal')
+        self.pt_state_error_layout.add_widget(Label(text='Puck Tracker', font_size=diagnostic_font_size, size_hint=label_size_hint))
+        self.pt_state_error_layout.add_widget(Label(text='State:', font_size=diagnostic_font_size))
+        self.pt_state_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.pt_state_error_layout.add_widget(self.pt_state_data)
+        self.pt_state_error_layout.add_widget(Label(text='Error:', font_size=diagnostic_font_size))
+        self.pt_error_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.pt_state_error_layout.add_widget(self.pt_error_data)
+        # pc state/error diagnostics
+        self.pc_state_error_layout = BoxLayout(orientation='horizontal')
+        self.pc_state_error_layout.add_widget(Label(text='Paddle Controller', font_size=diagnostic_font_size, size_hint=label_size_hint))
+        self.pc_state_error_layout.add_widget(Label(text='State:', font_size=diagnostic_font_size))
+        self.pc_state_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.pc_state_error_layout.add_widget(self.pc_state_data)
+        self.pc_state_error_layout.add_widget(Label(text='Error:', font_size=diagnostic_font_size))
+        self.pc_error_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.pc_state_error_layout.add_widget(self.pc_error_data)
+        # mc state/error
+        self.mc_state_error_layout = BoxLayout(orientation='horizontal')
+        self.mc_state_error_layout.add_widget(Label(text='Master Controller', font_size=diagnostic_font_size, size_hint=label_size_hint))
+        self.mc_state_error_layout.add_widget(Label(text='State:', font_size=diagnostic_font_size))
+        self.mc_state_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.mc_state_error_layout.add_widget(self.mc_state_data)
+        self.mc_state_error_layout.add_widget(Label(text='Error:', font_size=diagnostic_font_size))
+        self.mc_error_data = Label(text='NULL', font_size=diagnostic_font_size)
+        self.mc_state_error_layout.add_widget(self.mc_error_data)
+        # add diagnostics to layouts
+        self.diagnostic_data_layout.add_widget(self.ui_state_error_layout)
+        self.diagnostic_data_layout.add_widget(self.pt_state_error_layout)
+        self.diagnostic_data_layout.add_widget(self.pc_state_error_layout)
+        self.diagnostic_data_layout.add_widget(self.mc_state_error_layout)
+        self.add_widget(self.diagnostic_data_layout)
+
+        self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
+        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
 
     def go_menu(self, *args):
         self.manager.current = 'menu'
@@ -388,6 +488,7 @@ class DiagnosticsScreen(BoxLayout, Screen):
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
+        
         # IPC management
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
@@ -403,6 +504,31 @@ class ScreenManagement(ScreenManager):
         self.add_widget(AboutScreen(name='about', orientation='vertical', size=self.size))
         self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
 
+        # run the UI state machine
+        Clock.schedule_interval(self.receive_data, 0)
+
+    def receive_data(self, *args):
+        self.update_diagnostic_screen()
+        
+        # keep track of score
+        if int(self.ui_rx[ui_rx_enum.goal]) != ui_goal_enum.idle:
+            self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal])
+            self.ui_rx[ui_rx_enum.goal] = ui_goal_enum.idle
+
+        # only quit this app once everything else has shut down properly
+        if int(self.ui_rx[ui_rx_enum.state_cmd]) == ui_state_cmd_enum.quit:
+            self.get_screen('menu').okay_to_quit()
+
+    def update_diagnostic_screen(self, *args):
+        self.get_screen('diagnostics').ui_state_data.text = ui_state_enum.reverse_mapping[ui_state]
+        self.get_screen('diagnostics').ui_error_data.text = ui_error_enum.reverse_mapping[ui_error]
+        self.get_screen('diagnostics').pt_state_data.text = pt_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pt_state]]
+        self.get_screen('diagnostics').pt_error_data.text = pt_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pt_error]]
+        self.get_screen('diagnostics').mc_state_data.text = mc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_state]]
+        self.get_screen('diagnostics').mc_error_data.text = mc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_error]]
+        self.get_screen('diagnostics').pc_state_data.text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
+        self.get_screen('diagnostics').pc_error_data.text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
+
 # main app
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
@@ -412,11 +538,13 @@ class UserInterfaceApp(App):
         self.visualization_data = visualization_data
 
     def build(self):
-        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
+        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, size=(1024,600))
 
 # enum creator
 def enum(list_of_enums):
     enums = dict(zip(list_of_enums, range(len(list_of_enums))))
+    reverse = dict((value, key) for key, value in enums.iteritems())
+    enums['reverse_mapping'] = reverse
     return type('Enum', (), enums)
 
 # enum retriever
@@ -429,35 +557,60 @@ def get_enums():
     global ui_tx_enum
     global ui_game_state_enum
     global ui_screen_enum
+    global ui_goal_enum
+
+    global pt_state_enum
+    global pt_error_enum
+    
+    global mc_state_enum
+    global mc_error_enum
+    
+    global pc_state_enum
+    global pc_error_enum
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
         settings = json.load(fp)
         fp.close()
 
-    ui_state_cmd_enum = enum(settings['enumerations']['ui_state_cmd'])
-    ui_state_enum = enum(settings['enumerations']['ui_state'])
-    ui_error_enum = enum(settings['enumerations']['ui_error'])   
-    ui_rx_enum = enum(settings['enumerations']['ui_rx'])
-    ui_tx_enum = enum(settings['enumerations']['ui_tx'])
-    ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
-    ui_game_state_enum = enum(settings['enumerations']['ui_game_state'])
-    ui_screen_enum = enum(settings['enumerations']['ui_screen'])
+    ui_state_cmd_enum = enum(settings['user_interface']['enumerations']['ui_state_cmd'])
+    ui_state_enum = enum(settings['user_interface']['enumerations']['ui_state'])
+    ui_error_enum = enum(settings['user_interface']['enumerations']['ui_error'])   
+    ui_rx_enum = enum(settings['user_interface']['enumerations']['ui_rx'])
+    ui_tx_enum = enum(settings['user_interface']['enumerations']['ui_tx'])
+    ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
+    ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
+    ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
+    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+    
+    pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
+    pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])
+
+    mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
+    mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])
+
+    pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
+    pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
+    global ui_state
+    global ui_error
+
     get_enums()
 
     ui_state = ui_state_enum.idle
+    ui_error = ui_error_enum.idle
 
     while True:
         # retrieve commands from master controller
         mc_cmd = int(ui_rx[ui_rx_enum.state_cmd])
         ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.idle
-            
+
         # set desired state of the user interface to that commanded by mc    
         if mc_cmd == ui_state_cmd_enum.run:
+            ui_state = ui_state_enum.running
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
+        elif mc_cmd == ui_state_cmd_enum.quit:
+            ui_state = ui_state_enum.quit
             quit(0)
-            
-        

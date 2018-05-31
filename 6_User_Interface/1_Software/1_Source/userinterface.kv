@@ -1,0 +1,244 @@
+<IntroScreen>:
+    orientation: 'vertical'
+    Image:
+        source: (root.images_path_local + 'logo.png')
+        allow_stretch: True
+
+<SettingsScreen>:
+    orientation: 'vertical'
+       
+<DiagnosticsScreen>:
+    orientation: 'vertical'
+    canvas:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: "Diagnostics"
+        font_size: 40
+    BoxLayout:
+        canvas.before:
+            Color:
+                rgba: (0,0,0.3,0.8)
+            Rectangle:
+                pos: self.pos 
+                size: self.size
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+            Label:
+                text: "[u]State[/u]"
+                font_size: root.diagnostic_label_font_size
+                markup: True
+            Label:
+                text: "[u]Error[/u]"
+                font_size: root.diagnostic_label_font_size
+                markup: True
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Master Controller"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: mc_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: mc_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "User Interface"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: ui_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: ui_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Puck Tracker"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pt_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pt_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Paddle Controller"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pc_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pc_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+    Button:
+        text: "Calibrate Puck Tracker"
+        background_color: (0,0,0,0.7)
+        font_size: root.diagnostic_label_font_size
+        on_release: root.calibrate_pt()
+    Button:
+        text: "Main Menu"
+        background_color: (0,0,0,0.7)
+        font_size: root.diagnostic_label_font_size
+        on_release: root.manager.current = 'menu'
+
+<AboutScreen>:
+    orientation: 'vertical'
+    canvas:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: "Blurb about us, the project, and what we accomplished"
+        font_size: root.about_label_font_size
+    
+    Button:
+        text: "Main Menu"
+        background_color: (0,0,0,0.7)
+        font_size: root.about_label_font_size
+        on_release: root.manager.current = 'menu'
+
+<MenuScreen>:
+    orientation: 'vertical'
+
+    canvas.before:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+
+    Label:
+        text: "Main Menu"
+        size_hint: (1,0.2)
+        font_size: 40 
+
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Play Against Robot"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'visual'
+            Button:
+                text: "Settings"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'settings'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Play Using Robot"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'manual'
+            Button:
+                text: "About"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'about'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Diagnostics"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'diagnostics'
+            Button:
+                text: "Quit"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.go_quit()
+
+<GameControl>:
+    orientation: 'vertical'
+
+    Label:
+        text: root.game_clock_label
+        font_size: 80
+        color: (1,0,0,1)
+
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Robot"
+                font_size: 20
+                size_hint: (1,0.4)
+            Label:
+                text: root.robot_score_label
+                font_size: 50
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Human"
+                font_size: 20
+                size_hint: (1,0.4)
+            Label:
+                text: root.human_score_label
+                font_size: 50
+
+    Button:
+        id: start_reset_game_button
+        text: "Start Game"
+        font_size: 30
+        on_release: root.start_reset_game()
+    Button:
+        id: pause_resume_game_button
+        disabled: True
+        text: "Pause Game"
+        font_size: 30
+        on_release: root.pause_resume_game()
+    Button:
+        text: "Main Menu"
+        font_size: 30
+        on_release: root.go_menu()
+
+<ManualPaddle>:
+    size_hint: (None, None) 
+    Image:
+        source: (root.images_path_local + 'paddle.png')
+
+<ManualPlayingSurface>:
+    canvas.before:
+        Rectangle:
+            source: (root.images_path_local + 'hockeySurface.png')
+            pos: self.pos
+            size: self.size
+
+    ManualPaddle:
+        center: self.parent.center
+
+<ManualScreen>:
+    orientation: 'horizontal'
+    ManualPlayingSurface:
+    GameControl:
+        id: game_control
+        size_hint: (0.29,1)
+
+<VisualScreen>:
+    orientation: 'horizontal'
+    VisualizationData:
+    GameControl:
+        id: game_control
+        size_hint: (0.29,1)

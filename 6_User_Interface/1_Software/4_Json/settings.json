@@ -74,8 +74,8 @@
         }, 
         "settings": {
             "game_strategy": "defense", 
-            "game_difficulty": "hard", 
-            "game_length": 60
+            "game_difficulty": "medium", 
+            "game_length": 120
         }
     }, 
     "master_controller": {

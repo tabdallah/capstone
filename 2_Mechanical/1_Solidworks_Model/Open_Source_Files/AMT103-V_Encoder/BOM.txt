@@ -1,0 +1,3 @@
+3DX_CUI_Supplier: CUI, Inc
+3DX_CUI_Description: AMT10 Axial, Adjustable Resolution, 512 PPR, Single Index Pulse, 5 mm Bore, Standard, Incremental, Capacitive Modular Encoder
+3DX_CUI_Model Number: AMT103-D0512-I5000-S

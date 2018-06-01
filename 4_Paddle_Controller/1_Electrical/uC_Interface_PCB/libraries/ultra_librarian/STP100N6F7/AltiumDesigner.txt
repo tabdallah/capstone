@@ -1,0 +1,92 @@
+# Created by Ultra Librarian Gold 8.2.165 Copyright © 1999-2017
+# Frank Frank, Accelerated Designs
+
+StartFootprints
+
+Footprint (Name "TO-220")
+Pad (Name "1") (Location -200.78739929, -60) (HoleSize 60) (Rotation 0)
+PadShape (Size 80, 80) (Shape Rectangular) (Layer Top)
+PadShape (Size 80, 80) (Shape Rectangular) (Layer Bottom)
+EndPad
+Pad (Name "2") (Location -100.39369965, -60) (HoleSize 60) (Rotation 0)
+PadShape (Size 80, 80) (Shape Rounded) (Layer Top)
+PadShape (Size 80, 80) (Shape Rounded) (Layer Bottom)
+EndPad
+Pad (Name "3") (Location 0.00000035, -60) (HoleSize 60) (Rotation 0)
+PadShape (Size 80, 80) (Shape Rounded) (Layer Top)
+PadShape (Size 80, 80) (Shape Rounded) (Layer Bottom)
+EndPad
+Line (Width 6) (Start -315.39369965, -130.5) (End -315.39369965, 70.5) (Layer Mechanical15) 
+Line (Width 6) (Start -315.39369965, 70.5) (End 114.60630035, 70.5) (Layer Mechanical15) 
+Line (Width 6) (Start 114.60630035, 70.5) (End 114.60630035, -130.5) (Layer Mechanical15) 
+Line (Width 6) (Start 114.60630035, -130.5) (End -315.39369965, -130.5) (Layer Mechanical15) 
+Polygon (PointCount 4) (Layer Mechanical15) 
+Point (-315.39369965, -130.5)
+Point (-315.39369965, 70.5)
+Point (114.60630035, 70.5)
+Point (114.60630035, -130.5)
+EndPolygon
+Line (Width 6) (Start -310.39369965, -125.5) (End 109.60630035, -125.5) (Layer TopOverlay) 
+Line (Width 6) (Start 109.60630035, -125.5) (End 109.60630035, 65.5) (Layer TopOverlay) 
+Line (Width 6) (Start 109.60630035, 65.5) (End -310.39369965, 65.5) (Layer TopOverlay) 
+Line (Width 6) (Start -310.39369965, 65.5) (End -310.39369965, -125.5) (Layer TopOverlay) 
+Arc (Width 6) (Radius 8) (Location -380.39369965, -60) (StartAngle 0) (EndAngle 360) (Layer TopOverlay) 
+Line (Width 6) (Start -210.78739929, -60) (End -190.78739929, -60) (Layer Mechanical13) 
+Line (Width 6) (Start -200.78739929, -70) (End -200.78739929, -50) (Layer Mechanical13) 
+Line (Width 1) (Start -305.39369965, -120.5) (End 104.60630035, -120.5) (Layer Mechanical13) 
+Line (Width 1) (Start 104.60630035, -120.5) (End 104.60630035, 60.5) (Layer Mechanical13) 
+Line (Width 1) (Start 104.60630035, 60.5) (End -305.39369965, 60.5) (Layer Mechanical13) 
+Line (Width 1) (Start -305.39369965, 60.5) (End -305.39369965, -120.5) (Layer Mechanical13) 
+Arc (Width 0) (Radius 8) (Location -285.39369965, -60) (StartAngle 360) (EndAngle 720) (Layer Mechanical13) 
+Step (Name TO-220.stp)
+EndFootprint
+EndFootprints
+
+StartComponents
+
+Component (Name "STP100NF04") (PartCount 1) (DesPrefix "U?")
+Pin (Location 275, 100) (Rotation 90) (PinType Passive) (Length 100) (Width 0) (Designator Hidden "2") (Name Hidden "2") (PinSwap 0) (PartSwap 0) (PinSeq 2) (Part 1)
+Pin (Location 275, -100) (Rotation 270) (PinType Passive) (Length 100) (Width 0) (Designator Hidden "3") (Name Hidden "3") (PinSwap 0) (PartSwap 0) (PinSeq 3) (Part 1)
+Pin (Location 100, 0) (Rotation 180) (PinType Passive) (Length 100) (Width 0) (Designator Hidden "1") (Name Hidden "1") (PinSwap 0) (PartSwap 0) (PinSeq 1) (Part 1)
+Line (Width 8) (Start 100, 0) (End 175, 0) (Part 1)
+Line (Width 8) (Start 175, -100) (End 175, 100) (Part 1)
+Line (Width 8) (Start 200, -25) (End 200, 25) (Part 1)
+Line (Width 8) (Start 200, -100) (End 200, -50) (Part 1)
+Line (Width 8) (Start 200, 50) (End 200, 100) (Part 1)
+Line (Width 8) (Start 250, 0) (End 275, 0) (Part 1)
+Line (Width 8) (Start 200, -75) (End 275, -75) (Part 1)
+Line (Width 8) (Start 275, -100) (End 275, 0) (Part 1)
+Line (Width 8) (Start 275, -100) (End 325, -100) (Part 1)
+Line (Width 8) (Start 200, 75) (End 275, 75) (Part 1)
+Line (Width 8) (Start 325, 25) (End 325, 100) (Part 1)
+Line (Width 8) (Start 325, -100) (End 325, -25) (Part 1)
+Line (Width 8) (Start 360, 35) (End 350, 25) (Part 1)
+Line (Width 8) (Start 350, 25) (End 300, 25) (Part 1)
+Line (Width 8) (Start 300, 25) (End 290, 15) (Part 1)
+Line (Width 8) (Start 275, 100) (End 325, 100) (Part 1)
+Line (Width 8) (Start 275, 75) (End 275, 100) (Part 1)
+Arc (Width 20) (Radius 1) (Location 300, 100) (StartAngle 0) (EndAngle 360) (Part 1)
+Arc (Width 20) (Radius 1) (Location 300, -100) (StartAngle 0) (EndAngle 360) (Part 1)
+Arc (Width 20) (Radius 1) (Location 275, -50) (StartAngle 0) (EndAngle 360) (Part 1)
+Arc (Width 10) (Radius 150) (Location 250, 0) (StartAngle 0) (EndAngle 360) (Part 1)
+Polygon (PointCount 3) (Part 1)
+Point (250, 25)
+Point (200, 0)
+Point (250, -25)
+EndPolygon
+Polygon (PointCount 3) (Part 1)
+Point (350, -25)
+Point (300, -25)
+Point (325, 25)
+EndPolygon
+Parameter (Name "Vendor") (Location 0, 0) (Height 50) (Rotation 0) (Justification Center) (Value "STMicroelectronics") (Part 1)
+Parameter (Name "Manufacturer_Part_Number") (Location 0, 0) (Height 50) (Rotation 0) (Justification Center) (Value "STP100NF04") (Part 1)
+Parameter (Name "Built_By") (Location 0, 0) (Height 50) (Rotation 0) (Justification Center) (Value "EMA_UL_Team") (Part 1)
+Parameter (Name "RefDes") (Location 450, 75) (Height 100) (Rotation 0) (Justification CenterLeft) (Value "RefDes") (Part 1)
+Parameter (Name "Type") (Location 450, -200) (Height 100) (Rotation 0) (Justification CenterLeft) (Value "DEV") (Part 1)
+Parameter (Name "Value") (Location 450, -100) (Height 100) (Rotation 0) (Justification CenterLeft) (Value "Value") (Part 1)
+Parameter (Name "C") (Location 0, 0) (Height 1) (Rotation 0) (Justification Center) (Value "Copyright (C) 2015 Accelerated Designs. All rights reserved") (Part 1)
+Comment (Value "Part Number: STP100NF04") (Part 1)
+Footprint (Name "TO-220")
+EndComponent
+EndComponents

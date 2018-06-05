@@ -63,14 +63,37 @@ class ManualScreen(BoxLayout, Screen):
     def on_enter(self):
         self.ids['game_control'].on_enter()
 
-class VisualizationData(Image):
+class CameraDataVisual(Image):
     def __init__(self, **kwargs):
-        super(VisualizationData, self).__init__(**kwargs)
-        Clock.schedule_interval(self.updateData, 0)
+        super(CameraDataVisual, self).__init__(**kwargs)
+        Clock.schedule_interval(self.update_data, 0)
 
-    def updateData(self, *args):
-        while(self.parent.manager.visualization_data.poll()):
-            frame = self.parent.manager.visualization_data.recv()
+    def update_data(self, *args):
+        try:
+            frame = self.parent.manager.visualization_data.get(False)
+
+        except Queue.Empty:
+            pass
+        else:
+            print time.time()
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_flipped = cv2.flip(frame_rgb, 0)
+            frame_string = frame_flipped.tostring()
+            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+            image_texture.blit_buffer(frame_string, colorfmt='rgb', bufferfmt='ubyte')
+            self.texture = image_texture
+
+class CameraDataCalibration(Image):
+    def __init__(self, **kwargs):
+        super(CameraDataCalibration, self).__init__(**kwargs)
+        Clock.schedule_interval(self.update_data, 0)
+
+    def update_data(self, *args):
+        try:
+            frame = self.parent.parent.manager.visualization_data.get(False)
+        except Queue.Empty:
+            pass
+        else:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_flipped = cv2.flip(frame_rgb, 0)
             frame_string = frame_flipped.tostring()
@@ -83,7 +106,7 @@ class IntroScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
     def __init__(self, **kwargs):
         super(IntroScreen, self).__init__(**kwargs)
-        Clock.schedule_once(self.end_intro, 3)
+        Clock.schedule_once(self.end_intro, 0)
 
         """#self.sound = SoundLoader.load(audio_path + 'organ.wav')
         #if self.sound:
@@ -202,6 +225,8 @@ class SettingsScreen(BoxLayout, Screen):
         if self.old_settings != self.settings:
             self.updated_settings = True
 
+
+
 class GameControl(BoxLayout):
     robot_score = 0
     human_score = 0
@@ -284,9 +309,19 @@ class GameControl(BoxLayout):
             if self.sound:
                 self.sound.play()
 
+class PuckCalibrationScreen(BoxLayout, Screen):
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.puck_calibration
+
+class FiducialCalibrationScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.fiducial_calibration
+
 class VisualScreen(BoxLayout, Screen):
     def on_enter(self):
         self.ids['game_control'].on_enter()
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
 
 class MenuScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
@@ -310,9 +345,6 @@ class DiagnosticsScreen(BoxLayout, Screen):
     diagnostic_label_font_size = NumericProperty(30)
     images_path_local = StringProperty(images_path)
 
-    def calibrate_pt(self, *args):
-        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_pt    
-
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
     
@@ -334,9 +366,11 @@ class ScreenManagement(ScreenManager):
         self.add_widget(ManualScreen(name='manual'))
         self.add_widget(AboutScreen(name='about'))
         self.add_widget(DiagnosticsScreen(name='diagnostics'))
+        self.add_widget(FiducialCalibrationScreen(name='fiducial_calibration'))
+        self.add_widget(PuckCalibrationScreen(name='puck_calibration'))
 
         # run the UI state machine
-        Clock.schedule_interval(self.process_data, 0)
+        Clock.schedule_interval(self.process_data, 0.1)
 
     def process_data(self, *args):
         self.update_diagnostic_screen()
@@ -359,6 +393,17 @@ class ScreenManagement(ScreenManager):
         self.get_screen('diagnostics').ids['mc_error_label'].text = mc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_error]]
         self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
         self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
+        if self.current == 'fiducial_calibration':
+            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('fiducial_calibration').ids['lower_hue'].value
+            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('fiducial_calibration').ids['lower_sat'].value
+            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('fiducial_calibration').ids['lower_val'].value
+            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('fiducial_calibration').ids['upper_hue'].value
+            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('fiducial_calibration').ids['upper_sat'].value
+            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('fiducial_calibration').ids['upper_val'].value
+        elif self.current == 'puck_calibration':
+            self.ui_tx[ui_tx_enum.lower_hue] = 125
+            self.ui_tx[ui_tx_enum.lower_sat] = 125
+            self.ui_tx[ui_tx_enum.lower_val] = 125
 
 # main app
 class UserInterfaceApp(App):

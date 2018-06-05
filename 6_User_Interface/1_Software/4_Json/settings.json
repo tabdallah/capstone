@@ -27,7 +27,9 @@
                 "manual", 
                 "diagnostic", 
                 "about", 
-                "settings"
+                "settings", 
+                "fiducial_calibration", 
+                "puck_calibration"
             ], 
             "ui_state_cmd": [
                 "idle", 
@@ -55,7 +57,13 @@
                 "error", 
                 "game_state", 
                 "screen", 
-                "diagnostic_request"
+                "diagnostic_request", 
+                "lower_hue", 
+                "lower_sat", 
+                "lower_val", 
+                "upper_hue", 
+                "upper_sat", 
+                "upper_val"
             ], 
             "ui_game_state": [
                 "idle", 
@@ -105,13 +113,20 @@
             "pt_state_cmd": [
                 "idle", 
                 "calibrate", 
+                "find_fiducials_puck", 
                 "track", 
                 "error", 
                 "quit"
             ], 
             "pt_rx": [
                 "idle", 
-                "state_cmd"
+                "state_cmd", 
+                "lower_hue", 
+                "lower_sat", 
+                "lower_val", 
+                "upper_hue", 
+                "upper_sat", 
+                "upper_val"
             ], 
             "pt_state": [
                 "idle", 
@@ -119,6 +134,7 @@
                 "calibrated", 
                 "tracking", 
                 "error", 
+                "find_fiducials_puck", 
                 "quit"
             ], 
             "pt_error": [

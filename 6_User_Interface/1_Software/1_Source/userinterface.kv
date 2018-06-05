@@ -88,16 +88,23 @@
                 id: pc_error_label
                 text: "null"
                 font_size: root.diagnostic_label_font_size
-    Button:
-        text: "Calibrate Puck Tracker"
-        background_color: (0,0,0,0.7)
-        font_size: root.diagnostic_label_font_size
-        on_release: root.calibrate_pt()
-    Button:
-        text: "Main Menu"
-        background_color: (0,0,0,0.7)
-        font_size: root.diagnostic_label_font_size
-        on_release: root.manager.current = 'menu'
+    BoxLayout:
+        orientation: 'horizontal'
+        Button:
+            text: "Calibrate Puck Tracker"
+            background_color: (0,0,0,0.7)
+            font_size: root.diagnostic_label_font_size
+            on_release: root.manager.current = 'fiducial_calibration'
+        Button:
+            text: "Calibrate PC"
+            background_color: (0,0,0,0.7)
+            font_size: root.diagnostic_label_font_size
+            on_release:
+        Button:
+            text: "Main Menu"
+            background_color: (0,0,0,0.7)
+            font_size: root.diagnostic_label_font_size
+            on_release: root.manager.current = 'menu'
 
 <AboutScreen>:
     orientation: 'vertical'
@@ -169,6 +176,150 @@
                 background_color: root.menu_button_background_color
                 on_release: root.go_quit()
 
+<FiducialCalibrationScreen>:
+    orientation: 'vertical'
+    canvas:
+        Color:
+            rgba: (1,1,1,0.3)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: "Fiducial Calibration"
+        size_hint: (1,0.2)
+        font_size: 40 
+    Label:
+        text: "Adjust the sliders until you see only the 4 pink fiducial markers"
+        size_hint: (1,0.2)
+        font_size: 20 
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Lower: %s" % int(lower_hue.value)
+                Slider:
+                    id: lower_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Lower: %s" % int(lower_sat.value)
+                Slider:
+                    id: lower_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Lower: %s" % int(lower_val.value)
+                Slider:
+                    id: lower_val
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Upper: %s" % int(upper_hue.value)
+                Slider:
+                    id: upper_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Upper: %s" % int(upper_sat.value)
+                Slider:
+                    id: upper_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Upper: %s" % int(upper_val.value)
+                Slider:
+                    id: upper_val
+                    min: 0
+                    max: 255
+        CameraDataCalibration:
+    
+    BoxLayout:
+        size_hint: (1,0.2)
+        orientation: 'horizontal'
+        Button:
+            text: "Back to Diagnostics"
+            font_size: 30
+            on_release: root.manager.current = 'diagnostics'
+        Button:
+            text: "Skip & Continue"
+            font_size: 30
+            on_release: root.manager.current = 'puck_calibration'
+        Button:
+            text: "Save & Continue"
+            font_size: 30
+            on_release: root.manager.current = 'puck_calibration'
+
+<PuckCalibrationScreen>:
+    orientation: 'vertical'
+
+    Label:
+        text: "Puck Calibration"
+        size_hint: (1,0.2)
+        font_size: 40 
+    Label:
+        text: "Adjust the sliders until you see the silhouette of the 4 pink fiducial markers"
+        size_hint: (1,0.2)
+        font_size: 20 
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Slider:
+            Slider:
+            Slider:
+            Slider:
+            Slider:
+            Slider:
+        Label:
+            text: "mask showing things"
+    
+    BoxLayout:
+        size_hint: (1,0.2)
+        orientation: 'horizontal'
+        Button:
+            text: "Back to Diagnostics"
+            font_size: 30
+            on_release: root.manager.current = 'diagnostics'
+        Button:
+            text: "Skip & Continue"
+            font_size: 30
+        Button:
+            text: "Save & Continue"
+            font_size: 30
+
+
 <GameControl>:
     orientation: 'vertical'
 
@@ -238,7 +389,6 @@
 
 <VisualScreen>:
     orientation: 'horizontal'
-    VisualizationData:
     GameControl:
         id: game_control
         size_hint: (0.29,1)

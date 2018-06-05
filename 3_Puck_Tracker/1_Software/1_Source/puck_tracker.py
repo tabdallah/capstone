@@ -291,7 +291,12 @@ def pt_process(pt_rx, pt_tx, visualization_data):
     while True:
         # retrieve commands from master controller and clear
         mc_cmd = int(pt_rx[pt_rx_enum.state_cmd])
-        pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+        color_lower = (int(pt_rx[pt_rx_enum.lower_hue]),
+                       int(pt_rx[pt_rx_enum.lower_sat]),
+                       int(pt_rx[pt_rx_enum.lower_val]))
+        color_upper = (int(pt_rx[pt_rx_enum.upper_hue]),
+                       int(pt_rx[pt_rx_enum.upper_sat]),
+                       int(pt_rx[pt_rx_enum.upper_val]))
 
         # set desired state of puck tracker to that commanded by mc    
         if mc_cmd == pt_state_cmd_enum.calibrate:
@@ -300,19 +305,21 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_desired_state = pt_state_cmd_enum.track
         elif mc_cmd == pt_state_cmd_enum.quit:
             pt_desired_state = pt_state_cmd_enum.quit
-        else:
+        elif mc_cmd == pt_state_cmd_enum.find_fiducials_puck:
+            pt_desired_state = pt_state_cmd_enum.find_fiducials_puck
+        elif mc_cmd == pt_state_cmd_enum.idle:
             pt_desired_state = pt_state_cmd_enum.idle    
+        else:
+            pass
 
         # do the required setup to enter state requested by mc
         if pt_desired_state == pt_state_cmd_enum.calibrate and pt_state != pt_state_enum.calibrate:
-            pt_desired_state = pt_state_cmd_enum.idle
             pt_state = pt_state_enum.calibrate
             
             # retrieve fiducial_hsv range from settings file
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
 
         elif pt_desired_state == pt_state_cmd_enum.track and pt_state != pt_state_enum.tracking:
-            pt_desired_state = pt_state_cmd_enum.idle
             pt_state = pt_state_enum.tracking
             
             puck_hsv, fiducial_hsv, fiducial_coordinates = get_puck_tracker_settings()
@@ -320,9 +327,14 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             perspective_transform_matrix, max_width, max_height = get_perspective_transform_matrix(fiducial_coordinates)
             
         elif pt_desired_state == pt_state_cmd_enum.quit and pt_state != pt_state_enum.quit:
-            pt_desired_state = pt_state_cmd_enum.idle
             pt_state = pt_state_enum.quit
-              
+
+        elif pt_desired_state == pt_state_cmd_enum.idle and pt_state != pt_state_enum.idle:
+            pt_state = pt_state_enum.idle
+
+        elif pt_desired_state == pt_state_cmd_enum.find_fiducials_puck and pt_state != pt_state_enum.find_fiducials_puck:
+            pt_state = pt_state_enum.find_fiducials_puck
+
         else:
             pass
             # stay in current state
@@ -347,22 +359,47 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 pt_error = pt_error_enum.calibration_failed
                 calibration_attempts = 0
 
-        elif pt_state == pt_state_enum.tracking:
+        elif pt_state == pt_state_enum.find_fiducials_puck:
             ret, frame = video_stream.read()
 
             if ret == False:
                 pt_tx[pt_tx_enum.error] = pt_error_enum.camera
 
-            frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_width, max_height), cv2.INTER_LINEAR)
-            frame, puck_position_mm_xy = get_puck_position(frame_warped, puck_hsv[0], puck_hsv[1], mm_per_pixel_x, mm_per_pixel_y)
-            puck_velocity_mmps_xy = get_puck_velocity(puck_position_mm_xy)
-
-            pt_tx[pt_tx_enum.puck_position_x] = puck_position_mm_xy[1]
-            pt_tx[pt_tx_enum.puck_position_y] = puck_position_mm_xy[0]
-            pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
-            pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
+            # convert the frame to HSV color space
+            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            # create a mask for the fiducial color
+            fiducial_mask = cv2.inRange(frame_hsv, color_lower, color_upper)            
+            # apply a median blur filter to the mask (helps with image noise)
+            fiducial_mask_filtered = cv2.medianBlur(fiducial_mask, 5)
+            # bitwise_and
+            output = cv2.bitwise_and(frame,frame, mask=fiducial_mask_filtered)
             
-            visualization_data.send(frame)
+            try:
+                visualization_data.get_nowait()
+                visualization_data.put(output)
+            except Queue.Empty:
+                visualization_data.put(output)
+            
+        elif pt_state == pt_state_enum.tracking:
+            ret, frame = video_stream.read()
+
+            if ret == False:
+                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
+            
+                frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_width, max_height), cv2.INTER_LINEAR)
+                frame, puck_position_mm_xy = get_puck_position(frame_warped, puck_hsv[0], puck_hsv[1], mm_per_pixel_x, mm_per_pixel_y)
+                puck_velocity_mmps_xy = get_puck_velocity(puck_position_mm_xy)
+
+                pt_tx[pt_tx_enum.puck_position_x] = puck_position_mm_xy[1]
+                pt_tx[pt_tx_enum.puck_position_y] = puck_position_mm_xy[0]
+                pt_tx[pt_tx_enum.puck_velocity_x] = puck_velocity_mmps_xy[1]
+                pt_tx[pt_tx_enum.puck_velocity_y] = puck_velocity_mmps_xy[0]
+    
+            try:
+                visualization_data.get_nowait()
+                visualization_data.put(frame)
+            except Queue.Empty:
+                visualization_data.put(frame)
             
         elif pt_state == pt_state_enum.quit:
             pt_tx[pt_tx_enum.state] = pt_state_enum.quit

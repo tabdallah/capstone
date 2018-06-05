@@ -589,6 +589,8 @@ def Rx_IPC():
 	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
 	ui_screen = int(ui_tx[ui_tx_enum.screen])
 
+	# clear one time messages
+	ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
 ## end of method
 
 ##############################################################################################
@@ -794,6 +796,9 @@ def make_decisions():
 			Tx_PC_Cmd(PCAN)
 		elif ui_game_state == ui_game_state_enum.stopped:
 			pass
+	elif ui_screen == ui_screen_enum.diagnostic:
+		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_pt:
+			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate
 
 	# go through steps of shutting down if UI requests
 	if ui_state == ui_state_enum.quit:
@@ -801,6 +806,8 @@ def make_decisions():
 
 	if pt_state == pt_state_enum.quit:
 		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
+	elif pt_state == pt_state_enum.calibrated:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
 
 	if (ui_state == ui_state_enum.quit and
 		pt_state == pt_state_enum.quit):

@@ -34,6 +34,10 @@
                 "run", 
                 "quit"
             ], 
+            "ui_diagnostic_request": [
+                "idle", 
+                "calibrate_pt"
+            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -53,10 +57,6 @@
                 "screen", 
                 "diagnostic_request"
             ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
-            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -67,13 +67,13 @@
                 "human", 
                 "robot"
             ], 
-            "ui_diagnostic_request": [
+            "ui_error": [
                 "idle", 
-                "calibrate_pt"
+                "crashed"
             ]
         }, 
         "settings": {
-            "game_strategy": "defense", 
+            "game_strategy": "offense", 
             "game_difficulty": "medium", 
             "game_length": 120
         }
@@ -116,6 +116,7 @@
             "pt_state": [
                 "idle", 
                 "calibrate", 
+                "calibrated", 
                 "tracking", 
                 "error", 
                 "quit"
@@ -125,6 +126,56 @@
                 "camera", 
                 "calibration_failed"
             ]
+        }, 
+        "puck": {
+            "color": {
+                "hue": {
+                    "upper": 80, 
+                    "lower": 35
+                }, 
+                "val": {
+                    "upper": 255, 
+                    "lower": 15
+                }, 
+                "sat": {
+                    "upper": 255, 
+                    "lower": 65
+                }
+            }
+        }, 
+        "fiducial": {
+            "color": {
+                "hue": {
+                    "upper": 179, 
+                    "lower": 20
+                }, 
+                "val": {
+                    "upper": 255, 
+                    "lower": 170
+                }, 
+                "sat": {
+                    "upper": 223, 
+                    "lower": 128
+                }
+            }, 
+            "coordinates": {
+                "bl": {
+                    "y": 463.5766088862323, 
+                    "x": 21.593943016537157
+                }, 
+                "tl": {
+                    "y": 13.429682824655895, 
+                    "x": 16.97087572311989
+                }, 
+                "tr": {
+                    "y": 104.8065476190476, 
+                    "x": 628.360119047619
+                }, 
+                "br": {
+                    "y": 350.2986512524085, 
+                    "x": 631.1483622350673
+                }
+            }
         }
     }
 }

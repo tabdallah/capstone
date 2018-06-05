@@ -312,6 +312,9 @@ class DiagnosticsScreen(BoxLayout, Screen):
 
     def calibrate_pt(self, *args):
         self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_pt    
+
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
     
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):

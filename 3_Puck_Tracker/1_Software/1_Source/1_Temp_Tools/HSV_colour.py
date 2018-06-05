@@ -1,13 +1,11 @@
 import numpy as np
-import imutils
 import cv2
 import sys
-#import puck_tracker as pt
 
 cap = cv2.VideoCapture(0)
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320);
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240);
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640);
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480);
 cap.set(cv2.CAP_PROP_FPS, 224);
 
 ret, image = cap.read()
@@ -17,7 +15,6 @@ tracking = False
 
 def nothing(*arg):
     pass
-
 
 def onMouse(event, x, y, flags, param):
     # grab references to the global variables
@@ -37,7 +34,6 @@ def setBlue():
     cv2.setTrackbarPos('upper - hue', 'HSV', 179)
     cv2.setTrackbarPos('upper - sat', 'HSV', 255)
     cv2.setTrackbarPos('upper - val', 'HSV', 255)
-
 
 cv2.namedWindow('HSV')
 #cv2.setMouseCallback('RGB', onMouse)

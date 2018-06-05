@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 # define global variables
 settings_path = "../../../6_User_Interface/1_Software/4_Json/"
-settings_file_path = "../../../3_Puck_Tracker/1_Software/1_Source/puck_tracker_settings.json"
 last_puck_position_mm_x = 0
 last_puck_position_mm_y = 0
 last_time = 0
@@ -31,33 +30,33 @@ pt_tx_enum = 0
 
 def get_puck_tracker_settings():
     """Return the stored settings for the puck tracker"""
-    with open(settings_file_path, 'r') as fp:
-        pt_settings = json.load(fp)
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
         fp.close()
 
-    puck_lower_hsv = (pt_settings['puck']['color']['hue']['lower'],
-                      pt_settings['puck']['color']['sat']['lower'],
-                      pt_settings['puck']['color']['val']['lower'])
-    puck_upper_hsv = (pt_settings['puck']['color']['hue']['upper'],
-                      pt_settings['puck']['color']['sat']['upper'],
-                      pt_settings['puck']['color']['val']['upper'])
+    puck_lower_hsv = (settings['puck_tracker']['puck']['color']['hue']['lower'],
+                      settings['puck_tracker']['puck']['color']['sat']['lower'],
+                      settings['puck_tracker']['puck']['color']['val']['lower'])
+    puck_upper_hsv = (settings['puck_tracker']['puck']['color']['hue']['upper'],
+                      settings['puck_tracker']['puck']['color']['sat']['upper'],
+                      settings['puck_tracker']['puck']['color']['val']['upper'])
     
-    fiducial_lower_hsv = (pt_settings['fiducial']['color']['hue']['lower'],
-                          pt_settings['fiducial']['color']['sat']['lower'],
-                          pt_settings['fiducial']['color']['val']['lower'])
-    fiducial_upper_hsv = (pt_settings['fiducial']['color']['hue']['upper'],
-                          pt_settings['fiducial']['color']['sat']['upper'],
-                          pt_settings['fiducial']['color']['val']['upper'])
+    fiducial_lower_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['val']['lower'])
+    fiducial_upper_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['val']['upper'])
     
     fiducial_coordinates = np.array([
-        [pt_settings['fiducial']['coordinates']['tl']['x'],
-         pt_settings['fiducial']['coordinates']['tl']['y']],
-        [pt_settings['fiducial']['coordinates']['tr']['x'],
-         pt_settings['fiducial']['coordinates']['tr']['y']],
-        [pt_settings['fiducial']['coordinates']['br']['x'],
-         pt_settings['fiducial']['coordinates']['br']['y']],
-        [pt_settings['fiducial']['coordinates']['bl']['x'],
-         pt_settings['fiducial']['coordinates']['bl']['y']]], dtype = "float32")
+        [settings['puck_tracker']['fiducial']['coordinates']['tl']['x'],
+         settings['puck_tracker']['fiducial']['coordinates']['tl']['y']],
+        [settings['puck_tracker']['fiducial']['coordinates']['tr']['x'],
+         settings['puck_tracker']['fiducial']['coordinates']['tr']['y']],
+        [settings['puck_tracker']['fiducial']['coordinates']['br']['x'],
+         settings['puck_tracker']['fiducial']['coordinates']['br']['y']],
+        [settings['puck_tracker']['fiducial']['coordinates']['bl']['x'],
+         settings['puck_tracker']['fiducial']['coordinates']['bl']['y']]], dtype = "float32")
 
     return (puck_lower_hsv, puck_upper_hsv), (fiducial_lower_hsv, fiducial_upper_hsv), fiducial_coordinates
 
@@ -220,21 +219,21 @@ def find_fiducials(frame, fiducial_lower_hsv, fiducial_upper_hsv):
             ret = True
             
             # if all coordinates for the playing surface are found, save to json
-            with open(settings_file_path, 'r') as fp:
-                pt_settings = json.load(fp)
+            with open((settings_path + "settings.json"), 'r') as fp:
+                settings = json.load(fp)
                 fp.close()
             
-            pt_settings['fiducial']['coordinates']['tl']['x'] = fiducials[0][0]
-            pt_settings['fiducial']['coordinates']['tl']['y'] = fiducials[0][1]
-            pt_settings['fiducial']['coordinates']['tr']['x'] = fiducials[1][0]
-            pt_settings['fiducial']['coordinates']['tr']['y'] = fiducials[1][1]
-            pt_settings['fiducial']['coordinates']['br']['x'] = fiducials[2][0]
-            pt_settings['fiducial']['coordinates']['br']['y'] = fiducials[2][1]
-            pt_settings['fiducial']['coordinates']['bl']['x'] = fiducials[3][0]
-            pt_settings['fiducial']['coordinates']['bl']['y'] = fiducials[3][1]
+            settings['puck_tracker']['fiducial']['coordinates']['tl']['x'] = fiducials[0][0]
+            settings['puck_tracker']['fiducial']['coordinates']['tl']['y'] = fiducials[0][1]
+            settings['puck_tracker']['fiducial']['coordinates']['tr']['x'] = fiducials[1][0]
+            settings['puck_tracker']['fiducial']['coordinates']['tr']['y'] = fiducials[1][1]
+            settings['puck_tracker']['fiducial']['coordinates']['br']['x'] = fiducials[2][0]
+            settings['puck_tracker']['fiducial']['coordinates']['br']['y'] = fiducials[2][1]
+            settings['puck_tracker']['fiducial']['coordinates']['bl']['x'] = fiducials[3][0]
+            settings['puck_tracker']['fiducial']['coordinates']['bl']['y'] = fiducials[3][1]
             
-            with open(settings_file_path, 'w+') as fp:
-                json.dump(pt_settings, fp, indent=4)
+            with open((settings_path + "settings.json"), 'w+') as fp:
+                json.dump(settings, fp, indent=4)
                 fp.close()
                     
     return ret
@@ -292,6 +291,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
     while True:
         # retrieve commands from master controller and clear
         mc_cmd = int(pt_rx[pt_rx_enum.state_cmd])
+        pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
         # set desired state of puck tracker to that commanded by mc    
         if mc_cmd == pt_state_cmd_enum.calibrate:
@@ -330,26 +330,26 @@ def pt_process(pt_rx, pt_tx, visualization_data):
         # perform puck tracker state tasks
         if pt_state == pt_state_enum.calibrate:
             ret, frame = video_stream.read()
-            
+
             if ret == False:
                 pt_tx[pt_tx_enum.error] = pt_error_enum.camera
                 
             fiducials_found = find_fiducials(frame, fiducial_hsv[0], fiducial_hsv[1])
             
             if fiducials_found:
-                pt_state = pt_state_enum.idle
+                pt_state = pt_state_enum.calibrated
                 calibration_attempts = 0
             else:
                 calibration_attempts += 1
 
             if calibration_attempts >= 5:
-                pt_state = pt_state_enum.idle
+                pt_state = pt_state_enum.error
                 pt_error = pt_error_enum.calibration_failed
                 calibration_attempts = 0
 
         elif pt_state == pt_state_enum.tracking:
             ret, frame = video_stream.read()
-	   
+
             if ret == False:
                 pt_tx[pt_tx_enum.error] = pt_error_enum.camera
 

@@ -32,10 +32,19 @@
                 "fiducial_calibration", 
                 "puck_calibration"
             ], 
+            "ui_game_mode": [
+                "offense", 
+                "defense"
+            ], 
             "ui_state_cmd": [
                 "idle", 
                 "run", 
                 "quit"
+            ], 
+            "ui_game_difficulty": [
+                "easy", 
+                "medium", 
+                "hard"
             ], 
             "ui_rx": [
                 "idle", 
@@ -81,11 +90,9 @@
                 "calibrate_fiducials"
             ]
         }, 
-        "settings": {
-            "game_strategy": "offense", 
-            "game_difficulty": "easy", 
-            "game_length": 300
-        }
+        "game_mode": 0, 
+        "game_difficulty": 1, 
+        "game_length": 300
     }, 
     "master_controller": {
         "enumerations": {
@@ -197,7 +204,7 @@
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.7606787313331411, 
+            "mm_per_pixel_x": 2.760678731333141, 
             "mm_per_pixel_y": 1.7207571193975886
         }
     }

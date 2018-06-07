@@ -840,7 +840,7 @@ def make_decisions():
 		elif ui_game_state == ui_game_state_enum.stopped:
 			pass
 
-	elif ui_screen == ui_screen_enum.visual:
+	elif ui_screen == ui_screen_enum.menu:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
 	elif ui_screen == ui_screen_enum.fiducial_calibration:
@@ -887,10 +887,18 @@ def make_decisions():
 		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 
 	if (ui_state == ui_state_enum.quit and pt_state == pt_state_enum.quit):
-		ui_process.terminate()
-		pt_process.terminate()
+		while True:
+			if ui_process.is_alive() or pt_process.is_alive():
+				print "not dead"
+				ui_process.terminate()
+				pt_process.terminate()
+			else:
+				break
+		#ui_process.terminate()
+		#pt_process.terminate()
 		Close_HDF5()
 		Uninit_PCAN(PCAN)
+		print "master controller quit"
 		sys.exit(0)
 
 ## end of function
@@ -902,7 +910,7 @@ def make_decisions():
 ## 
 ## main()
 ##
-if __name__ == "__main__":
+try:
 	# Create and set format of the logging file
 	# If you want to disable the logger then set "level=logging.ERROR"
 	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
@@ -929,6 +937,9 @@ if __name__ == "__main__":
 		add_pos_sent_HDF5(str(datetime.datetime.now()))
 		update_dset_HDF5()
 		sleep(timeout)
+		#print "time: ", time.time()
+except KeyboardInterrupt:
+	sys.exit()
 
 ## end of function
 

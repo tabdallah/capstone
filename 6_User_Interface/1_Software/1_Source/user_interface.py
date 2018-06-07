@@ -59,41 +59,21 @@ class ManualPaddle(Scatter):
 class ManualPlayingSurface(Widget):
     images_path_local = StringProperty(images_path)
 
-class ManualScreen(BoxLayout, Screen):
-    def on_enter(self):
-        self.ids['game_control'].on_enter()
+class CameraData(Image):
+    def __init__(self, **kwargs):
+        super(CameraData, self).__init__(**kwargs)
+        #self.source = (images_path + 'loading.gif')
 
-class CameraDataVisual(Image):
-    def on_enter(self):
-        Clock.schedule_interval(self.update_data, 0)
-
-    def on_leave(self):
-        Clock.unschedule(self.update_data)
-
-    def update_data(self, *args):
-        try:
-            frame = self.parent.manager.visualization_data.get(False)
-
-        except Queue.Empty:
-            pass
-        else:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_flipped = cv2.flip(frame_rgb, 0)
-            frame_string = frame_flipped.tostring()
-            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
-            image_texture.blit_buffer(frame_string, colorfmt='rgb', bufferfmt='ubyte')
-            self.texture = image_texture
-
-class CameraDataCalibration(Image):
     def on_enter(self):
         Clock.schedule_interval(self.update_data, 0)
 
     def on_leave(self):
         Clock.unschedule(self.update_data)
+        #self.source = (images_path + 'loading.gif')
 
     def update_data(self, *args):
         try:
-            frame = self.parent.parent.manager.visualization_data.get(False)
+            frame = app.root.visualization_data.get(False)
         except Queue.Empty:
             pass
         else:
@@ -115,118 +95,105 @@ class IntroScreen(BoxLayout, Screen):
         #if self.sound:
         #    self.sound.play()"""
         
-
     def end_intro(self, *args):
         self.manager.current = 'menu'
 
+class MenuScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
+    menu_button_font_size = ObjectProperty(30)
+    menu_button_background_color = ObjectProperty((0,0,0,0.6))
+
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.menu
+
+    def go_quit(self, *args):
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.request_quit
+
+    def okay_to_quit(self, *args):
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
+        App.get_running_app().stop()
+
+class VisualScreen(BoxLayout, Screen):
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
+        self.ids['game_control'].on_enter()
+        self.ids['camera_data'].on_enter()
+    def on_leave(self):
+        self.ids['camera_data'].on_leave()
+
+class ManualScreen(BoxLayout, Screen):
+    def on_enter(self):
+        self.ids['game_control'].on_enter()
+
+class DiagnosticsScreen(BoxLayout, Screen):
+    diagnostic_label_font_size = NumericProperty(30)
+    images_path_local = StringProperty(images_path)
+
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
+
+class LineSeparator(Widget):
+    pass
+
 class SettingsScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(SettingsScreen, self).__init__(**kwargs)
-
-        # game strategy setting
-        self.game_strategy_layout = BoxLayout(orientation='horizontal')
-        self.game_strategy_layout.add_widget(Label(text='Game Strategy:'))
-        self.offense_button = ToggleButton(text='Offense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
-        self.defense_button = ToggleButton(text='Defense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
-        self.game_strategy_layout.add_widget(self.offense_button)
-        self.game_strategy_layout.add_widget(self.defense_button)
-
-        # game difficulty setting
-        self.game_difficulty_layout = BoxLayout(orientation='horizontal')
-        self.game_difficulty_layout.add_widget(Label(text='Game Difficulty:'))
-        self.easy_button = ToggleButton(text='Easy', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
-        self.medium_button = ToggleButton(text='Medium', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
-        self.hard_button = ToggleButton(text='Hard', group='game_difficulty_group', allow_no_selection=False, on_release=self.change_game_difficulty)
-        self.game_difficulty_layout.add_widget(self.easy_button)
-        self.game_difficulty_layout.add_widget(self.medium_button)
-        self.game_difficulty_layout.add_widget(self.hard_button)
-
-        # game length setting
-        self.game_length_layout = BoxLayout(orientation='horizontal')
-        self.game_length_layout.add_widget(Label(text='Game Length:'))
-        self.one_min_button = ToggleButton(text='1:00', value=60, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
-        self.two_min_button = ToggleButton(text='2:00', value=120, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
-        self.five_min_button = ToggleButton(text='5:00', value=300, group='game_length_group', allow_no_selection=False, on_release=self.change_game_length)
-        self.game_length_layout.add_widget(self.one_min_button)
-        self.game_length_layout.add_widget(self.two_min_button)
-        self.game_length_layout.add_widget(self.five_min_button)
-
-        self.add_widget(Button(text='Main Menu', on_release=self.go_menu, size_hint=(1,0.2))) 
-        self.add_widget(self.game_strategy_layout)
-        self.add_widget(self.game_difficulty_layout)
-        self.add_widget(self.game_length_layout)
-
-        # load settings
-        with open((settings_path + 'settings.json'), 'r') as fp:
-            self.settings = json.load(fp)
-            fp.close()
-
-        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
-        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
-        self.game_length = self.settings['user_interface']['settings']['game_length']
-        self.updated_settings = True
-
-        if self.game_difficulty == "easy":
-            self.easy_button.state = 'down'
-        elif self.game_difficulty == "medium":
-            self.medium_button.state = 'down'
-        elif self.game_difficulty == "hard":
-            self.hard_button.state = 'down'
-
-        if self.game_length == 60:
-            self.one_min_button.state = 'down'
-        elif self.game_length == 120:
-            self.two_min_button.state = 'down'
-        elif self.game_length == 300:
-            self.five_min_button.state = 'down'
-
-        if self.game_strategy == "defense":
-            self.defense_button.state = "down"
-        elif self.game_strategy == "offense":
-            self.offense_button.state = "down"
+    images_path_local = StringProperty(images_path)
 
     def go_menu(self, *args):
         self.manager.current = 'menu'
 
     def change_game_difficulty(self, *args):
-        if self.easy_button.state == 'down':
-            self.settings['user_interface']['settings']['game_difficulty'] = 'easy'
-        elif self.medium_button.state == 'down':
-            self.settings['user_interface']['settings']['game_difficulty'] = 'medium'
-        elif self.hard_button.state == 'down':
-            self.settings['user_interface']['settings']['game_difficulty'] = 'hard'
+        global game_difficulty
+        if self.ids['easy_button'].state == 'down':
+            game_difficulty = ui_game_difficulty_enum.easy
+        elif self.ids['medium_button'].state == 'down':
+            game_difficulty = ui_game_difficulty_enum.medium
+        elif self.ids['hard_button'].state == 'down':
+            game_difficulty = ui_game_difficulty_enum.hard
 
     def change_game_length(self, *args):
-        if self.one_min_button.state == 'down':
-            self.settings['user_interface']['settings']['game_length'] = 60
-        elif self.two_min_button.state == 'down':
-            self.settings['user_interface']['settings']['game_length'] = 120
-        elif self.five_min_button.state == 'down':
-            self.settings['user_interface']['settings']['game_length'] = 300
+        global game_length
+        if self.ids['one_min_button'].state == 'down':
+            game_length = 60
+        elif self.ids['two_min_button'].state == 'down':
+            game_length = 120
+        elif self.ids['five_min_button'].state == 'down':
+            game_length = 300
 
-    def change_game_strategy(self, *args):
-        if self.defense_button.state == "down":
-            self.settings['user_interface']['settings']['game_strategy'] = "defense"
-        elif self.offense_button.state == "down":
-            self.settings['user_interface']['settings']['game_strategy'] = "offense"
+    def change_game_mode(self, *args):
+        global game_mode
+        if self.ids['offense_button'].state == 'down':
+            game_mode = ui_game_mode_enum.offense
+        elif self.ids['defense_button'].state == 'down':
+            game_mode = ui_game_mode_enum.defense
 
     def on_enter(self):
-        with open((settings_path + 'settings.json'), 'r') as fp:
-            self.settings = json.load(fp)
-            self.old_settings = copy.deepcopy(self.settings)
-            fp.close()
+        get_pt_settings() #TODO: remove as this is likely up to date already
+
+        if game_difficulty == ui_game_difficulty_enum.easy:
+            self.ids['easy_button'].state = 'down'
+        elif game_difficulty == ui_game_difficulty_enum.medium:
+            self.ids['medium_button'].state = 'down'
+        elif game_difficulty == ui_game_difficulty_enum.hard:
+            self.ids['hard_button'].state = 'down'
+
+        if game_length == 60:
+            self.ids['one_min_button'].state = 'down'
+        elif game_length == 120:
+            self.ids['two_min_button'].state = 'down'
+        elif game_length == 300:
+            self.ids['five_min_button'].state = 'down'
+
+        if game_mode == ui_game_mode_enum.defense:
+            self.ids['defense_button'].state = 'down'
+        elif game_mode == ui_game_mode_enum.offense:
+            self.ids['offense_button'].state = 'down'
 
     def on_leave(self):
-        with open((settings_path + 'settings.json'), 'w+') as fp:
-            json.dump(self.settings, fp, indent=4)
-            fp.close()
+        update_game_settings()
 
-        self.game_length = self.settings['user_interface']['settings']['game_length']
-        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
-        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
-
-        if self.old_settings != self.settings:
-            self.updated_settings = True
+class AboutScreen(BoxLayout, Screen):
+    about_label_font_size = NumericProperty(30)
+    images_path_local = StringProperty(images_path)
 
 class GameControl(BoxLayout):
     robot_score = 0
@@ -239,8 +206,8 @@ class GameControl(BoxLayout):
     game_length = 60
 
     def get_settings(self, *args):
-        self.game_length = self.parent.manager.get_screen('settings').game_length
-        self.game_difficulty = self.parent.manager.get_screen('settings').game_difficulty
+        self.game_length = game_length
+        self.game_difficulty = game_difficulty
         
         # update 
         mins, secs = divmod(self.game_length, 60)
@@ -287,9 +254,7 @@ class GameControl(BoxLayout):
 
     def on_enter(self):
         self.parent.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
-        if self.parent.manager.get_screen('settings').updated_settings == True:
-            self.get_settings()
-            self.parent.manager.get_screen('settings').updated_settings = False
+        self.get_settings()
 
     def go_menu(self, *args):
         if self.ids['pause_resume_game_button'].text == "Pause Game" and self.ids['pause_resume_game_button'].disabled == False:
@@ -320,7 +285,7 @@ class PuckCalibrationScreen(BoxLayout, Screen):
         get_pt_settings()
         self.action_label = "Find Puck"
         self.instruction_label = "Adjust the sliders until you see only the one green puck"
-        self.ids['camera_data_calibration'].on_enter()
+        self.ids['camera_data'].on_enter()
         self.ids['lower_hue'].value = puck_lower_hsv[0]
         self.ids['lower_sat'].value = puck_lower_hsv[1]
         self.ids['lower_val'].value = puck_lower_hsv[2]
@@ -342,7 +307,7 @@ class PuckCalibrationScreen(BoxLayout, Screen):
             self.manager.current = 'diagnostics'
 
     def on_leave(self):
-        self.ids['camera_data_calibration'].on_leave()
+        self.ids['camera_data'].on_leave()
 
 class FiducialCalibrationScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
@@ -353,7 +318,7 @@ class FiducialCalibrationScreen(BoxLayout, Screen):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.fiducial_calibration
         self.action_label = "Find Fiducials"
         self.instruction_label = "Adjust the sliders until you only see the four pink fiducial markers"
-        self.ids['camera_data_calibration'].on_enter()
+        self.ids['camera_data'].on_enter()
         get_pt_settings()
         self.ids['lower_hue'].value = fiducial_lower_hsv[0]
         self.ids['lower_sat'].value = fiducial_lower_hsv[1]
@@ -394,41 +359,7 @@ class FiducialCalibrationScreen(BoxLayout, Screen):
         self.ids['skip_redo_button'].text = "Skip"
         self.ids['calibrate_continue_button'].text = "Save & Calibrate"
         self.ids['slider_layout'].disabled = False
-        self.ids['camera_data_calibration'].on_leave()
-
-class VisualScreen(BoxLayout, Screen):
-    def on_enter(self):
-        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
-        self.ids['game_control'].on_enter()
-        self.ids['camera_data_visual'].on_enter()
-    def on_leave(self):
-        self.ids['camera_data_visual'].on_leave()
-
-class MenuScreen(BoxLayout, Screen):
-    images_path_local = StringProperty(images_path)
-    menu_button_font_size = ObjectProperty(30)
-    menu_button_background_color = ObjectProperty((0,0,0,0.6))
-
-    def on_enter(self):
-        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.menu
-
-    def go_quit(self, *args):
-        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.request_quit
-
-    def okay_to_quit(self, *args):
-        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
-        App.get_running_app().stop()
-
-class AboutScreen(BoxLayout, Screen):
-    about_label_font_size = NumericProperty(30)
-    images_path_local = StringProperty(images_path)
-
-class DiagnosticsScreen(BoxLayout, Screen):
-    diagnostic_label_font_size = NumericProperty(30)
-    images_path_local = StringProperty(images_path)
-
-    def on_enter(self):
-        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
+        self.ids['camera_data'].on_leave()
     
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
@@ -494,6 +425,8 @@ class ScreenManagement(ScreenManager):
 class UserInterfaceApp(App):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(UserInterfaceApp, self).__init__(**kwargs)
+        global app
+        app = App.get_running_app() 
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
         self.visualization_data = visualization_data
@@ -519,6 +452,8 @@ def get_enums():
     global ui_game_state_enum
     global ui_screen_enum
     global ui_goal_enum
+    global ui_game_mode_enum
+    global ui_game_difficulty_enum
 
     global pt_state_enum
     global pt_error_enum
@@ -543,7 +478,9 @@ def get_enums():
     ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
     ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
     ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
-    
+    ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
+    ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
+
     pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
     pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])
 
@@ -559,6 +496,9 @@ def get_pt_settings():
     global fiducial_upper_hsv
     global puck_lower_hsv
     global puck_upper_hsv
+    global game_mode
+    global game_difficulty
+    global game_length
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
@@ -578,6 +518,10 @@ def get_pt_settings():
     puck_upper_hsv = (settings['puck_tracker']['puck']['color']['hue']['upper'],
                       settings['puck_tracker']['puck']['color']['sat']['upper'],
                       settings['puck_tracker']['puck']['color']['val']['upper'])
+
+    game_mode = settings['user_interface']['game_mode']
+    game_difficulty = settings['user_interface']['game_difficulty']
+    game_length = settings['user_interface']['game_length']
 
 def update_fiducial_values():
     global fiducial_lower_hsv
@@ -614,6 +558,23 @@ def update_puck_values():
         json.dump(settings, fp, indent=4)
         fp.close()
 
+def update_game_settings():
+    global game_difficulty
+    global game_mode
+    global game_length
+    
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    settings['user_interface']['game_mode'] = game_mode
+    settings['user_interface']['game_difficulty'] = game_difficulty
+    settings['user_interface']['game_length'] = game_length
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
+
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
     global ui_state
@@ -636,4 +597,5 @@ def ui_process(ui_rx, ui_tx, visualization_data):
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
         elif mc_cmd == ui_state_cmd_enum.quit:
             ui_state = ui_state_enum.quit
-            quit(0)
+            print "user interface quit"
+            quit()

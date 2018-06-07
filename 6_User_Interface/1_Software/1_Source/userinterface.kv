@@ -1,12 +1,109 @@
+<LineSeparator>:
+    id: line_separator  
+    size_hint_y: None
+    height: 6
+    canvas:
+        Color:
+            rgba: 0, 0, 1, 0.4
+        Rectangle:
+            pos: 0, line_separator.center_y
+            size: line_separator.width, 4
+
 <IntroScreen>:
     orientation: 'vertical'
     Image:
         source: (root.images_path_local + 'logo.png')
         allow_stretch: True
 
+<SettingsButton@ToggleButton>:
+    id: root.id
+    text: root.text
+    on_release: root.on_release
+    group: root.group
+    allow_no_selection: False
+    outline_width: 1.3
+    outline_color: (0,0,0)
+    font_size: 25
+    background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
+    background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
+
 <SettingsScreen>:
     orientation: 'vertical'
-       
+    canvas:
+        Color:
+            rgba: (1,1,1,0.7)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    ScreenLabel:
+        text: "Settings"
+    LineSeparator:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Game Mode"
+                font_size: 30
+            SettingsButton:
+                id: offense_button
+                text: "Offense"
+                group: "game_mode"
+                on_release: root.change_game_mode()
+            SettingsButton:
+                id: defense_button
+                text: "Defense"
+                group: "game_mode"
+                on_release: root.change_game_mode()
+            Label:
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Game Difficulty"
+                font_size: 30
+            SettingsButton:
+                id: easy_button
+                text: "Easy"
+                group: "game_difficulty"
+                on_release: root.change_game_difficulty()
+            SettingsButton:
+                id: medium_button
+                text: "Medium"
+                group: "game_difficulty"
+                on_release: root.change_game_difficulty()
+            SettingsButton:
+                id: hard_button
+                text: "Hard"
+                group: "game_difficulty"
+                on_release: root.change_game_difficulty()
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Game Length"
+                font_size: 30
+            SettingsButton:
+                id: one_min_button
+                text: "1:00"
+                group: "game_length"
+                on_release: root.change_game_length()
+            SettingsButton:
+                id: two_min_button
+                text: "2:00"
+                group: "game_length"
+                on_release: root.change_game_length()
+            SettingsButton:
+                id: five_min_button
+                text: "5:00"
+                group: "game_length"
+                on_release: root.change_game_length()
+        Button:
+            text: "Main Menu"
+            background_color: (0,0,0,0.7)
+            font_size: 30
+            on_release: root.manager.current = 'menu'
+
+
 <DiagnosticsScreen>:
     orientation: 'vertical'
     canvas:
@@ -14,13 +111,12 @@
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
-    Label:
+    ScreenLabel:
         text: "Diagnostics"
-        font_size: 40
     BoxLayout:
         canvas.before:
             Color:
-                rgba: (0,0,0.3,0.8)
+                rgba: (0,0,0,0.8)
             Rectangle:
                 pos: self.pos 
                 size: self.size
@@ -88,18 +184,18 @@
                 id: pc_error_label
                 text: "null"
                 font_size: root.diagnostic_label_font_size
-    BoxLayout:
-        orientation: 'horizontal'
-        Button:
-            text: "Calibrate Puck Tracker"
-            background_color: (0,0,0,0.7)
-            font_size: root.diagnostic_label_font_size
-            on_release: root.manager.current = 'fiducial_calibration'
-        Button:
-            text: "Main Menu"
-            background_color: (0,0,0,0.7)
-            font_size: root.diagnostic_label_font_size
-            on_release: root.manager.current = 'menu'
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "Calibrate Puck Tracker"
+                background_color: (0,0,0,0.7)
+                font_size: root.diagnostic_label_font_size
+                on_release: root.manager.current = 'fiducial_calibration'
+            Button:
+                text: "Main Menu"
+                background_color: (0,0,0,0.7)
+                font_size: root.diagnostic_label_font_size
+                on_release: root.manager.current = 'menu'
 
 <AboutScreen>:
     orientation: 'vertical'
@@ -108,9 +204,9 @@
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
-    Label:
-        text: "Blurb about us, the project, and what we accomplished"
-        font_size: root.about_label_font_size
+
+    ScreenLabel:
+        text: "About"
     
     Button:
         text: "Main Menu"
@@ -118,57 +214,75 @@
         font_size: root.about_label_font_size
         on_release: root.manager.current = 'menu'
 
+<MainMenuButton@Button>:
+    text: root.text
+    on_release: root.on_release
+    outline_width: 1.3
+    outline_color: (0,0,0)
+    font_size: 35
+    background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
+    background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
+
+<SettingsButton@ToggleButton>:
+    text: root.text
+    on_release: root.on_release
+    outline_width: 1.3
+    outline_color: (0,0,0)
+    font_size: 25
+    background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
+    background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
+
+<ScreenLabel@Label>:
+    text: root.text
+    outline_width: 1
+    outline_color: (0,0,0)
+    size_hint: (1,0.2)
+    font_size: 50 
+
 <MenuScreen>:
     orientation: 'vertical'
 
     canvas.before:
+        Color:
+            rgba: (1,1,1,0.7)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
-
-    Label:
+    ScreenLabel:
         text: "Main Menu"
-        size_hint: (1,0.2)
-        font_size: 40 
-
+    LineSeparator:
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
             orientation: 'vertical'
-            Button:
+            padding: 10
+            spacing: 10
+            MainMenuButton:
                 text: "Play Against Robot"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.manager.current = 'visual'
-            Button:
+            MainMenuButton:
                 text: "Settings"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.manager.current = 'settings'
         BoxLayout:
             orientation: 'vertical'
-            Button:
+            padding: 10
+            spacing: 10
+            MainMenuButton:
                 text: "Play Using Robot"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.manager.current = 'manual'
-            Button:
+            MainMenuButton:
                 text: "About"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.manager.current = 'about'
         BoxLayout:
             orientation: 'vertical'
-            Button:
+            padding: 10
+            spacing: 10
+            MainMenuButton:
                 text: "Diagnostics"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.manager.current = 'diagnostics'
-            Button:
+            MainMenuButton:
                 text: "Quit"
-                font_size: root.menu_button_font_size
-                background_color: root.menu_button_background_color
                 on_release: root.go_quit()
 
 <FiducialCalibrationScreen>:
@@ -259,8 +373,8 @@
                     id: upper_val
                     min: 0
                     max: 255
-        CameraDataCalibration:
-            id: camera_data_calibration
+        CameraData:
+            id: camera_data
     
     BoxLayout:
         size_hint: (1,0.2)
@@ -367,8 +481,8 @@
                     id: upper_val
                     min: 0
                     max: 255
-        CameraDataCalibration:
-            id: camera_data_calibration
+        CameraData:
+            id: camera_data
     
     BoxLayout:
         size_hint: (1,0.2)
@@ -458,8 +572,8 @@
 
 <VisualScreen>:
     orientation: 'horizontal'
-    CameraDataVisual:
-        id: camera_data_visual
+    CameraData:
+        id: camera_data
     GameControl:
         id: game_control
         size_hint: (0.29,1)

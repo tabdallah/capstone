@@ -303,6 +303,11 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                        int(pt_rx[pt_rx_enum.upper_sat]),
                        int(pt_rx[pt_rx_enum.upper_val]))
 
+        # grab the next frame from camera
+        ret, frame = video_stream.read()
+        if ret == False:
+            pt_tx[pt_tx_enum.error] = pt_error_enum.camera
+
         # set state of puck tracker to that commanded by mc and do required setup   
         if mc_cmd == pt_state_cmd_enum.calibrate_fiducials and pt_state != pt_state_enum.calibrate_fiducials:
             pt_state = pt_state_enum.calibrate_fiducials    
@@ -329,11 +334,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pass
         
         # perform puck tracker state tasks
-        if pt_state == pt_state_enum.calibrate_fiducials:
-            ret, frame = video_stream.read()
-            if ret == False:
-                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
-            
+        if pt_state == pt_state_enum.calibrate_fiducials:            
             if fiducials_found:
                 frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_frame_width, max_frame_height), cv2.INTER_LINEAR)
                 try:
@@ -357,14 +358,9 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 calibration_attempts = 0    
 
         elif pt_state == pt_state_enum.tracking:
-            ret, frame = video_stream.read()
-            if ret == False:
-                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
-            
             frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_frame_width, max_frame_height), cv2.INTER_LINEAR)
             frame = get_puck_position(frame_warped)
             get_puck_velocity()
-
             # this may seem confusing, but everything in the puck tracker currently has the wrong coordinate system. TODO: Fix on a rainy day
             pt_tx[pt_tx_enum.puck_position_x] = puck_position_mm_y
             pt_tx[pt_tx_enum.puck_position_y] = puck_position_mm_x
@@ -378,10 +374,6 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 visualization_data.put(frame)
 
         elif pt_state == pt_state_enum.find_fiducials:
-            ret, frame = video_stream.read()
-            if ret == False:
-                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
-
             frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             frame_mask = cv2.inRange(frame_hsv, color_lower, color_upper)            
             frame_mask_filtered = cv2.medianBlur(frame_mask, 5)
@@ -394,10 +386,6 @@ def pt_process(pt_rx, pt_tx, visualization_data):
                 visualization_data.put(frame)
 
         elif pt_state == pt_state_enum.find_puck:
-            ret, frame = video_stream.read()
-            if ret == False:
-                pt_tx[pt_tx_enum.error] = pt_error_enum.camera
-
             frame_warped = cv2.warpPerspective(frame, perspective_transform_matrix, (max_frame_width, max_frame_height), cv2.INTER_LINEAR)
             frame_hsv = cv2.cvtColor(frame_warped, cv2.COLOR_BGR2HSV)
             frame_mask = cv2.inRange(frame_hsv, color_lower, color_upper)            
@@ -414,7 +402,8 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.state] = pt_state_enum.quit
             video_stream.release() 
             cv2.destroyAllWindows()
-            quit(0)
+            print "puck tracker quit"
+            quit()
 
         # update state/error
         pt_tx[pt_tx_enum.error] = pt_error

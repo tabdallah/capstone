@@ -25,6 +25,9 @@ from kivy.graphics.texture import Texture
 from time import sleep
 from kivy.config import Config
 from kivy.uix.popup import Popup
+from kivy.animation import Animation
+from kivy.graphics import Line
+from kivy.properties import NumericProperty, StringProperty
 
 # customize screen size/cursor visibility
 Config.set('graphics','width','1024')
@@ -46,47 +49,54 @@ ui_state_enum = 0
 ui_error_enum = 0
 ui_rx_enum = 0
 ui_tx_enum = 0
+ui_state = 0
+ui_error = 0
 
 # miscellaneous class definitions
-class Paddle(Scatter):
-    def __init__(self, **kwargs):
-        super(Paddle, self).__init__(**kwargs)
-        self.paddle_image = Image(source=(images_path + 'paddle.png'), pos=self.pos)
-        self.add_widget(self.paddle_image)
+class ManualPaddle(Scatter):
+    images_path_local = StringProperty(images_path)
 
-"""class ManualControl(Widget):
-    def __init__(self, **kwargs):
-        super(ManualControl, self).__init__(**kwargs)
-        self.paddle_object = Paddle()
-        self.add_widget(self.paddle_object)
+class ManualPlayingSurface(Widget):
+    images_path_local = StringProperty(images_path)
 
-        #with self.canvas:
-        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
-            #BorderImage(source=(images_path + 'hockeySurface.png'), size_hint=(1,0.9))
-        #Clock.schedule_interval(self.update_screen, 0)
+class ManualScreen(BoxLayout, Screen):
+    def on_enter(self):
+        self.ids['game_control'].on_enter()
 
-    def update_screen(self, *args):
-        sleep(0.1)
-        paddleCoordinates = self.paddle_object.center
-        scalingFactorWidth = tableWidthMm/self.width
-        scalingFactorLength = tableHalfLengthMm/self.height
-        if self.parent.manager.current == 'manual':
-            try:
-                self.parent.manager.ui_tx.put("paddle_position_mm_x:{0:.0f}".format(paddleCoordinates[0]*scalingFactorWidth))
-                self.parent.manager.ui_tx.put("paddle_position_mm_y:{0:.0f}".format(paddleCoordinates[1]*scalingFactorLength))
-            except Queue.Full:
-              print "Queue Full?"
+class CameraDataVisual(Image):
+    def on_enter(self):
+        Clock.schedule_interval(self.update_data, 0)
+
+    def on_leave(self):
+        Clock.unschedule(self.update_data)
+
+    def update_data(self, *args):
+        try:
+            frame = self.parent.manager.visualization_data.get(False)
+
+        except Queue.Empty:
+            pass
         else:
-            pass"""
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_flipped = cv2.flip(frame_rgb, 0)
+            frame_string = frame_flipped.tostring()
+            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+            image_texture.blit_buffer(frame_string, colorfmt='rgb', bufferfmt='ubyte')
+            self.texture = image_texture
 
-class VisualizationData(Image):
-    def __init__(self, **kwargs):
-        super(VisualizationData, self).__init__(**kwargs)
-        Clock.schedule_interval(self.updateData, 0)
+class CameraDataCalibration(Image):
+    def on_enter(self):
+        Clock.schedule_interval(self.update_data, 0)
 
-    def updateData(self, *args):
-        while(self.parent.parent.parent.manager.visualization_data.poll()):
-            frame = self.parent.parent.parent.manager.visualization_data.recv()
+    def on_leave(self):
+        Clock.unschedule(self.update_data)
+
+    def update_data(self, *args):
+        try:
+            frame = self.parent.parent.manager.visualization_data.get(False)
+        except Queue.Empty:
+            pass
+        else:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_flipped = cv2.flip(frame_rgb, 0)
             frame_string = frame_flipped.tostring()
@@ -96,22 +106,31 @@ class VisualizationData(Image):
 
 # screen class definitions
 class IntroScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
     def __init__(self, **kwargs):
         super(IntroScreen, self).__init__(**kwargs)
-        self.add_widget(Image(source=(images_path + 'logo.png'),allow_stretch=True))
-        self.sound = SoundLoader.load(audio_path + 'organ.wav')
-        if self.sound:
-            self.sound.play()
         Clock.schedule_once(self.end_intro, 0)
 
+        """#self.sound = SoundLoader.load(audio_path + 'organ.wav')
+        #if self.sound:
+        #    self.sound.play()"""
+        
+
     def end_intro(self, *args):
-        self.manager.get_screen('visual').get_settings()
         self.manager.current = 'menu'
 
 class SettingsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
-       
+
+        # game strategy setting
+        self.game_strategy_layout = BoxLayout(orientation='horizontal')
+        self.game_strategy_layout.add_widget(Label(text='Game Strategy:'))
+        self.offense_button = ToggleButton(text='Offense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
+        self.defense_button = ToggleButton(text='Defense', group='game_strategy_group', allow_no_selection=False, on_release=self.change_game_strategy)
+        self.game_strategy_layout.add_widget(self.offense_button)
+        self.game_strategy_layout.add_widget(self.defense_button)
+
         # game difficulty setting
         self.game_difficulty_layout = BoxLayout(orientation='horizontal')
         self.game_difficulty_layout.add_widget(Label(text='Game Difficulty:'))
@@ -133,6 +152,7 @@ class SettingsScreen(BoxLayout, Screen):
         self.game_length_layout.add_widget(self.five_min_button)
 
         self.add_widget(Button(text='Main Menu', on_release=self.go_menu, size_hint=(1,0.2))) 
+        self.add_widget(self.game_strategy_layout)
         self.add_widget(self.game_difficulty_layout)
         self.add_widget(self.game_length_layout)
 
@@ -141,8 +161,9 @@ class SettingsScreen(BoxLayout, Screen):
             self.settings = json.load(fp)
             fp.close()
 
-        self.game_difficulty = self.settings['user_interface']['game_difficulty']
-        self.game_length = self.settings['user_interface']['game_length']
+        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
+        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
+        self.game_length = self.settings['user_interface']['settings']['game_length']
         self.updated_settings = True
 
         if self.game_difficulty == "easy":
@@ -158,25 +179,36 @@ class SettingsScreen(BoxLayout, Screen):
             self.two_min_button.state = 'down'
         elif self.game_length == 300:
             self.five_min_button.state = 'down'
-    
+
+        if self.game_strategy == "defense":
+            self.defense_button.state = "down"
+        elif self.game_strategy == "offense":
+            self.offense_button.state = "down"
+
     def go_menu(self, *args):
         self.manager.current = 'menu'
 
     def change_game_difficulty(self, *args):
         if self.easy_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'easy'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'easy'
         elif self.medium_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'medium'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'medium'
         elif self.hard_button.state == 'down':
-            self.settings['user_interface']['game_difficulty'] = 'hard'
+            self.settings['user_interface']['settings']['game_difficulty'] = 'hard'
 
     def change_game_length(self, *args):
         if self.one_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 60
+            self.settings['user_interface']['settings']['game_length'] = 60
         elif self.two_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 120
+            self.settings['user_interface']['settings']['game_length'] = 120
         elif self.five_min_button.state == 'down':
-            self.settings['user_interface']['game_length'] = 300
+            self.settings['user_interface']['settings']['game_length'] = 300
+
+    def change_game_strategy(self, *args):
+        if self.defense_button.state == "down":
+            self.settings['user_interface']['settings']['game_strategy'] = "defense"
+        elif self.offense_button.state == "down":
+            self.settings['user_interface']['settings']['game_strategy'] = "offense"
 
     def on_enter(self):
         with open((settings_path + 'settings.json'), 'r') as fp:
@@ -189,210 +221,274 @@ class SettingsScreen(BoxLayout, Screen):
             json.dump(self.settings, fp, indent=4)
             fp.close()
 
-        self.game_length = self.settings['user_interface']['game_length']
-        self.game_difficulty = self.settings['user_interface']['game_difficulty']
+        self.game_length = self.settings['user_interface']['settings']['game_length']
+        self.game_difficulty = self.settings['user_interface']['settings']['game_difficulty']
+        self.game_strategy = self.settings['user_interface']['settings']['game_strategy']
 
         if self.old_settings != self.settings:
             self.updated_settings = True
 
-class ManualScreen(Screen, FloatLayout):
-    def __init__(self, **kwargs):
-        super(ManualScreen, self).__init__(**kwargs)
-
-        #with self.canvas.before:
-        #    Rectangle(source=(images_path + 'hockeySurface.png'), pos=self.pos, size=self.size)
-
-        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
-        
-        #self.paddle_object = Paddle(size=(100,100))
-        #self.add_widget(self.paddle_object)
-
-    def go_menu(self, *args):
-        self.manager.current = 'menu'
-
-class VisualScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(VisualScreen, self).__init__(**kwargs)
-
-        # scoreboard stuff
-        self.scoreboard = BoxLayout(orientation='horizontal')
-        self.robot = BoxLayout(orientation='vertical')
-        self.game_clock = BoxLayout(orientation='vertical')
-        self.human = BoxLayout(orientation='vertical')
-        self.scoreboard.add_widget(self.robot)
-        self.scoreboard.add_widget(self.game_clock)
-        self.scoreboard.add_widget(self.human)
-        #self.robot.add_widget(Label(name='name',text='roboMan',font_size=20))
-        #self.robot.add_widget(Label(name='score',text='0',font_size=40))
-        self.clock_label = Label(name='game_clock',text='00:00',font_size=80)
-        self.game_clock.add_widget(self.clock_label)
-        #self.human.add_widget(Label(name='name',text='someGuy',font_size=20))
-        #self.human.add_widget(Label(name='score',text='0',font_size=40))
-        #self.add_widget(self.scoreboard)
-
-        # visualization & menu
-        self.visualization_and_menu = BoxLayout(orientation='horizontal')
-        self.visualization = BoxLayout(orientation='vertical')
-        self.menu = BoxLayout(orientation='vertical', size_hint=(0.3,1))
-        self.visualization_and_menu.add_widget(self.visualization)
-        self.visualization_and_menu.add_widget(self.menu)
-        self.visualization.add_widget(VisualizationData())
-        self.start_reset_game_button = Button(text="Start Game", on_release=self.start_reset_game)
-        self.pause_resume_game_button = Button(text="Pause Game", on_release=self.pause_resume_game)
-        self.menu.add_widget(self.scoreboard)
-        self.menu.add_widget(self.start_reset_game_button)
-        self.menu.add_widget(self.pause_resume_game_button)
-        self.menu.add_widget(Button(text="Main Menu",on_release=self.go_menu))
-        self.add_widget(self.visualization_and_menu)
-        self.pause_resume_game_button.disabled = True
+class GameControl(BoxLayout):
+    robot_score = 0
+    human_score = 0
+    game_clock = 0
+    robot_score_label = StringProperty(str(robot_score))
+    human_score_label = StringProperty(str(human_score))
+    game_clock_label = StringProperty("00:00")
+    game_running = True
+    game_length = 60
 
     def get_settings(self, *args):
-        self.game_length = self.manager.get_screen('settings').game_length
-        self.game_difficulty = self.manager.get_screen('settings').game_difficulty
+        self.game_length = self.parent.manager.get_screen('settings').game_length
+        self.game_difficulty = self.parent.manager.get_screen('settings').game_difficulty
         
         # update 
         mins, secs = divmod(self.game_length, 60)
-        self.clock_label.text = '{:02d}:{:02d}'.format(mins,secs)
-        self.clock_label.value = self.game_length
+        self.game_clock_label = '{:02d}:{:02d}'.format(mins,secs)
+        self.game_clock = self.game_length
 
     def decrement_clock(self, *args):
-        self.clock_label.value -= 1
-        mins, secs = divmod(self.clock_label.value, 60)
+        self.game_clock -= 1
+        mins, secs = divmod(self.game_clock, 60)
         timeformat = '{:02d}:{:02d}'.format(mins,secs)
-        self.clock_label.text = timeformat
+        self.game_clock_label = timeformat
 
-        if self.clock_label.value == 0:
+        if self.game_clock == 0:
             Clock.unschedule(self.decrement_clock)
-            self.pause_resume_game_button.disabled = True
+            self.ids['pause_resume_game_button'].disabled = True
 
     def start_reset_game(self, *args):
-        if self.start_reset_game_button.text == "Start Game":
+        if self.ids['start_reset_game_button'].text == "Start Game":
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.playing
             Clock.schedule_interval(self.decrement_clock, 1)
-            self.pause_resume_game_button.disabled = False
-            self.start_reset_game_button.text = "Reset Game"
+            self.ids['pause_resume_game_button'].disabled = False
+            self.ids['start_reset_game_button'].text = "Reset Game"
 
-        elif self.start_reset_game_button.text == "Reset Game":
+        elif self.ids['start_reset_game_button'].text == "Reset Game":
             mins, secs = divmod(self.game_length, 60)
-            self.clock_label.text = '{:02d}:{:02d}'.format(mins,secs)
-            self.clock_label.value = self.game_length
-            self.pause_resume_game_button.text = "Pause Game"
-            self.pause_resume_game_button.disabled = True
+            self.game_clock_label = '{:02d}:{:02d}'.format(mins,secs)
+            self.game_clock = self.game_length
+            self.ids['pause_resume_game_button'].text = "Pause Game"
+            self.ids['pause_resume_game_button'].disabled = True
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
-            self.start_reset_game_button.text = "Start Game"
+            self.ids['start_reset_game_button'].text = "Start Game"
 
     def pause_resume_game(self, *args):
-        if self.pause_resume_game_button.text == "Pause Game":
+        if self.ids['pause_resume_game_button'].text == "Pause Game":
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
-            self.pause_resume_game_button.text = "Resume Game"
+            self.ids['pause_resume_game_button'].text = "Resume Game"
 
-        elif self.pause_resume_game_button.text == "Resume Game":
+        elif self.ids['pause_resume_game_button'].text == "Resume Game":
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.playing
             Clock.schedule_interval(self.decrement_clock, 1)
-            self.pause_resume_game_button.text = "Pause Game"
+            self.ids['pause_resume_game_button'].text = "Pause Game"
 
     def on_enter(self):
-        if self.manager.get_screen('settings').updated_settings == True:
+        self.parent.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
+        if self.parent.manager.get_screen('settings').updated_settings == True:
             self.get_settings()
-            self.manager.get_screen('settings').updated_settings = False
-
-    def on_leave(self):
-        if self.pause_resume_game_button.text == "Pause Game":
-            Clock.unschedule(self.decrement_clock)
-            self.pause_resume_game_button.text = "Resume Game"
+            self.parent.manager.get_screen('settings').updated_settings = False
 
     def go_menu(self, *args):
-        self.manager.current = 'menu'
+        if self.ids['pause_resume_game_button'].text == "Pause Game" and self.ids['pause_resume_game_button'].disabled == False:
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
+            Clock.unschedule(self.decrement_clock)
+            self.ids['pause_resume_game_button'].text = "Resume Game"
+        self.parent.manager.current = 'menu'
+
+    def add_goal(self, goal_scorer):
+        if game_running:
+            if goal_scorer == ui_goal_enum.human:
+                self.human_score += 1
+                self.human_score_label = str(self.human_score)
+            elif goal_scorer == ui_goal_enum.robot:
+                self.robot_score += 1
+                self.robot_score_label = str(self.robot_score)
+            self.sound = SoundLoader.load(audio_path + 'goal_horn.mp3')
+            if self.sound:
+                self.sound.play()
+
+class PuckCalibrationScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
+    action_label = StringProperty()
+    instruction_label = StringProperty()
+    
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.puck_calibration
+        get_pt_settings()
+        self.action_label = "Find Puck"
+        self.instruction_label = "Adjust the sliders until you see only the one green puck"
+        self.ids['camera_data_calibration'].on_enter()
+        self.ids['lower_hue'].value = puck_lower_hsv[0]
+        self.ids['lower_sat'].value = puck_lower_hsv[1]
+        self.ids['lower_val'].value = puck_lower_hsv[2]
+        self.ids['upper_hue'].value = puck_upper_hsv[0]
+        self.ids['upper_sat'].value = puck_upper_hsv[1]
+        self.ids['upper_val'].value = puck_upper_hsv[2]
+
+    def skip_redo_button(self, *args):
+        if self.ids['skip_redo_button'].text == "Skip":
+            self.manager.current = 'diagnostics'
+
+    def calibrate_continue_button(self, *args):
+        global puck_lower_hsv
+        global puck_upper_hsv
+        if self.ids['calibrate_continue_button'].text == "Save & Calibrate":
+            puck_lower_hsv = (self.ids['lower_hue'].value, self.ids['lower_sat'].value, self.ids['lower_val'].value)
+            puck_upper_hsv = (self.ids['upper_hue'].value, self.ids['upper_sat'].value, self.ids['upper_val'].value)
+            update_puck_values()
+            self.manager.current = 'diagnostics'
+
+    def on_leave(self):
+        self.ids['camera_data_calibration'].on_leave()
+
+class FiducialCalibrationScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
+    action_label = StringProperty()
+    instruction_label = StringProperty()
+
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.fiducial_calibration
+        self.action_label = "Find Fiducials"
+        self.instruction_label = "Adjust the sliders until you only see the four pink fiducial markers"
+        self.ids['camera_data_calibration'].on_enter()
+        get_pt_settings()
+        self.ids['lower_hue'].value = fiducial_lower_hsv[0]
+        self.ids['lower_sat'].value = fiducial_lower_hsv[1]
+        self.ids['lower_val'].value = fiducial_lower_hsv[2]
+        self.ids['upper_hue'].value = fiducial_upper_hsv[0]
+        self.ids['upper_sat'].value = fiducial_upper_hsv[1]
+        self.ids['upper_val'].value = fiducial_upper_hsv[2]
+
+    def calibrate_continue_button(self, *args):
+        global fiducial_lower_hsv
+        global fiducial_upper_hsv
+        if self.ids['calibrate_continue_button'].text == "Save & Calibrate":
+            self.ids['slider_layout'].disabled = True
+            fiducial_lower_hsv = (self.ids['lower_hue'].value, self.ids['lower_sat'].value, self.ids['lower_val'].value)
+            fiducial_upper_hsv = (self.ids['upper_hue'].value, self.ids['upper_sat'].value, self.ids['upper_val'].value)
+            update_fiducial_values()
+            self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_fiducials
+            self.ids['skip_redo_button'].text = "Redo"
+            self.action_label = "Calibrated Fiducials"
+            self.instruction_label = "Was the fiducial calibration successful? You should see just the playing surface. If not, redo"
+            self.ids['calibrate_continue_button'].text = "Continue"
+        elif self.ids['calibrate_continue_button'].text == "Continue":
+            self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+            self.manager.current = 'puck_calibration'
+
+    def skip_redo_button(self, *args):
+        if self.ids['skip_redo_button'].text == "Skip":
+            self.manager.current = 'puck_calibration'
+        elif self.ids['skip_redo_button'].text == "Redo":
+            self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+            self.ids['slider_layout'].disabled = False
+            self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+            self.ids['skip_redo_button'].text = "Skip"
+            self.on_enter()
+
+    def on_leave(self):
+        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+        self.ids['skip_redo_button'].text = "Skip"
+        self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+        self.ids['slider_layout'].disabled = False
+        self.ids['camera_data_calibration'].on_leave()
+
+class VisualScreen(BoxLayout, Screen):
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
+        self.ids['game_control'].on_enter()
+        self.ids['camera_data_visual'].on_enter()
+    def on_leave(self):
+        self.ids['camera_data_visual'].on_leave()
 
 class MenuScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(MenuScreen, self).__init__(**kwargs)
-        with self.canvas.before:
-            Rectangle(source=(images_path + 'menu_background.jpg'), pos=self.pos, size=self.size)
-        self.menu_label = Label(name='main_menu', text='Main Menu', size_hint=(1,0.2), font_size=40)
-        #with self.menu_label.canvas:
-        #    Color(0,1,0,0.5)
-        #    Rectangle(pos=self.menu_label.pos, size=self.menu_label.size)
-        menu_button_font_size = 30
-        menu_button_background_color = (0,0,0,0.6)
-        self.add_widget(self.menu_label)
-        self.menu_box = BoxLayout(orientation='horizontal')
-        self.menu_col_1 = BoxLayout(orientation='vertical')
-        self.menu_col_2 = BoxLayout(orientation='vertical')
-        self.menu_col_3 = BoxLayout(orientation='vertical')
-        self.menu_box.add_widget(self.menu_col_1)
-        self.menu_box.add_widget(self.menu_col_2)
-        self.menu_box.add_widget(self.menu_col_3)
-        self.menu_col_1.add_widget(Button(text="Play Against Robot", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_visual))
-        self.menu_col_1.add_widget(Button(text="Settings", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_settings))
-        self.menu_col_2.add_widget(Button(text="Play Using Robot", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_manual))
-        self.menu_col_2.add_widget(Button(text="About", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_about))
-        self.menu_col_3.add_widget(Button(text="Diagnostics", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_diagnostics))
-        self.menu_col_3.add_widget(Button(text="Quit", font_size=menu_button_font_size, background_color=menu_button_background_color, on_release=self.go_quit))
-        self.add_widget(self.menu_box)
+    images_path_local = StringProperty(images_path)
+    menu_button_font_size = ObjectProperty(30)
+    menu_button_background_color = ObjectProperty((0,0,0,0.6))
 
-    def go_visual(self, *args):
-        self.manager.current = 'visual'
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.menu
 
-    def go_settings(self, *args):
-        self.manager.current = 'settings'
-
-    def go_manual(self, *args):
-        self.manager.current = 'manual'
-
-    def go_about(self, *args):
-        self.manager.current = 'about'
-
-    def go_diagnostics(self, *args):
-        self.manager.current = 'diagnostics'
-    
     def go_quit(self, *args):
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.request_quit
+
+    def okay_to_quit(self, *args):
         self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
-        self.manager.visualization_data.send(0)
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(AboutScreen, self).__init__(**kwargs)
-        self.add_widget(Label(text='Blurb about us, the project, and what we accomplished'))
-        self.add_widget(Button(text='Main Menu', on_release=self.go_menu))
-
-    def go_menu(self, *args):
-        self.manager.current = 'menu'
+    about_label_font_size = NumericProperty(30)
+    images_path_local = StringProperty(images_path)
 
 class DiagnosticsScreen(BoxLayout, Screen):
-    def __init__(self, **kwargs):
-        super(DiagnosticsScreen, self).__init__(**kwargs)
-        self.add_widget(Label(text='Relevant data'))
-        #self.add_widget(Button(text='Calibrate Puck Tracker', on_release=self.calibrate_pt))
-        self.add_widget(Button(text='Main Menu', size_hint=(1,0.1), on_release=self.go_menu))
+    diagnostic_label_font_size = NumericProperty(30)
+    images_path_local = StringProperty(images_path)
 
-    def go_menu(self, *args):
-        self.manager.current = 'menu'
-
-    def calibrate_pt(self, *args):
-        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_pt
+    def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
     
-# screen manager (also does IPC)
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
-        # queue management
+        
+        # IPC management
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
         self.visualization_data = visualization_data
-        Clock.schedule_interval(self.get_queue_data, 0.01)
 
         # screen management
         self.transition = FadeTransition()
         self.add_widget(IntroScreen(name='intro'))
-        self.add_widget(SettingsScreen(name='settings', orientation='vertical', size=self.size))
-        self.add_widget(MenuScreen(name='menu', orientation='vertical', size=self.size))
-        self.add_widget(VisualScreen(name='visual', orientation='vertical', size=self.size))
-        self.add_widget(ManualScreen(name='manual', size=self.size))
-        self.add_widget(AboutScreen(name='about', orientation='vertical', size=self.size))
-        self.add_widget(DiagnosticsScreen(name='diagnostics', orientation='vertical', size=self.size))
+        self.add_widget(SettingsScreen(name='settings'))
+        self.add_widget(MenuScreen(name='menu'))
+        self.add_widget(VisualScreen(name='visual'))
+        self.add_widget(ManualScreen(name='manual'))
+        self.add_widget(AboutScreen(name='about'))
+        self.add_widget(DiagnosticsScreen(name='diagnostics'))
+        self.add_widget(FiducialCalibrationScreen(name='fiducial_calibration'))
+        self.add_widget(PuckCalibrationScreen(name='puck_calibration'))
 
-    def get_queue_data(self, *args):
-        pass
+        # run the UI state machine
+        Clock.schedule_interval(self.process_data, 0.1)
+
+    def process_data(self, *args):
+        self.update_diagnostic_screen()
+        
+        # keep track of score
+        if int(self.ui_rx[ui_rx_enum.goal]) != ui_goal_enum.idle:
+            self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal])
+            self.ui_rx[ui_rx_enum.goal] = ui_goal_enum.idle
+
+        # only quit this app once everything else has shut down properly
+        if int(self.ui_rx[ui_rx_enum.state_cmd]) == ui_state_cmd_enum.quit:
+            self.get_screen('menu').okay_to_quit()
+
+    def update_diagnostic_screen(self, *args):
+        self.get_screen('diagnostics').ids['ui_state_label'].text = ui_state_enum.reverse_mapping[ui_state]
+        self.get_screen('diagnostics').ids['ui_error_label'].text = ui_error_enum.reverse_mapping[ui_error]
+        self.get_screen('diagnostics').ids['pt_state_label'].text = pt_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pt_state]]
+        self.get_screen('diagnostics').ids['pt_error_label'].text = pt_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pt_error]]
+        self.get_screen('diagnostics').ids['mc_state_label'].text = mc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_state]]
+        self.get_screen('diagnostics').ids['mc_error_label'].text = mc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_error]]
+        self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
+        self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
+        if self.current == 'fiducial_calibration':
+            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('fiducial_calibration').ids['lower_hue'].value
+            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('fiducial_calibration').ids['lower_sat'].value
+            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('fiducial_calibration').ids['lower_val'].value
+            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('fiducial_calibration').ids['upper_hue'].value
+            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('fiducial_calibration').ids['upper_sat'].value
+            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('fiducial_calibration').ids['upper_val'].value
+        elif self.current == 'puck_calibration':
+            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('puck_calibration').ids['lower_hue'].value
+            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('puck_calibration').ids['lower_sat'].value
+            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('puck_calibration').ids['lower_val'].value
+            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('puck_calibration').ids['upper_hue'].value
+            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('puck_calibration').ids['upper_sat'].value
+            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('puck_calibration').ids['upper_val'].value
 
 # main app
 class UserInterfaceApp(App):
@@ -403,11 +499,13 @@ class UserInterfaceApp(App):
         self.visualization_data = visualization_data
 
     def build(self):
-        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data, name='manager', size=(1024,600)) #Builder.load_file("user_interface_kivy.kv")
+        return ScreenManagement(self.ui_rx, self.ui_tx, self.visualization_data)
 
 # enum creator
 def enum(list_of_enums):
     enums = dict(zip(list_of_enums, range(len(list_of_enums))))
+    reverse = dict((value, key) for key, value in enums.iteritems())
+    enums['reverse_mapping'] = reverse
     return type('Enum', (), enums)
 
 # enum retriever
@@ -418,38 +516,124 @@ def get_enums():
     global ui_error_enum
     global ui_rx_enum
     global ui_tx_enum
+    global ui_game_state_enum
+    global ui_screen_enum
+    global ui_goal_enum
+
+    global pt_state_enum
+    global pt_error_enum
+    
+    global mc_state_enum
+    global mc_error_enum
+    
+    global pc_state_enum
+    global pc_error_enum
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
         settings = json.load(fp)
         fp.close()
 
-    ui_state_cmd_enum = enum(settings['enumerations']['ui_state_cmd'])
-    ui_state_enum = enum(settings['enumerations']['ui_state'])
-    ui_error_enum = enum(settings['enumerations']['ui_error'])   
-    ui_rx_enum = enum(settings['enumerations']['ui_rx'])
-    ui_tx_enum = enum(settings['enumerations']['ui_tx'])
-    ui_diagnostic_request_enum = enum(settings['enumerations']['ui_diagnostic_request'])
+    ui_state_cmd_enum = enum(settings['user_interface']['enumerations']['ui_state_cmd'])
+    ui_state_enum = enum(settings['user_interface']['enumerations']['ui_state'])
+    ui_error_enum = enum(settings['user_interface']['enumerations']['ui_error'])   
+    ui_rx_enum = enum(settings['user_interface']['enumerations']['ui_rx'])
+    ui_tx_enum = enum(settings['user_interface']['enumerations']['ui_tx'])
+    ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
+    ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
+    ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
+    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+    
+    pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
+    pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])
+
+    mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
+    mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])
+
+    pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
+    pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
+
+# load settings from JSON file
+def get_pt_settings():
+    global fiducial_lower_hsv
+    global fiducial_upper_hsv
+    global puck_lower_hsv
+    global puck_upper_hsv
+
+    # get settings from file
+    with open((settings_path + 'settings.json'), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+
+    fiducial_lower_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['val']['lower'])
+    fiducial_upper_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['val']['upper'])
+
+    puck_lower_hsv = (settings['puck_tracker']['puck']['color']['hue']['lower'],
+                      settings['puck_tracker']['puck']['color']['sat']['lower'],
+                      settings['puck_tracker']['puck']['color']['val']['lower'])
+    puck_upper_hsv = (settings['puck_tracker']['puck']['color']['hue']['upper'],
+                      settings['puck_tracker']['puck']['color']['sat']['upper'],
+                      settings['puck_tracker']['puck']['color']['val']['upper'])
+
+def update_fiducial_values():
+    global fiducial_lower_hsv
+    global fiducial_upper_hsv
+    
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    settings['puck_tracker']['fiducial']['color']['hue']['lower'] = int(fiducial_lower_hsv[0])
+    settings['puck_tracker']['fiducial']['color']['sat']['lower'] = int(fiducial_lower_hsv[1])
+    settings['puck_tracker']['fiducial']['color']['val']['lower'] = int(fiducial_lower_hsv[2])
+    settings['puck_tracker']['fiducial']['color']['hue']['upper'] = int(fiducial_upper_hsv[0])
+    settings['puck_tracker']['fiducial']['color']['sat']['upper'] = int(fiducial_upper_hsv[1])
+    settings['puck_tracker']['fiducial']['color']['val']['upper'] = int(fiducial_upper_hsv[2])
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
+
+def update_puck_values():
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    settings['puck_tracker']['puck']['color']['hue']['lower'] = int(puck_lower_hsv[0])
+    settings['puck_tracker']['puck']['color']['sat']['lower'] = int(puck_lower_hsv[1])
+    settings['puck_tracker']['puck']['color']['val']['lower'] = int(puck_lower_hsv[2])
+    settings['puck_tracker']['puck']['color']['hue']['upper'] = int(puck_upper_hsv[0])
+    settings['puck_tracker']['puck']['color']['sat']['upper'] = int(puck_upper_hsv[1])
+    settings['puck_tracker']['puck']['color']['val']['upper'] = int(puck_upper_hsv[2])
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
+    global ui_state
+    global ui_error
+
     get_enums()
+    get_pt_settings()
 
     ui_state = ui_state_enum.idle
+    ui_error = ui_error_enum.idle
 
     while True:
         # retrieve commands from master controller
         mc_cmd = int(ui_rx[ui_rx_enum.state_cmd])
-            
+        ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.idle
+
         # set desired state of the user interface to that commanded by mc    
         if mc_cmd == ui_state_cmd_enum.run:
-            ui_desired_state = ui_state_cmd_enum.run
-        else:
-            ui_desired_state = ui_state_cmd_enum.idle
-
-        # do the required setup to enter state requested by mc
-        if ui_desired_state == ui_state_cmd_enum.run and ui_state != ui_state_enum.running:
             ui_state = ui_state_enum.running
-            ui_desired_state = ui_state_cmd_enum.idle
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
+        elif mc_cmd == ui_state_cmd_enum.quit:
+            ui_state = ui_state_enum.quit
             quit(0)

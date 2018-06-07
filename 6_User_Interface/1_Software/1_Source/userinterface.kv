@@ -1,0 +1,465 @@
+<IntroScreen>:
+    orientation: 'vertical'
+    Image:
+        source: (root.images_path_local + 'logo.png')
+        allow_stretch: True
+
+<SettingsScreen>:
+    orientation: 'vertical'
+       
+<DiagnosticsScreen>:
+    orientation: 'vertical'
+    canvas:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: "Diagnostics"
+        font_size: 40
+    BoxLayout:
+        canvas.before:
+            Color:
+                rgba: (0,0,0.3,0.8)
+            Rectangle:
+                pos: self.pos 
+                size: self.size
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+            Label:
+                text: "[u]State[/u]"
+                font_size: root.diagnostic_label_font_size
+                markup: True
+            Label:
+                text: "[u]Error[/u]"
+                font_size: root.diagnostic_label_font_size
+                markup: True
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Master Controller"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: mc_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: mc_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "User Interface"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: ui_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: ui_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Puck Tracker"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pt_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pt_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Paddle Controller"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pc_state_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+            Label
+                id: pc_error_label
+                text: "null"
+                font_size: root.diagnostic_label_font_size
+    BoxLayout:
+        orientation: 'horizontal'
+        Button:
+            text: "Calibrate Puck Tracker"
+            background_color: (0,0,0,0.7)
+            font_size: root.diagnostic_label_font_size
+            on_release: root.manager.current = 'fiducial_calibration'
+        Button:
+            text: "Main Menu"
+            background_color: (0,0,0,0.7)
+            font_size: root.diagnostic_label_font_size
+            on_release: root.manager.current = 'menu'
+
+<AboutScreen>:
+    orientation: 'vertical'
+    canvas:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: "Blurb about us, the project, and what we accomplished"
+        font_size: root.about_label_font_size
+    
+    Button:
+        text: "Main Menu"
+        background_color: (0,0,0,0.7)
+        font_size: root.about_label_font_size
+        on_release: root.manager.current = 'menu'
+
+<MenuScreen>:
+    orientation: 'vertical'
+
+    canvas.before:
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+
+    Label:
+        text: "Main Menu"
+        size_hint: (1,0.2)
+        font_size: 40 
+
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Play Against Robot"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'visual'
+            Button:
+                text: "Settings"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'settings'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Play Using Robot"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'manual'
+            Button:
+                text: "About"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'about'
+        BoxLayout:
+            orientation: 'vertical'
+            Button:
+                text: "Diagnostics"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.manager.current = 'diagnostics'
+            Button:
+                text: "Quit"
+                font_size: root.menu_button_font_size
+                background_color: root.menu_button_background_color
+                on_release: root.go_quit()
+
+<FiducialCalibrationScreen>:
+    orientation: 'vertical'
+    canvas:
+        Color:
+            rgba: (1,1,1,0.3)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: root.action_label
+        size_hint: (1,0.2)
+        font_size: 40 
+    Label:
+        text: root.instruction_label
+        size_hint: (1,0.2)
+        font_size: 20 
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            id: slider_layout
+            orientation: 'vertical'
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Lower: %s" % int(lower_hue.value)
+                Slider:
+                    id: lower_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Lower: %s" % int(lower_sat.value)
+                Slider:
+                    id: lower_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Lower: %s" % int(lower_val.value)
+                Slider:
+                    id: lower_val
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Upper: %s" % int(upper_hue.value)
+                Slider:
+                    id: upper_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Upper: %s" % int(upper_sat.value)
+                Slider:
+                    id: upper_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Upper: %s" % int(upper_val.value)
+                Slider:
+                    id: upper_val
+                    min: 0
+                    max: 255
+        CameraDataCalibration:
+            id: camera_data_calibration
+    
+    BoxLayout:
+        size_hint: (1,0.2)
+        orientation: 'horizontal'
+        Button:
+            text: "Back to Diagnostics"
+            font_size: 30
+            on_release: root.manager.current = 'diagnostics'
+        Button:
+            id: skip_redo_button
+            text: "Skip"
+            font_size: 30
+            on_release: root.skip_redo_button()
+        Button:
+            id: calibrate_continue_button
+            text: "Save & Calibrate"
+            font_size: 30
+            on_release: root.calibrate_continue_button()
+
+<PuckCalibrationScreen>:
+    orientation: 'vertical'
+    canvas:
+        Color:
+            rgba: (1,1,1,0.3)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
+    Label:
+        text: root.action_label
+        size_hint: (1,0.2)
+        font_size: 40 
+    Label:
+        text: root.instruction_label
+        size_hint: (1,0.2)
+        font_size: 20 
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Lower: %s" % int(lower_hue.value)
+                Slider:
+                    id: lower_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Lower: %s" % int(lower_sat.value)
+                Slider:
+                    id: lower_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Lower: %s" % int(lower_val.value)
+                Slider:
+                    id: lower_val
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Hue Upper: %s" % int(upper_hue.value)
+                Slider:
+                    id: upper_hue
+                    min: 0
+                    max: 179
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Sat Upper: %s" % int(upper_sat.value)
+                Slider:
+                    id: upper_sat
+                    min: 0
+                    max: 255
+            BoxLayout:
+                orientation: 'horizontal'
+                Label:
+                    size_hint: (0.3,1)
+                    text_size: self.size
+                    valign: "middle"
+                    text: " Val Upper: %s" % int(upper_val.value)
+                Slider:
+                    id: upper_val
+                    min: 0
+                    max: 255
+        CameraDataCalibration:
+            id: camera_data_calibration
+    
+    BoxLayout:
+        size_hint: (1,0.2)
+        orientation: 'horizontal'
+        Button:
+            text: "Back to Diagnostics"
+            font_size: 30
+            on_release: root.manager.current = 'diagnostics'
+        Button:
+            id: skip_redo_button
+            text: "Skip"
+            font_size: 30
+            on_release: root.skip_redo_button()
+        Button:
+            id: calibrate_continue_button
+            text: "Save & Calibrate"
+            font_size: 30
+            on_release: root.calibrate_continue_button()
+
+
+<GameControl>:
+    orientation: 'vertical'
+
+    Label:
+        text: root.game_clock_label
+        font_size: 80
+        color: (1,0,0,1)
+
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Robot"
+                font_size: 20
+                size_hint: (1,0.4)
+            Label:
+                text: root.robot_score_label
+                font_size: 50
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Human"
+                font_size: 20
+                size_hint: (1,0.4)
+            Label:
+                text: root.human_score_label
+                font_size: 50
+
+    Button:
+        id: start_reset_game_button
+        text: "Start Game"
+        font_size: 30
+        on_release: root.start_reset_game()
+    Button:
+        id: pause_resume_game_button
+        disabled: True
+        text: "Pause Game"
+        font_size: 30
+        on_release: root.pause_resume_game()
+    Button:
+        text: "Main Menu"
+        font_size: 30
+        on_release: root.go_menu()
+
+<ManualPaddle>:
+    size_hint: (None, None) 
+    Image:
+        source: (root.images_path_local + 'paddle.png')
+
+<ManualPlayingSurface>:
+    canvas.before:
+        Rectangle:
+            source: (root.images_path_local + 'hockeySurface.png')
+            pos: self.pos
+            size: self.size
+
+    ManualPaddle:
+        center: self.parent.center
+
+<ManualScreen>:
+    orientation: 'horizontal'
+    ManualPlayingSurface:
+    GameControl:
+        id: game_control
+        size_hint: (0.29,1)
+
+<VisualScreen>:
+    orientation: 'horizontal'
+    CameraDataVisual:
+        id: camera_data_visual
+    GameControl:
+        id: game_control
+        size_hint: (0.29,1)

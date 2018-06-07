@@ -30,9 +30,9 @@ from kivy.graphics import Line
 from kivy.properties import NumericProperty, StringProperty
 
 # customize screen size/cursor visibility
-#Config.set('graphics','width','1024')
-#Config.set('graphics','height','600')
-Config.set('graphics', 'fullscreen', 'auto')
+Config.set('graphics','width','1024')
+Config.set('graphics','height','600')
+#Config.set('graphics', 'fullscreen', 'auto')
 Config.set('graphics', 'show_cursor', '1')
 
 # paths to import external files
@@ -64,9 +64,11 @@ class ManualScreen(BoxLayout, Screen):
         self.ids['game_control'].on_enter()
 
 class CameraDataVisual(Image):
-    def __init__(self, **kwargs):
-        super(CameraDataVisual, self).__init__(**kwargs)
+    def on_enter(self):
         Clock.schedule_interval(self.update_data, 0)
+
+    def on_leave(self):
+        Clock.unschedule(self.update_data)
 
     def update_data(self, *args):
         try:
@@ -75,7 +77,6 @@ class CameraDataVisual(Image):
         except Queue.Empty:
             pass
         else:
-            print time.time()
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_flipped = cv2.flip(frame_rgb, 0)
             frame_string = frame_flipped.tostring()
@@ -84,9 +85,11 @@ class CameraDataVisual(Image):
             self.texture = image_texture
 
 class CameraDataCalibration(Image):
-    def __init__(self, **kwargs):
-        super(CameraDataCalibration, self).__init__(**kwargs)
+    def on_enter(self):
         Clock.schedule_interval(self.update_data, 0)
+
+    def on_leave(self):
+        Clock.unschedule(self.update_data)
 
     def update_data(self, *args):
         try:
@@ -225,8 +228,6 @@ class SettingsScreen(BoxLayout, Screen):
         if self.old_settings != self.settings:
             self.updated_settings = True
 
-
-
 class GameControl(BoxLayout):
     robot_score = 0
     human_score = 0
@@ -310,18 +311,98 @@ class GameControl(BoxLayout):
                 self.sound.play()
 
 class PuckCalibrationScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
+    action_label = StringProperty()
+    instruction_label = StringProperty()
+    
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.puck_calibration
+        get_pt_settings()
+        self.action_label = "Find Puck"
+        self.instruction_label = "Adjust the sliders until you see only the one green puck"
+        self.ids['camera_data_calibration'].on_enter()
+        self.ids['lower_hue'].value = puck_lower_hsv[0]
+        self.ids['lower_sat'].value = puck_lower_hsv[1]
+        self.ids['lower_val'].value = puck_lower_hsv[2]
+        self.ids['upper_hue'].value = puck_upper_hsv[0]
+        self.ids['upper_sat'].value = puck_upper_hsv[1]
+        self.ids['upper_val'].value = puck_upper_hsv[2]
+
+    def skip_redo_button(self, *args):
+        if self.ids['skip_redo_button'].text == "Skip":
+            self.manager.current = 'diagnostics'
+
+    def calibrate_continue_button(self, *args):
+        global puck_lower_hsv
+        global puck_upper_hsv
+        if self.ids['calibrate_continue_button'].text == "Save & Calibrate":
+            puck_lower_hsv = (self.ids['lower_hue'].value, self.ids['lower_sat'].value, self.ids['lower_val'].value)
+            puck_upper_hsv = (self.ids['upper_hue'].value, self.ids['upper_sat'].value, self.ids['upper_val'].value)
+            update_puck_values()
+            self.manager.current = 'diagnostics'
+
+    def on_leave(self):
+        self.ids['camera_data_calibration'].on_leave()
 
 class FiducialCalibrationScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
+    action_label = StringProperty()
+    instruction_label = StringProperty()
+
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.fiducial_calibration
+        self.action_label = "Find Fiducials"
+        self.instruction_label = "Adjust the sliders until you only see the four pink fiducial markers"
+        self.ids['camera_data_calibration'].on_enter()
+        get_pt_settings()
+        self.ids['lower_hue'].value = fiducial_lower_hsv[0]
+        self.ids['lower_sat'].value = fiducial_lower_hsv[1]
+        self.ids['lower_val'].value = fiducial_lower_hsv[2]
+        self.ids['upper_hue'].value = fiducial_upper_hsv[0]
+        self.ids['upper_sat'].value = fiducial_upper_hsv[1]
+        self.ids['upper_val'].value = fiducial_upper_hsv[2]
+
+    def calibrate_continue_button(self, *args):
+        global fiducial_lower_hsv
+        global fiducial_upper_hsv
+        if self.ids['calibrate_continue_button'].text == "Save & Calibrate":
+            self.ids['slider_layout'].disabled = True
+            fiducial_lower_hsv = (self.ids['lower_hue'].value, self.ids['lower_sat'].value, self.ids['lower_val'].value)
+            fiducial_upper_hsv = (self.ids['upper_hue'].value, self.ids['upper_sat'].value, self.ids['upper_val'].value)
+            update_fiducial_values()
+            self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_fiducials
+            self.ids['skip_redo_button'].text = "Redo"
+            self.action_label = "Calibrated Fiducials"
+            self.instruction_label = "Was the fiducial calibration successful? You should see just the playing surface. If not, redo"
+            self.ids['calibrate_continue_button'].text = "Continue"
+        elif self.ids['calibrate_continue_button'].text == "Continue":
+            self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+            self.manager.current = 'puck_calibration'
+
+    def skip_redo_button(self, *args):
+        if self.ids['skip_redo_button'].text == "Skip":
+            self.manager.current = 'puck_calibration'
+        elif self.ids['skip_redo_button'].text == "Redo":
+            self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+            self.ids['slider_layout'].disabled = False
+            self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+            self.ids['skip_redo_button'].text = "Skip"
+            self.on_enter()
+
+    def on_leave(self):
+        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+        self.ids['skip_redo_button'].text = "Skip"
+        self.ids['calibrate_continue_button'].text = "Save & Calibrate"
+        self.ids['slider_layout'].disabled = False
+        self.ids['camera_data_calibration'].on_leave()
 
 class VisualScreen(BoxLayout, Screen):
     def on_enter(self):
-        self.ids['game_control'].on_enter()
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
+        self.ids['game_control'].on_enter()
+        self.ids['camera_data_visual'].on_enter()
+    def on_leave(self):
+        self.ids['camera_data_visual'].on_leave()
 
 class MenuScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
@@ -332,9 +413,10 @@ class MenuScreen(BoxLayout, Screen):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.menu
 
     def go_quit(self, *args):
-        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.request_quit
 
     def okay_to_quit(self, *args):
+        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.quit
         App.get_running_app().stop()
 
 class AboutScreen(BoxLayout, Screen):
@@ -401,9 +483,12 @@ class ScreenManagement(ScreenManager):
             self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('fiducial_calibration').ids['upper_sat'].value
             self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('fiducial_calibration').ids['upper_val'].value
         elif self.current == 'puck_calibration':
-            self.ui_tx[ui_tx_enum.lower_hue] = 125
-            self.ui_tx[ui_tx_enum.lower_sat] = 125
-            self.ui_tx[ui_tx_enum.lower_val] = 125
+            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('puck_calibration').ids['lower_hue'].value
+            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('puck_calibration').ids['lower_sat'].value
+            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('puck_calibration').ids['lower_val'].value
+            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('puck_calibration').ids['upper_hue'].value
+            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('puck_calibration').ids['upper_sat'].value
+            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('puck_calibration').ids['upper_val'].value
 
 # main app
 class UserInterfaceApp(App):
@@ -468,12 +553,74 @@ def get_enums():
     pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
     pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
 
+# load settings from JSON file
+def get_pt_settings():
+    global fiducial_lower_hsv
+    global fiducial_upper_hsv
+    global puck_lower_hsv
+    global puck_upper_hsv
+
+    # get settings from file
+    with open((settings_path + 'settings.json'), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+
+    fiducial_lower_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['lower'],
+                          settings['puck_tracker']['fiducial']['color']['val']['lower'])
+    fiducial_upper_hsv = (settings['puck_tracker']['fiducial']['color']['hue']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['sat']['upper'],
+                          settings['puck_tracker']['fiducial']['color']['val']['upper'])
+
+    puck_lower_hsv = (settings['puck_tracker']['puck']['color']['hue']['lower'],
+                      settings['puck_tracker']['puck']['color']['sat']['lower'],
+                      settings['puck_tracker']['puck']['color']['val']['lower'])
+    puck_upper_hsv = (settings['puck_tracker']['puck']['color']['hue']['upper'],
+                      settings['puck_tracker']['puck']['color']['sat']['upper'],
+                      settings['puck_tracker']['puck']['color']['val']['upper'])
+
+def update_fiducial_values():
+    global fiducial_lower_hsv
+    global fiducial_upper_hsv
+    
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    settings['puck_tracker']['fiducial']['color']['hue']['lower'] = int(fiducial_lower_hsv[0])
+    settings['puck_tracker']['fiducial']['color']['sat']['lower'] = int(fiducial_lower_hsv[1])
+    settings['puck_tracker']['fiducial']['color']['val']['lower'] = int(fiducial_lower_hsv[2])
+    settings['puck_tracker']['fiducial']['color']['hue']['upper'] = int(fiducial_upper_hsv[0])
+    settings['puck_tracker']['fiducial']['color']['sat']['upper'] = int(fiducial_upper_hsv[1])
+    settings['puck_tracker']['fiducial']['color']['val']['upper'] = int(fiducial_upper_hsv[2])
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
+
+def update_puck_values():
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    settings['puck_tracker']['puck']['color']['hue']['lower'] = int(puck_lower_hsv[0])
+    settings['puck_tracker']['puck']['color']['sat']['lower'] = int(puck_lower_hsv[1])
+    settings['puck_tracker']['puck']['color']['val']['lower'] = int(puck_lower_hsv[2])
+    settings['puck_tracker']['puck']['color']['hue']['upper'] = int(puck_upper_hsv[0])
+    settings['puck_tracker']['puck']['color']['sat']['upper'] = int(puck_upper_hsv[1])
+    settings['puck_tracker']['puck']['color']['val']['upper'] = int(puck_upper_hsv[2])
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
+
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
     global ui_state
     global ui_error
 
     get_enums()
+    get_pt_settings()
 
     ui_state = ui_state_enum.idle
     ui_error = ui_error_enum.idle

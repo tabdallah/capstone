@@ -107,7 +107,6 @@ ui_state = 0
 ui_error = 0
 ui_diagnostic_request = 0
 game_mode = 0
-last_ui_screen = 0
 
 # puck prediction
 puck_position_mm_x = 0
@@ -196,6 +195,27 @@ def get_enums():
 	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
 	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+
+##############################################################################################
+## Retrieve Settings from JSON
+##############################################################################################
+
+##
+## get_settings()
+## Retrieve settings for all modules from JSON file
+##
+def get_settings():
+	global mm_per_pixel_x
+	global mm_per_pixel_y
+	global settings
+
+	# get settings from file
+	with open((settings_path + 'settings.json'), 'r') as fp:
+		settings = json.load(fp)
+		fp.close()
+
+	mm_per_pixel_x = settings['puck_tracker']['scaling_factors']['mm_per_pixel_y']
+	mm_per_pixel_y = settings['puck_tracker']['scaling_factors']['mm_per_pixel_x']
 
 ##############################################################################################
 ## Command line output functions
@@ -600,7 +620,7 @@ def Rx_IPC():
 	pt_rx[pt_rx_enum.upper_val] = ui_tx[ui_tx_enum.upper_val]	
 
 	# clear one time messages
-	ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+	#ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
 
 ## end of method
 
@@ -646,9 +666,6 @@ def get_paddle_position():
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
 	
-	mm_per_pixel_y = 2.95335951134
-	mm_per_pixel_x = 1.7139380531
-
 	# get frame for visualization
 	if visualization_data_rx.empty():
 		frame_received = False
@@ -685,7 +702,10 @@ def get_paddle_position():
 		intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
 		
 		# x = (y - b)/m
-		puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+		if slope == 0:
+			puck_prediction_mm_x = 0
+		else:
+			puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
 
 		# predict bounces and get a real x prediction
 		bounce_count = 0
@@ -785,10 +805,16 @@ def get_paddle_position():
 
 ## end of method
 
+## 
+## make_decisions()
+## Controls interface between puck tracker, user interface, and paddle controller
+##
 def make_decisions():
 	global last_ui_screen
 	global visualization_data_tx
 	global visualization_data_rx
+	global ui_process
+	global pt_process
 
 	# TODO get real data for these vars
 	mc_state = 0
@@ -807,15 +833,21 @@ def make_decisions():
 	# check which UI screen we are on, this dictates a large part of what state we'll be in
 	if ui_screen == ui_screen_enum.visual:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
-		get_paddle_position()
-
+		if puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
+			get_paddle_position()
 		if ui_game_state == ui_game_state_enum.playing:
 			Tx_PC_Cmd(PCAN)
 		elif ui_game_state == ui_game_state_enum.stopped:
 			pass
 
-	if ui_screen == ui_screen_enum.fiducial_calibration:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials_puck
+	elif ui_screen == ui_screen_enum.visual:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+
+	elif ui_screen == ui_screen_enum.fiducial_calibration:
+		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
+			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
+		else:
+			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
 
 		# get frame for visualization
 		try:
@@ -829,33 +861,39 @@ def make_decisions():
 			except Queue.Empty:
 				visualization_data_tx.put(frame)
 
+	elif ui_screen == ui_screen_enum.puck_calibration:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_puck
 
-	"""elif ui_screen == ui_screen_enum.diagnostic:
-		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_pt:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate"""
+		# get frame for visualization
+		try:
+			frame = visualization_data_rx.get(False)
+		except Queue.Empty:
+			pass
+		else:
+			try:
+				visualization_data_tx.get_nowait()
+				visualization_data_tx.put(frame)
+			except Queue.Empty:
+				visualization_data_tx.put(frame)
 
-	if ui_screen != ui_screen_enum.visual and last_ui_screen == ui_screen_enum.visual:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
-
-	if ui_screen != ui_screen_enum.fiducial_calibration and last_ui_screen == ui_screen_enum.fiducial_calibration:
+	elif ui_screen == ui_screen_enum.diagnostic:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
 	# go through steps of shutting down if UI requests
-	if ui_state == ui_state_enum.quit:
+	if ui_state == ui_state_enum.request_quit:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
 	if pt_state == pt_state_enum.quit:
 		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
-	elif pt_state == pt_state_enum.calibrated:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
 
-	if (ui_state == ui_state_enum.quit and
-		pt_state == pt_state_enum.quit):
+	if (ui_state == ui_state_enum.quit and pt_state == pt_state_enum.quit):
+		ui_process.terminate()
+		pt_process.terminate()
 		Close_HDF5()
 		Uninit_PCAN(PCAN)
-		quit(0)
+		sys.exit(0)
 
-	last_ui_screen = ui_screen
+## end of function
 
 ##############################################################################################
 ## MAIN() function
@@ -864,15 +902,14 @@ def make_decisions():
 ## 
 ## main()
 ##
-def main():
-	global log_fileName
-
+if __name__ == "__main__":
 	# Create and set format of the logging file
 	# If you want to disable the logger then set "level=logging.ERROR"
 	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Create enums
 	get_enums()
+	get_settings()
 
 	# Initialize PCAN device
 	Init_PCAN(PCAN)
@@ -883,26 +920,17 @@ def main():
 	# Initialize IPC between MC - PC - UI
 	Init_IPC()
 
-	# Master Controller State Machine
+	# Master Controller loop
 	while True:
 		Rx_IPC()
 		Rx_CAN(PCAN)
-		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		make_decisions()
-		#Tx_PC_Cmd(PCAN)
-		#add_pos_sent_HDF5(str(datetime.datetime.now()))
-		#update_dset_HDF5()
+		add_pos_sent_HDF5(str(datetime.datetime.now()))
+		update_dset_HDF5()
 		sleep(timeout)
 
-## end of method
-
-try:
-	main()
-except KeyboardInterrupt:
-	pass
-	#Close_HDF5()
-	#Uninit_PCAN(PCAN)
-	#Uninit_IPC()
+## end of function
 
 ##############################################################################################
 ## Garbage

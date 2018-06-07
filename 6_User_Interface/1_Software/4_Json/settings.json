@@ -17,6 +17,7 @@
             "ui_state": [
                 "idle", 
                 "running", 
+                "request_quit", 
                 "quit"
             ], 
             "ui_screen": [
@@ -35,10 +36,6 @@
                 "idle", 
                 "run", 
                 "quit"
-            ], 
-            "ui_diagnostic_request": [
-                "idle", 
-                "calibrate_pt"
             ], 
             "ui_rx": [
                 "idle", 
@@ -65,6 +62,10 @@
                 "upper_sat", 
                 "upper_val"
             ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
+            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -75,15 +76,15 @@
                 "human", 
                 "robot"
             ], 
-            "ui_error": [
+            "ui_diagnostic_request": [
                 "idle", 
-                "crashed"
+                "calibrate_fiducials"
             ]
         }, 
         "settings": {
             "game_strategy": "offense", 
-            "game_difficulty": "medium", 
-            "game_length": 120
+            "game_difficulty": "easy", 
+            "game_length": 300
         }
     }, 
     "master_controller": {
@@ -112,8 +113,9 @@
             ], 
             "pt_state_cmd": [
                 "idle", 
-                "calibrate", 
-                "find_fiducials_puck", 
+                "calibrate_fiducials", 
+                "find_fiducials", 
+                "find_puck", 
                 "track", 
                 "error", 
                 "quit"
@@ -130,11 +132,12 @@
             ], 
             "pt_state": [
                 "idle", 
-                "calibrate", 
+                "calibrate_fiducials", 
                 "calibrated", 
                 "tracking", 
                 "error", 
-                "find_fiducials_puck", 
+                "find_fiducials", 
+                "find_puck", 
                 "quit"
             ], 
             "pt_error": [
@@ -151,7 +154,7 @@
                 }, 
                 "val": {
                     "upper": 255, 
-                    "lower": 15
+                    "lower": 11
                 }, 
                 "sat": {
                     "upper": 255, 
@@ -163,35 +166,39 @@
             "color": {
                 "hue": {
                     "upper": 179, 
-                    "lower": 20
+                    "lower": 0
                 }, 
                 "val": {
                     "upper": 255, 
-                    "lower": 170
+                    "lower": 164
                 }, 
                 "sat": {
                     "upper": 223, 
-                    "lower": 128
+                    "lower": 111
                 }
             }, 
             "coordinates": {
                 "bl": {
-                    "y": 463.5766088862323, 
-                    "x": 21.593943016537157
+                    "y": 465.29213705684293, 
+                    "x": 21.743513567042974
                 }, 
                 "tl": {
-                    "y": 13.429682824655895, 
-                    "x": 16.97087572311989
+                    "y": 15.083333333333332, 
+                    "x": 18.473317865429234
                 }, 
                 "tr": {
-                    "y": 104.8065476190476, 
-                    "x": 628.360119047619
+                    "y": 105.82566248256624, 
+                    "x": 627.9051603905159
                 }, 
                 "br": {
-                    "y": 350.2986512524085, 
-                    "x": 631.1483622350673
+                    "y": 347.86291486291486, 
+                    "x": 634.7359307359308
                 }
             }
+        }, 
+        "scaling_factors": {
+            "mm_per_pixel_x": 2.7606787313331411, 
+            "mm_per_pixel_y": 1.7207571193975886
         }
     }
 }

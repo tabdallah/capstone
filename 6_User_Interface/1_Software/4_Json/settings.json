@@ -46,6 +46,10 @@
                 "medium", 
                 "hard"
             ], 
+            "ui_diagnostic_request": [
+                "idle", 
+                "calibrate_fiducials"
+            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -71,10 +75,6 @@
                 "upper_sat", 
                 "upper_val"
             ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
-            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -85,14 +85,14 @@
                 "human", 
                 "robot"
             ], 
-            "ui_diagnostic_request": [
+            "ui_error": [
                 "idle", 
-                "calibrate_fiducials"
+                "crashed"
             ]
         }, 
         "game_mode": 0, 
         "game_difficulty": 1, 
-        "game_length": 300
+        "game_length": 60
     }, 
     "master_controller": {
         "enumerations": {
@@ -176,36 +176,36 @@
                     "lower": 0
                 }, 
                 "val": {
-                    "upper": 255, 
-                    "lower": 164
+                    "upper": 245, 
+                    "lower": 160
                 }, 
                 "sat": {
-                    "upper": 223, 
-                    "lower": 111
+                    "upper": 226, 
+                    "lower": 126
                 }
             }, 
             "coordinates": {
                 "bl": {
-                    "y": 465.29213705684293, 
-                    "x": 21.743513567042974
+                    "y": 464.3455598455598, 
+                    "x": 19.577434577434577
                 }, 
                 "tl": {
-                    "y": 15.083333333333332, 
-                    "x": 18.473317865429234
+                    "y": 14.566387559808613, 
+                    "x": 16.909688995215312
                 }, 
                 "tr": {
-                    "y": 105.82566248256624, 
-                    "x": 627.9051603905159
+                    "y": 107.78666666666666, 
+                    "x": 630.7666666666667
                 }, 
                 "br": {
-                    "y": 347.86291486291486, 
-                    "x": 634.7359307359308
+                    "y": 352.88834154351395, 
+                    "x": 635.6814449917898
                 }
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.760678731333141, 
-            "mm_per_pixel_y": 1.7207571193975886
+            "mm_per_pixel_x": 2.7467359232703616, 
+            "mm_per_pixel_y": 1.7224007766397953
         }
     }
 }

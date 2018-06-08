@@ -91,9 +91,9 @@ class IntroScreen(BoxLayout, Screen):
         super(IntroScreen, self).__init__(**kwargs)
         Clock.schedule_once(self.end_intro, 0)
 
-        """#self.sound = SoundLoader.load(audio_path + 'organ.wav')
-        #if self.sound:
-        #    self.sound.play()"""
+        self.sound = SoundLoader.load(audio_path + 'organ.wav')
+        if self.sound:
+            self.sound.play()
         
     def end_intro(self, *args):
         self.manager.current = 'menu'
@@ -114,6 +114,7 @@ class MenuScreen(BoxLayout, Screen):
         App.get_running_app().stop()
 
 class VisualScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
         self.ids['game_control'].on_enter()
@@ -122,7 +123,9 @@ class VisualScreen(BoxLayout, Screen):
         self.ids['camera_data'].on_leave()
 
 class ManualScreen(BoxLayout, Screen):
+    images_path_local = StringProperty(images_path)
     def on_enter(self):
+        self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.manual
         self.ids['game_control'].on_enter()
 
 class DiagnosticsScreen(BoxLayout, Screen):
@@ -133,6 +136,9 @@ class DiagnosticsScreen(BoxLayout, Screen):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
 
 class LineSeparator(Widget):
+    pass
+
+class LineSeparator2(Widget):
     pass
 
 class SettingsScreen(BoxLayout, Screen):
@@ -253,7 +259,6 @@ class GameControl(BoxLayout):
             self.ids['pause_resume_game_button'].text = "Pause Game"
 
     def on_enter(self):
-        self.parent.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.visual
         self.get_settings()
 
     def go_menu(self, *args):
@@ -597,5 +602,5 @@ def ui_process(ui_rx, ui_tx, visualization_data):
             UserInterfaceApp(ui_rx, ui_tx, visualization_data).run()
         elif mc_cmd == ui_state_cmd_enum.quit:
             ui_state = ui_state_enum.quit
-            print "user interface quit"
-            quit()
+            visualization_data.close()
+            quit(0)

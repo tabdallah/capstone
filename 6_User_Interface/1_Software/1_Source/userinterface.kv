@@ -4,10 +4,21 @@
     height: 6
     canvas:
         Color:
-            rgba: 0, 0, 1, 0.4
+            rgba: 0, 0.4, 1, 0.4
         Rectangle:
-            pos: 0, line_separator.center_y
-            size: line_separator.width, 4
+            pos: self.pos[0], line_separator.center_y
+            size: line_separator.width, 6
+
+<LineSeparator2>:
+    id: line_separator  
+    size_hint_y: None
+    height: 2
+    canvas:
+        Color:
+            rgba: 1, 1, 1, 0.4
+        Rectangle:
+            pos: self.pos[0], line_separator.center_y
+            size: line_separator.width, 3
 
 <IntroScreen>:
     orientation: 'vertical'
@@ -15,23 +26,39 @@
         source: (root.images_path_local + 'logo.png')
         allow_stretch: True
 
+<SquareButton@Button>:
+    text: root.text
+    on_release: root.on_release
+    outline_width: 1.3
+    outline_color: (0,0,0)
+    font_size: 30
+    background_normal: ('../../../6_User_Interface/1_Software/2_Images/menu_unclicked.png')
+    background_down: ('../../../6_User_Interface/1_Software/2_Images/menu_clicked.png')
+
+<SettingsLabel@Label>:
+    id: root.id
+    text: root.text
+    font_size: 30
+    outline_width: 1.3
+    outline_color: (0,0,0)
+
 <SettingsButton@ToggleButton>:
     id: root.id
     text: root.text
     on_release: root.on_release
     group: root.group
     allow_no_selection: False
-    outline_width: 1.3
+    outline_width: 1.6
     outline_color: (0,0,0)
     font_size: 25
-    background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
-    background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
+    background_normal: ('../../../6_User_Interface/1_Software/2_Images/settings_unclicked.png')
+    background_down: ('../../../6_User_Interface/1_Software/2_Images/settings_clicked.png')
 
 <SettingsScreen>:
     orientation: 'vertical'
-    canvas:
+    canvas.before:
         Color:
-            rgba: (1,1,1,0.7)
+            rgba: (1,1,1,0.6)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
@@ -40,12 +67,15 @@
         text: "Settings"
     LineSeparator:
     BoxLayout:
+        spacing: 5
+        padding: 5
         orientation: 'vertical'
         BoxLayout:
+            padding: 5
+            spacing: 5
             orientation: 'horizontal'
-            Label:
-                text: "Game Mode"
-                font_size: 30
+            SettingsLabel:
+                text: "Game Mode:"
             SettingsButton:
                 id: offense_button
                 text: "Offense"
@@ -58,10 +88,11 @@
                 on_release: root.change_game_mode()
             Label:
         BoxLayout:
+            padding: 5
+            spacing: 5
             orientation: 'horizontal'
-            Label:
-                text: "Game Difficulty"
-                font_size: 30
+            SettingsLabel:
+                text: "Game Difficulty:"
             SettingsButton:
                 id: easy_button
                 text: "Easy"
@@ -78,10 +109,11 @@
                 group: "game_difficulty"
                 on_release: root.change_game_difficulty()
         BoxLayout:
+            padding: 5
+            spacing: 5
             orientation: 'horizontal'
-            Label:
-                text: "Game Length"
-                font_size: 30
+            SettingsLabel:
+                text: "Game Length:"
             SettingsButton:
                 id: one_min_button
                 text: "1:00"
@@ -97,104 +129,88 @@
                 text: "5:00"
                 group: "game_length"
                 on_release: root.change_game_length()
-        Button:
+        SquareButton:
             text: "Main Menu"
-            background_color: (0,0,0,0.7)
-            font_size: 30
             on_release: root.manager.current = 'menu'
 
 
 <DiagnosticsScreen>:
     orientation: 'vertical'
-    canvas:
+    canvas.before:
+        Color:
+            rgba: (1,1,1,0.4)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
     ScreenLabel:
         text: "Diagnostics"
+    LineSeparator:
     BoxLayout:
-        canvas.before:
-            Color:
-                rgba: (0,0,0,0.8)
-            Rectangle:
-                pos: self.pos 
-                size: self.size
         orientation: 'vertical'
         BoxLayout:
             orientation: 'horizontal'
-            Label:
-            Label:
+            SettingsLabel:
+            SettingsLabel:
                 text: "[u]State[/u]"
-                font_size: root.diagnostic_label_font_size
                 markup: True
-            Label:
+            SettingsLabel:
                 text: "[u]Error[/u]"
-                font_size: root.diagnostic_label_font_size
                 markup: True
+        LineSeparator2:
         BoxLayout:
             orientation: 'horizontal'
-            Label:
+            SettingsLabel:
                 text: "Master Controller"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: mc_state_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: mc_error_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
+        LineSeparator2:
         BoxLayout:
             orientation: 'horizontal'
-            Label:
+            SettingsLabel:
                 text: "User Interface"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: ui_state_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: ui_error_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
+        LineSeparator2:
         BoxLayout:
             orientation: 'horizontal'
-            Label:
+            SettingsLabel:
                 text: "Puck Tracker"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: pt_state_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: pt_error_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
+        LineSeparator2:
         BoxLayout:
             orientation: 'horizontal'
-            Label:
+            SettingsLabel:
                 text: "Paddle Controller"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: pc_state_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
-            Label
+            SettingsLabel:
                 id: pc_error_label
                 text: "null"
-                font_size: root.diagnostic_label_font_size
+        LineSeparator2:
         BoxLayout:
             orientation: 'horizontal'
-            Button:
+            padding: 5
+            spacing: 5
+            SquareButton:
                 text: "Calibrate Puck Tracker"
-                background_color: (0,0,0,0.7)
-                font_size: root.diagnostic_label_font_size
                 on_release: root.manager.current = 'fiducial_calibration'
-            Button:
+            SquareButton:
                 text: "Main Menu"
-                background_color: (0,0,0,0.7)
-                font_size: root.diagnostic_label_font_size
                 on_release: root.manager.current = 'menu'
 
 <AboutScreen>:
@@ -207,12 +223,13 @@
 
     ScreenLabel:
         text: "About"
-    
-    Button:
-        text: "Main Menu"
-        background_color: (0,0,0,0.7)
-        font_size: root.about_label_font_size
-        on_release: root.manager.current = 'menu'
+    LineSeparator:    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 5
+        SquareButton:
+            text: "Main Menu"
+            on_release: root.manager.current = 'menu'
 
 <MainMenuButton@Button>:
     text: root.text
@@ -220,15 +237,6 @@
     outline_width: 1.3
     outline_color: (0,0,0)
     font_size: 35
-    background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
-    background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
-
-<SettingsButton@ToggleButton>:
-    text: root.text
-    on_release: root.on_release
-    outline_width: 1.3
-    outline_color: (0,0,0)
-    font_size: 25
     background_normal: ('../../../6_User_Interface/1_Software/2_Images/unclicked.png')
     background_down: ('../../../6_User_Interface/1_Software/2_Images/clicked.png')
 
@@ -505,47 +513,56 @@
 
 <GameControl>:
     orientation: 'vertical'
-
+    spacing: 5
+    padding: 5
     Label:
         text: root.game_clock_label
+        outline_width: 1.3
+        outline_color: (0,0,0)
         font_size: 80
         color: (1,0,0,1)
 
+    LineSeparator2:
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
             orientation: 'vertical'
             Label:
                 text: "Robot"
-                font_size: 20
-                size_hint: (1,0.4)
+                outline_width: 1.3
+                outline_color: (0,0,0)
+                font_size: 30
+                size_hint: (1,0.6)
             Label:
                 text: root.robot_score_label
-                font_size: 50
+                outline_width: 1.3
+                outline_color: (0,0,0)      
+                font_size: 60
         BoxLayout:
             orientation: 'vertical'
             Label:
                 text: "Human"
-                font_size: 20
-                size_hint: (1,0.4)
+                outline_width: 1.3
+                outline_color: (0,0,0)
+                font_size: 30
+                size_hint: (1,0.6)
             Label:
                 text: root.human_score_label
-                font_size: 50
-
-    Button:
+                outline_width: 1.3
+                outline_color: (0,0,0)
+                font_size: 60
+    LineSeparator2:
+    SquareButton:
         id: start_reset_game_button
         text: "Start Game"
-        font_size: 30
         on_release: root.start_reset_game()
-    Button:
+    SquareButton:
         id: pause_resume_game_button
         disabled: True
         text: "Pause Game"
-        font_size: 30
         on_release: root.pause_resume_game()
-    Button:
+    SquareButton:
         text: "Main Menu"
-        font_size: 30
         on_release: root.go_menu()
 
 <ManualPaddle>:
@@ -554,7 +571,9 @@
         source: (root.images_path_local + 'paddle.png')
 
 <ManualPlayingSurface>:
-    canvas.before:
+    canvas:
+        Color:
+            rgba: (1,1,1,1)
         Rectangle:
             source: (root.images_path_local + 'hockeySurface.png')
             pos: self.pos
@@ -565,6 +584,13 @@
 
 <ManualScreen>:
     orientation: 'horizontal'
+    canvas.before:
+        Color:
+            rgba: (1,1,1,0.4)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
     ManualPlayingSurface:
     GameControl:
         id: game_control
@@ -572,6 +598,13 @@
 
 <VisualScreen>:
     orientation: 'horizontal'
+    canvas.before:
+        Color:
+            rgba: (1,1,1,0.4)
+        Rectangle:
+            source: (root.images_path_local + 'menu_background.jpg')
+            pos: root.pos 
+            size: root.size
     CameraData:
         id: camera_data
     GameControl:

@@ -106,7 +106,6 @@ pt_error = 0
 ui_state = 0
 ui_error = 0
 ui_diagnostic_request = 0
-game_mode = 0
 
 # puck prediction
 puck_position_mm_x = 0
@@ -172,6 +171,8 @@ def get_enums():
 	global ui_game_state_enum
 	global ui_screen_enum
 	global ui_goal_enum
+	global ui_game_difficulty_enum
+	global ui_game_mode_enum
 
 	global settings
 
@@ -195,6 +196,8 @@ def get_enums():
 	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
 	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
+	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -356,9 +359,7 @@ def Tx_PC_Cmd(device):
 	# Send the message and check if it was successful
 	status = PCANBasic.Write(device, PCAN_USBBUS1, message)
 	if status > 0:
-		print "Error transmitting CAN message"
 		logging.error("Error transmitting CAN message")
-		print PCANBasic.GetErrorText(device, status, 0)
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 
 ## end of method
@@ -673,117 +674,128 @@ def get_paddle_position():
 		frame = visualization_data_rx.get(True)
 		frame_received = True
 
-	# set the target paddle position based on game mode
-	if game_mode == 1: # 1 means offense right now, TODO: Enum this
-		paddle_target_position_mm_y = paddle_offense_position_mm_y
-	else:
-		paddle_target_position_mm_y = paddle_defense_position_mm_y
-
-	# default paddle position
-	paddle_position_mm_x = last_puck_prediction_averaged_mm_x
-	paddle_position_mm_y = 0
-
-	# predicting the x axis position of the puck	
-	puck_prediction_mm_x = 0
-	
-	# check if the puck is moving towards the robot, if yes: DEFEND!
-	if puck_velocity_mmps_y < min_puck_velocity_mmps_y:
-		# using the equation of a line y = mx + b, find predicted x position when y = 0
-		vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
-		vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
-		
-		if vector_mm_x == 0:
-			# avoid divide by zero
-			slope = 999999
+	if puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
+		# set the target paddle position based on game mode
+		if game_mode == ui_game_mode_enum.offense:
+			paddle_target_position_mm_y = paddle_offense_position_mm_y
 		else:
-			slope = vector_mm_y/vector_mm_x
-		
-		# b = y - mx
-		intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
-		
-		# x = (y - b)/m
-		if slope == 0:
-			puck_prediction_mm_x = 0
-		else:
-			puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+			paddle_target_position_mm_y = paddle_defense_position_mm_y
 
-		# predict bounces and get a real x prediction
-		bounce_count = 0
-		while True:
-			if (table_width_mm - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
-				if frame_received:
-					if bounce_count == 0:
-						cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-					else:
-						cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-				break
-
-			elif puck_prediction_mm_x < puck_radius_mm:
-				bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
-				bounce_mm_x = puck_radius_mm
-				slope = -slope
-				intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
-				puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-				if frame_received:
-					if bounce_count == 0:
-						cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-					else:
-						cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-
-			elif puck_prediction_mm_x > (table_width_mm - puck_radius_mm):
-				bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
-				bounce_mm_x = (table_width_mm - puck_radius_mm)
-				slope = -slope
-				intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
-				puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-				if frame_received:
-					if bounce_count == 0:
-						cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-					else:
-						cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-						
-			last_bounce_mm_y = bounce_mm_y
-			last_bounce_mm_x = bounce_mm_x
-			bounce_count += 1
-
-		# draw a circle around the raw desired paddle position
-		if frame_received:
-			cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), 10, (0, 0, 255), 2)
-
-		# now that we have a predicted x position, take an average to improve accuracy  
-		puck_prediction_averaged_array[puck_prediction_averaged_index] = puck_prediction_mm_x
-		number_non_zero_values = np.count_nonzero(puck_prediction_averaged_array)
-		if number_non_zero_values != 0:
-			puck_prediction_averaged_mm_x = (np.sum(puck_prediction_averaged_array)) / number_non_zero_values
-		else:
-			puck_prediction_averaged_mm_x = 0
-		
-		# manage index for array
-		puck_prediction_averaged_index += 1
-		if puck_prediction_averaged_index >= puck_prediction_averaged_window_size:
-			puck_prediction_averaged_index = 0
-
-		# draw a circle around the averaged desired paddle position
-		if frame_received:
-			cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
-
-		if game_mode == 0: # only goal post correct if defense
-			# Goal post correction
-			if puck_prediction_averaged_mm_x < goal_left_post_mm_x:
-				puck_prediction_averaged_mm_x = goal_left_post_mm_x
-			# puck pos after right goalpost then set to the right goalpost_pos+tolerance
-			elif puck_prediction_averaged_mm_x > goal_right_post_mm_x:
-				puck_prediction_averaged_mm_x = goal_right_post_mm_x
-
-		# set paddle position
-		paddle_position_mm_x = puck_prediction_averaged_mm_x
-		paddle_position_mm_y = paddle_target_position_mm_y
-
-	if (puck_velocity_mmps_y > min_puck_velocity_mmps_y) and (last_puck_velocity_mmps_y < min_puck_velocity_mmps_y):
-		puck_prediction_averaged_array.fill(0)
-		puck_prediction_averaged_index = 0
-		paddle_position_mm_x = goal_center_mm_x
+		# default paddle position
+		paddle_position_mm_x = last_puck_prediction_averaged_mm_x
 		paddle_position_mm_y = 0
+
+		# predicting the x axis position of the puck	
+		puck_prediction_mm_x = 0
+		
+		# check if the puck is moving towards the robot, if yes: DEFEND!
+		if puck_velocity_mmps_y < min_puck_velocity_mmps_y:
+			# using the equation of a line y = mx + b, find predicted x position when y = 0
+			vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
+			vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
+			
+			if vector_mm_x == 0:
+				# avoid divide by zero
+				slope = 999999
+			else:
+				slope = vector_mm_y/vector_mm_x
+			
+			# b = y - mx
+			intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
+			
+			# x = (y - b)/m
+			if slope == 0:
+				puck_prediction_mm_x = 0
+			else:
+				puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+
+			# predict bounces and get a real x prediction
+			bounce_count = 0
+			while True:
+				if (table_width_mm - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
+					if frame_received:
+						if bounce_count == 0:
+							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+						else:
+							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+					break
+
+				elif puck_prediction_mm_x < puck_radius_mm:
+					bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
+					bounce_mm_x = puck_radius_mm
+					slope = -slope
+					intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
+					puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+					if frame_received:
+						if bounce_count == 0:
+							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+						else:
+							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+
+				elif puck_prediction_mm_x > (table_width_mm - puck_radius_mm):
+					bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
+					bounce_mm_x = (table_width_mm - puck_radius_mm)
+					slope = -slope
+					intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
+					puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+					if frame_received:
+						if bounce_count == 0:
+							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+						else:
+							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
+							
+				last_bounce_mm_y = bounce_mm_y
+				last_bounce_mm_x = bounce_mm_x
+				bounce_count += 1
+
+			# draw a circle around the raw desired paddle position
+			if frame_received:
+				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), 10, (0, 0, 255), 2)
+
+			# now that we have a predicted x position, take an average to improve accuracy  
+			puck_prediction_averaged_array[puck_prediction_averaged_index] = puck_prediction_mm_x
+			number_non_zero_values = np.count_nonzero(puck_prediction_averaged_array)
+			if number_non_zero_values != 0:
+				puck_prediction_averaged_mm_x = (np.sum(puck_prediction_averaged_array)) / number_non_zero_values
+			else:
+				puck_prediction_averaged_mm_x = 0
+			
+			# manage index for array
+			puck_prediction_averaged_index += 1
+			if puck_prediction_averaged_index >= puck_prediction_averaged_window_size:
+				puck_prediction_averaged_index = 0
+
+			# draw a circle around the averaged desired paddle position
+			if frame_received:
+				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
+
+			if game_mode == ui_game_mode_enum.defense: # only goal post correct if defense
+				# Goal post correction
+				if puck_prediction_averaged_mm_x < goal_left_post_mm_x:
+					puck_prediction_averaged_mm_x = goal_left_post_mm_x
+				# puck pos after right goalpost then set to the right goalpost_pos+tolerance
+				elif puck_prediction_averaged_mm_x > goal_right_post_mm_x:
+					puck_prediction_averaged_mm_x = goal_right_post_mm_x
+
+			# set paddle position
+			paddle_position_mm_x = puck_prediction_averaged_mm_x
+			paddle_position_mm_y = paddle_target_position_mm_y
+
+		if (puck_velocity_mmps_y > min_puck_velocity_mmps_y) and (last_puck_velocity_mmps_y < min_puck_velocity_mmps_y):
+			puck_prediction_averaged_array.fill(0)
+			puck_prediction_averaged_index = 0
+			paddle_position_mm_x = goal_center_mm_x
+			paddle_position_mm_y = 0
+
+		last_puck_velocity_mmps_y = puck_velocity_mmps_y
+		last_puck_position_mm_x = puck_position_mm_x
+		last_puck_position_mm_y = puck_position_mm_y
+		last_puck_prediction_averaged_mm_x = paddle_position_mm_x
+
+		logging.debug("Paddle defense position is: %i,0", paddle_position_mm_x)
+
+		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
+		mc_pos_cmd_y_mm = int(paddle_position_mm_y)
 
 	# send frame
 	if frame_received:
@@ -792,16 +804,6 @@ def get_paddle_position():
 			visualization_data_tx.put_nowait(frame)
 		except:
 			pass
-
-	last_puck_velocity_mmps_y = puck_velocity_mmps_y
-	last_puck_position_mm_x = puck_position_mm_x
-	last_puck_position_mm_y = puck_position_mm_y
-	last_puck_prediction_averaged_mm_x = paddle_position_mm_x
-
-	logging.debug("Paddle defense position is: %i,0", paddle_position_mm_x)
-
-	mc_pos_cmd_x_mm = int(paddle_position_mm_x)
-	mc_pos_cmd_y_mm = int(paddle_position_mm_y)
 
 ## end of method
 
@@ -833,14 +835,14 @@ def make_decisions():
 	# check which UI screen we are on, this dictates a large part of what state we'll be in
 	if ui_screen == ui_screen_enum.visual:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
-		if puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
-			get_paddle_position()
+		get_paddle_position()
 		if ui_game_state == ui_game_state_enum.playing:
 			Tx_PC_Cmd(PCAN)
 		elif ui_game_state == ui_game_state_enum.stopped:
 			pass
 
 	elif ui_screen == ui_screen_enum.menu:
+		update_game_settings()
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
 	elif ui_screen == ui_screen_enum.fiducial_calibration:
@@ -889,17 +891,33 @@ def make_decisions():
 	if (ui_state == ui_state_enum.quit and pt_state == pt_state_enum.quit):
 		while True:
 			if ui_process.is_alive() or pt_process.is_alive():
-				print "not dead"
 				ui_process.terminate()
 				pt_process.terminate()
 			else:
 				break
-		#ui_process.terminate()
-		#pt_process.terminate()
 		Close_HDF5()
 		Uninit_PCAN(PCAN)
-		print "master controller quit"
+		visualization_data_tx.close()
+		visualization_data_rx.close()
 		sys.exit(0)
+
+## end of function
+
+## 
+## update_game_settings()
+## Retrieve the game settings controlled by the user interface
+##
+def update_game_settings():
+    global game_mode
+    global game_difficulty
+
+    # get settings from file
+    with open((settings_path + 'settings.json'), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+
+    game_mode = settings['user_interface']['game_mode']
+    game_difficulty = settings['user_interface']['game_difficulty']
 
 ## end of function
 
@@ -937,7 +955,6 @@ try:
 		add_pos_sent_HDF5(str(datetime.datetime.now()))
 		update_dset_HDF5()
 		sleep(timeout)
-		#print "time: ", time.time()
 except KeyboardInterrupt:
 	sys.exit()
 

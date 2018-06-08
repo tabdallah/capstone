@@ -402,8 +402,8 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.state] = pt_state_enum.quit
             video_stream.release() 
             cv2.destroyAllWindows()
-            print "puck tracker quit"
-            quit()
+            visualization_data.close()
+            quit(0)
 
         # update state/error
         pt_tx[pt_tx_enum.error] = pt_error

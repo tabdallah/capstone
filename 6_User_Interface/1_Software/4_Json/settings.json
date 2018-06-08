@@ -46,10 +46,6 @@
                 "medium", 
                 "hard"
             ], 
-            "ui_paddle_pos": [
-                "x": 387.35,
-                "y": 0
-            ], 
             "ui_diagnostic_request": [
                 "idle", 
                 "calibrate_fiducials"
@@ -79,19 +75,23 @@
                 "upper_sat", 
                 "upper_val"
             ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
+            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
                 "stopped"
             ], 
+            "ui_paddle_pos": {
+                "y": 20, 
+                "x": 120
+            }, 
             "ui_goal": [
                 "idle", 
                 "human", 
                 "robot"
-            ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
             ]
         }, 
         "game_mode": 0, 

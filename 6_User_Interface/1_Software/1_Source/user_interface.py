@@ -460,7 +460,8 @@ def get_enums():
     global ui_screen_enum
     global ui_goal_enum
     global ui_game_mode_enum
-    global ui_game_difficulty_enum
+    global ui_game_difficulty_enum    
+    global ui_paddle_pos_enum
 
     global pt_state_enum
     global pt_error_enum
@@ -470,6 +471,7 @@ def get_enums():
     
     global pc_state_enum
     global pc_error_enum
+
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
@@ -496,7 +498,7 @@ def get_enums():
 
     pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
     pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
-    ui_paddle_pos = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
+    ui_paddle_pos_enum = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
 
 # load settings from JSON file
 def get_pt_settings():

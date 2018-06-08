@@ -173,7 +173,7 @@ def get_enums():
 	global ui_goal_enum
 	global ui_game_difficulty_enum
 	global ui_game_mode_enum
-	global ui_
+	global ui_paddle_pos_enum
 
 	global settings
 
@@ -199,7 +199,7 @@ def get_enums():
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
 	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
-	ui_paddle_pos = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
+	ui_paddle_pos_enum = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -305,7 +305,7 @@ def Tx_PC_Cmd(device):
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
 	message.LEN = 4
-	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)ui_error
+	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
 	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
 	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
 	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
@@ -826,7 +826,7 @@ def make_decisions():
 ## pass state data of other modules to the UI
 ##
 def send_UI_states():
-    ui_rx[ui_rx_enum.pt_state] = pt_state
+	ui_rx[ui_rx_enum.pt_state] = pt_state
 	ui_rx[ui_rx_enum.pt_error] = pt_error
 	ui_rx[ui_rx_enum.mc_state] = mc_state
 	ui_rx[ui_rx_enum.mc_error] = mc_error
@@ -887,8 +887,8 @@ def handle_visual_game():
 ## Take care of manual game decisions (human operating robot vs human)
 ##
 def handle_manual_game():
-	mc_pos_cmd_x_mm = ui_paddle_pos.x
-	mc_pos_cmd_y_mm = ui_paddle_pos.y
+	mc_pos_cmd_x_mm = ui_paddle_pos_enum.x
+	mc_pos_cmd_y_mm = ui_paddle_pos_enum.y
 	logging.debug("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
 	filter_Tx_PC_Cmd()
 	Tx_PC_Cmd(PCAN)
@@ -921,21 +921,21 @@ def calibrate_fiducials():
 	global visualization_data_rx
 
 	if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
-		else:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
+	else:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
 
-		# get frame for visualization
+	# get frame for visualization
+	try:
+		frame = visualization_data_rx.get(False)
+	except Queue.Empty:
+		pass
+	else:
 		try:
-			frame = visualization_data_rx.get(False)
+			visualization_data_tx.get_nowait()
+			visualization_data_tx.put(frame)
 		except Queue.Empty:
-			pass
-		else:
-			try:
-				visualization_data_tx.get_nowait()
-				visualization_data_tx.put(frame)
-			except Queue.Empty:
-				visualization_data_tx.put(frame)
+			visualization_data_tx.put(frame)
 	
 ## end of function
 

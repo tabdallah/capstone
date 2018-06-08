@@ -126,6 +126,8 @@ class ManualScreen(BoxLayout, Screen):
     images_path_local = StringProperty(images_path)
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.manual
+        # for debugging
+        update_paddle_position()
         self.ids['game_control'].on_enter()
 
 class DiagnosticsScreen(BoxLayout, Screen):
@@ -494,6 +496,7 @@ def get_enums():
 
     pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
     pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
+    ui_paddle_pos = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
 
 # load settings from JSON file
 def get_pt_settings():
@@ -579,6 +582,21 @@ def update_game_settings():
     with open((settings_path + "settings.json"), 'w+') as fp:
         json.dump(settings, fp, indent=4)
         fp.close()
+
+def update_paddle_position():
+    
+    with open((settings_path + "settings.json"), 'r') as fp:
+        settings = json.load(fp)
+        fp.close()
+    
+    #debugging
+    settings['user_interface']['enumerations']['ui_paddle_pos']['x'] = 120
+    settings['user_interface']['enumerations']['ui_paddle_pos']['y'] = 20
+    
+    with open((settings_path + "settings.json"), 'w+') as fp:
+        json.dump(settings, fp, indent=4)
+        fp.close()
+
 
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""

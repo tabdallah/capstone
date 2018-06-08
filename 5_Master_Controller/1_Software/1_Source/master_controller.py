@@ -173,6 +173,7 @@ def get_enums():
 	global ui_goal_enum
 	global ui_game_difficulty_enum
 	global ui_game_mode_enum
+	global ui_
 
 	global settings
 
@@ -198,6 +199,7 @@ def get_enums():
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
 	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
+	ui_paddle_pos = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -219,48 +221,6 @@ def get_settings():
 
 	mm_per_pixel_x = settings['puck_tracker']['scaling_factors']['mm_per_pixel_y']
 	mm_per_pixel_y = settings['puck_tracker']['scaling_factors']['mm_per_pixel_x']
-
-##############################################################################################
-## Command line output functions
-##############################################################################################
-
-##
-## process_input()
-## Debug mode - allow user to set parameters and stuff
-##
-def process_input():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-
-	print "Air Hockey Command Input"
-	mc_pos_cmd_x_mm = input("Enter Position X: ")
-	logging.debug("New entered pos X: %s", mc_pos_cmd_x_mm)
-	mc_pos_cmd_y_mm = input("Enter Position Y: ")	
-	logging.debug("New entered pos Y: %s", mc_pos_cmd_y_mm)	
-## end of method
-
-
-##
-## update_display()
-## Show master controller status and command
-##
-def update_display():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
-
-	os.system('clear')
-	print("Air Hockey Robot Status")
-	print("---------------")
-	print "Position X Status: ", pc_pos_status_x_mm
-	print "Position Y Status: ", pc_pos_status_y_mm
-	print "Position X Command: ", mc_pos_cmd_x_mm
-	print "Position Y Command: ", mc_pos_cmd_y_mm
-	print " "
-	print "Press 'Enter' for debug mode (keyboard mode only)"
-## end of method
-
 
 ##############################################################################################
 ## CAN functions
@@ -345,7 +305,7 @@ def Tx_PC_Cmd(device):
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
 	message.LEN = 4
-	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
+	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)ui_error
 	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
 	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
 	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
@@ -825,63 +785,69 @@ def make_decisions():
 	pc_error = 0
 
 	# pass state data to the UI
-	ui_rx[ui_rx_enum.pt_state] = pt_state
-	ui_rx[ui_rx_enum.pt_error] = pt_error
-	ui_rx[ui_rx_enum.mc_state] = mc_state
-	ui_rx[ui_rx_enum.mc_error] = mc_error
-	ui_rx[ui_rx_enum.pc_state] = pc_state
-	ui_rx[ui_rx_enum.pc_error] = pc_error
+	send_UI_states()
 
-	# check which UI screen we are on, this dictates a large part of what state we'll be in
+	# Check ALL states (NEED to include PC CAN states)
+	if (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error):
+		handle_errors()
+		return
+	
+	elif (pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit):
+		handle_quits()
+		return
+
+	elif ui_state != ui_state_enum.running:
+		return
+
+	# Check which UI screen we are on, this dictates a large part of what state we'll be in
 	if ui_screen == ui_screen_enum.visual:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
-		get_paddle_position()
-		if ui_game_state == ui_game_state_enum.playing:
-			Tx_PC_Cmd(PCAN)
-		elif ui_game_state == ui_game_state_enum.stopped:
-			pass
+		handle_visual_game()
+
+	elif ui_screen == ui_screen_enum.manual:
+		handle_manual_game()
 
 	elif ui_screen == ui_screen_enum.menu:
 		update_game_settings()
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
 	elif ui_screen == ui_screen_enum.fiducial_calibration:
-		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
-		else:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
-
-		# get frame for visualization
-		try:
-			frame = visualization_data_rx.get(False)
-		except Queue.Empty:
-			pass
-		else:
-			try:
-				visualization_data_tx.get_nowait()
-				visualization_data_tx.put(frame)
-			except Queue.Empty:
-				visualization_data_tx.put(frame)
+		calibrate_fiducials()
 
 	elif ui_screen == ui_screen_enum.puck_calibration:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_puck
-
-		# get frame for visualization
-		try:
-			frame = visualization_data_rx.get(False)
-		except Queue.Empty:
-			pass
-		else:
-			try:
-				visualization_data_tx.get_nowait()
-				visualization_data_tx.put(frame)
-			except Queue.Empty:
-				visualization_data_tx.put(frame)
+		calibrate_puck()
 
 	elif ui_screen == ui_screen_enum.diagnostic:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
-	# go through steps of shutting down if UI requests
+## end of function
+
+## 
+## send_UI_states()
+## pass state data of other modules to the UI
+##
+def send_UI_states():
+    ui_rx[ui_rx_enum.pt_state] = pt_state
+	ui_rx[ui_rx_enum.pt_error] = pt_error
+	ui_rx[ui_rx_enum.mc_state] = mc_state
+	ui_rx[ui_rx_enum.mc_error] = mc_error
+	ui_rx[ui_rx_enum.pc_state] = pc_state
+	ui_rx[ui_rx_enum.pc_error] = pc_error
+## end of function
+
+
+##   TBD
+## handle_errors()
+## Take care of all errors from UI, PT, PC
+##
+def handle_errors():
+	pass
+## end of function
+
+##  
+## handle_quits()
+## go through steps of shutting down if UI requests
+##
+def handle_quits():
 	if ui_state == ui_state_enum.request_quit:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
@@ -899,8 +865,33 @@ def make_decisions():
 		Uninit_PCAN(PCAN)
 		visualization_data_tx.close()
 		visualization_data_rx.close()
-		sys.exit(0)
+		sys.exit(0)	
 
+## end of function
+
+##  
+## handle_visual_game()
+## Take care of visual game decisions (robot vs human)
+##
+def handle_visual_game():
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
+	get_paddle_position()
+	if ui_game_state == ui_game_state_enum.playing:
+		Tx_PC_Cmd(PCAN)
+	elif ui_game_state == ui_game_state_enum.stopped:
+		pass
+## end of function
+
+##  
+## handle_manual_game()
+## Take care of manual game decisions (human operating robot vs human)
+##
+def handle_manual_game():
+	mc_pos_cmd_x_mm = ui_paddle_pos.x
+	mc_pos_cmd_y_mm = ui_paddle_pos.y
+	logging.debug("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
+	filter_Tx_PC_Cmd()
+	Tx_PC_Cmd(PCAN)
 ## end of function
 
 ## 
@@ -918,6 +909,54 @@ def update_game_settings():
 
     game_mode = settings['user_interface']['game_mode']
     game_difficulty = settings['user_interface']['game_difficulty']
+
+## end of function
+
+##  
+## calibrate_fiducials()
+## Calibrate fiducials when in the UI settings 
+##
+def calibrate_fiducials():
+	global visualization_data_tx
+	global visualization_data_rx
+
+	if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
+			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
+		else:
+			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
+
+		# get frame for visualization
+		try:
+			frame = visualization_data_rx.get(False)
+		except Queue.Empty:
+			pass
+		else:
+			try:
+				visualization_data_tx.get_nowait()
+				visualization_data_tx.put(frame)
+			except Queue.Empty:
+				visualization_data_tx.put(frame)
+	
+## end of function
+
+##  
+## calibrate_puck()
+## Calibrate puck when in the UI settings
+##
+def calibrate_puck():
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_puck
+
+	# get frame for visualization
+	try:
+		frame = visualization_data_rx.get(False)
+	except Queue.Empty:
+		pass
+	else:
+		try:
+			visualization_data_tx.get_nowait()
+			visualization_data_tx.put(frame)
+		except Queue.Empty:
+			visualization_data_tx.put(frame)	
 
 ## end of function
 

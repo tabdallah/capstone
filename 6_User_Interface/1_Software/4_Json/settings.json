@@ -46,6 +46,10 @@
                 "medium", 
                 "hard"
             ], 
+            "ui_paddle_pos": [
+                "x": 387.35,
+                "y": 0
+            ], 
             "ui_diagnostic_request": [
                 "idle", 
                 "calibrate_fiducials"

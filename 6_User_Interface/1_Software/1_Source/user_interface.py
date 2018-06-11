@@ -30,10 +30,10 @@ from kivy.graphics import Line
 from kivy.properties import NumericProperty, StringProperty
 
 # customize screen size/cursor visibility
-Config.set('graphics','width','1024')
-Config.set('graphics','height','600')
-#Config.set('graphics', 'fullscreen', 'auto')
-Config.set('graphics', 'show_cursor', '1')
+#Config.set('graphics','width','1024')
+#Config.set('graphics','height','600')
+Config.set('graphics', 'fullscreen', 'auto')
+#Config.set('graphics', 'show_cursor', '1')
 
 # paths to import external files
 images_path = "../../../6_User_Interface/1_Software/2_Images/"

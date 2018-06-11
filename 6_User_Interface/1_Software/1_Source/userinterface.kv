@@ -138,7 +138,7 @@
     orientation: 'vertical'
     canvas.before:
         Color:
-            rgba: (1,1,1,0.4)
+            rgba: (1,1,1,0.5)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
@@ -293,90 +293,84 @@
                 text: "Quit"
                 on_release: root.go_quit()
 
+<ColorCalibrationLabel@Label>:
+    text: root.text
+    outline_width: 1
+    outline_color: (0,0,0)
+    size_hint: (0.4,1)
+    font_size: 20 
+    text_size: self.size
+    valign: "middle"
+
 <FiducialCalibrationScreen>:
     orientation: 'vertical'
+    padding: 5
     canvas:
         Color:
-            rgba: (1,1,1,0.3)
+            rgba: (1,1,1,0.5)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
-    Label:
+    ScreenLabel:
         text: root.action_label
-        size_hint: (1,0.2)
-        font_size: 40 
     Label:
         text: root.instruction_label
-        size_hint: (1,0.2)
+        outline_width: 1
+        outline_color: (0,0,0)
+        size_hint: (1,0.1)
         font_size: 20 
+    LineSeparator:
     BoxLayout:
         orientation: 'horizontal'
+        spacing: 5
         BoxLayout:
             id: slider_layout
             orientation: 'vertical'
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Hue Lower: %s" % int(lower_hue.value)
+                ColorCalibrationLabel:
+                    text: "Hue Lower: %s" % int(lower_hue.value)
                 Slider:
                     id: lower_hue
                     min: 0
                     max: 179
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Sat Lower: %s" % int(lower_sat.value)
+                ColorCalibrationLabel:
+                    text: "Sat Lower: %s" % int(lower_sat.value)
                 Slider:
                     id: lower_sat
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Val Lower: %s" % int(lower_val.value)
+                ColorCalibrationLabel:
+                    text: "Val Lower: %s" % int(lower_val.value)
                 Slider:
                     id: lower_val
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Hue Upper: %s" % int(upper_hue.value)
+                ColorCalibrationLabel:
+                    text: "Hue Upper: %s" % int(upper_hue.value)
                 Slider:
                     id: upper_hue
                     min: 0
                     max: 179
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Sat Upper: %s" % int(upper_sat.value)
+                ColorCalibrationLabel:
+                    text: "Sat Upper: %s" % int(upper_sat.value)
                 Slider:
                     id: upper_sat
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Val Upper: %s" % int(upper_val.value)
+                ColorCalibrationLabel:
+                    text: "Val Upper: %s" % int(upper_val.value)
                 Slider:
                     id: upper_val
                     min: 0
@@ -385,106 +379,90 @@
             id: camera_data
     
     BoxLayout:
-        size_hint: (1,0.2)
         orientation: 'horizontal'
-        Button:
+        size_hint: (1,0.2)
+        spacing: 5
+        SquareButton:
             text: "Back to Diagnostics"
-            font_size: 30
             on_release: root.manager.current = 'diagnostics'
-        Button:
+        SquareButton:
             id: skip_redo_button
             text: "Skip"
-            font_size: 30
             on_release: root.skip_redo_button()
-        Button:
+        SquareButton:
             id: calibrate_continue_button
             text: "Save & Calibrate"
-            font_size: 30
             on_release: root.calibrate_continue_button()
 
 <PuckCalibrationScreen>:
     orientation: 'vertical'
+    padding: 5
     canvas:
         Color:
-            rgba: (1,1,1,0.3)
+            rgba: (1,1,1,0.5)
         Rectangle:
             source: (root.images_path_local + 'menu_background.jpg')
             pos: root.pos 
             size: root.size
-    Label:
+    ScreenLabel:
         text: root.action_label
-        size_hint: (1,0.2)
-        font_size: 40 
     Label:
         text: root.instruction_label
-        size_hint: (1,0.2)
+        outline_width: 1
+        outline_color: (0,0,0)
+        size_hint: (1,0.1)
         font_size: 20 
+    LineSeparator:
     BoxLayout:
         orientation: 'horizontal'
+        spacing: 5
         BoxLayout:
+            id: slider_layout
             orientation: 'vertical'
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Hue Lower: %s" % int(lower_hue.value)
+                ColorCalibrationLabel:
+                    text: "Hue Lower: %s" % int(lower_hue.value)
                 Slider:
                     id: lower_hue
                     min: 0
                     max: 179
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Sat Lower: %s" % int(lower_sat.value)
+                ColorCalibrationLabel:
+                    text: "Sat Lower: %s" % int(lower_sat.value)
                 Slider:
                     id: lower_sat
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Val Lower: %s" % int(lower_val.value)
+                ColorCalibrationLabel:
+                    text: "Val Lower: %s" % int(lower_val.value)
                 Slider:
                     id: lower_val
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Hue Upper: %s" % int(upper_hue.value)
+                ColorCalibrationLabel:
+                    text: "Hue Upper: %s" % int(upper_hue.value)
                 Slider:
                     id: upper_hue
                     min: 0
                     max: 179
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Sat Upper: %s" % int(upper_sat.value)
+                ColorCalibrationLabel:
+                    text: "Sat Upper: %s" % int(upper_sat.value)
                 Slider:
                     id: upper_sat
                     min: 0
                     max: 255
             BoxLayout:
                 orientation: 'horizontal'
-                Label:
-                    size_hint: (0.3,1)
-                    text_size: self.size
-                    valign: "middle"
-                    text: " Val Upper: %s" % int(upper_val.value)
+                ColorCalibrationLabel:
+                    text: "Val Upper: %s" % int(upper_val.value)
                 Slider:
                     id: upper_val
                     min: 0
@@ -493,23 +471,20 @@
             id: camera_data
     
     BoxLayout:
-        size_hint: (1,0.2)
         orientation: 'horizontal'
-        Button:
+        size_hint: (1,0.2)
+        spacing: 5
+        SquareButton:
             text: "Back to Diagnostics"
-            font_size: 30
             on_release: root.manager.current = 'diagnostics'
-        Button:
+        SquareButton:
             id: skip_redo_button
             text: "Skip"
-            font_size: 30
             on_release: root.skip_redo_button()
-        Button:
+        SquareButton:
             id: calibrate_continue_button
             text: "Save & Calibrate"
-            font_size: 30
             on_release: root.calibrate_continue_button()
-
 
 <GameControl>:
     orientation: 'vertical'

@@ -18,6 +18,7 @@
                 "idle", 
                 "running", 
                 "request_quit", 
+                "error", 
                 "quit"
             ], 
             "ui_screen": [
@@ -73,13 +74,9 @@
                 "lower_val", 
                 "upper_hue", 
                 "upper_sat", 
-                "upper_val",
-                "paddle_position_x",
+                "upper_val", 
+                "paddle_position_x", 
                 "paddle_position_y"
-            ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
             ], 
             "ui_game_state": [
                 "idle", 
@@ -90,6 +87,10 @@
                 "idle", 
                 "human", 
                 "robot"
+            ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
             ]
         }, 
         "game_mode": 0, 

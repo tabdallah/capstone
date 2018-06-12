@@ -9,9 +9,11 @@ import sys
 import math
 import select
 import os
+#disable kivy logger that block our logger (didn't fix the whole problem)
+os.environ["KIVY_NO_FILELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
 import logging
-logging.basicConfig(filename='example.log', level=logging.DEBUG)
-logging.debug('Test')
 import h5py
 import numpy as np
 import datetime
@@ -19,6 +21,11 @@ import time
 import json
 import cv2
 import Queue
+
+# Create and set format of the logging file
+# If you want to disable the logger then set "level=logging.ERROR"
+logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
+#logger = logging.getLoger().getChild(__name__)
 
 # add file path for puck tracker and user interface modules
 sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')
@@ -39,9 +46,6 @@ PCAN = PCANBasic()
 ## Global data storage
 ## Maybe improve this later
 ##############################################################################################
-
-log_fileName = "debug.log"		# File name for debug logging
-
 timeout = 0.005 			# Timeout for keyboard input in seconds
 
 operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
@@ -772,16 +776,6 @@ def get_paddle_position():
 ##
 def make_decisions():
 	global last_ui_screen
-	global visualization_data_tx
-	global visualization_data_rx
-	global ui_process
-	global pt_process
-
-	# TODO get real data for these vars
-	mc_state = 0
-	mc_error = 0
-	pc_state = 0
-	pc_error = 0
 
 	# pass state data to the UI
 	send_UI_states()
@@ -825,6 +819,13 @@ def make_decisions():
 ## pass state data of other modules to the UI
 ##
 def send_UI_states():
+
+	# TODO get real data for these vars
+	mc_state = 0
+	mc_error = 0
+	pc_state = 0
+	pc_error = 0
+
 	ui_rx[ui_rx_enum.pt_state] = pt_state
 	ui_rx[ui_rx_enum.pt_error] = pt_error
 	ui_rx[ui_rx_enum.mc_state] = mc_state
@@ -847,6 +848,11 @@ def handle_errors():
 ## go through steps of shutting down if UI requests
 ##
 def handle_quits():
+	global visualization_data_tx
+	global visualization_data_rx
+	global ui_process
+	global pt_process
+	
 	if ui_state == ui_state_enum.request_quit:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
@@ -967,9 +973,6 @@ def calibrate_puck():
 ## main()
 ##
 try:
-	# Create and set format of the logging file
-	# If you want to disable the logger then set "level=logging.ERROR"
-	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Create enums
 	get_enums()
@@ -999,9 +1002,4 @@ except KeyboardInterrupt:
 ## end of function
 
 ##############################################################################################
-## Garbage
-##############################################################################################
-def playground(device):
-
-	if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):
-		Tx_PC_Cmd(PCAN)
+## THE END

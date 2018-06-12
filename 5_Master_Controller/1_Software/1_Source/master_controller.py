@@ -199,7 +199,6 @@ def get_enums():
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
 	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
-	ui_paddle_pos_enum = enum(settings['user_interface']['enumerations']['ui_paddle_pos'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -887,8 +886,8 @@ def handle_visual_game():
 ## Take care of manual game decisions (human operating robot vs human)
 ##
 def handle_manual_game():
-	mc_pos_cmd_x_mm = ui_paddle_pos_enum.x
-	mc_pos_cmd_y_mm = ui_paddle_pos_enum.y
+	mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
+	mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
 	logging.debug("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
 	filter_Tx_PC_Cmd()
 	Tx_PC_Cmd(PCAN)

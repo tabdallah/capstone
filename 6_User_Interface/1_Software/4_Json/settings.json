@@ -73,7 +73,9 @@
                 "lower_val", 
                 "upper_hue", 
                 "upper_sat", 
-                "upper_val"
+                "upper_val",
+                "paddle_position_x",
+                "paddle_position_y"
             ], 
             "ui_error": [
                 "idle", 
@@ -84,10 +86,6 @@
                 "playing", 
                 "stopped"
             ], 
-            "ui_paddle_pos": {
-                "y": 20, 
-                "x": 120
-            }, 
             "ui_goal": [
                 "idle", 
                 "human", 

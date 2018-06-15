@@ -31,78 +31,6 @@ PushECOToAnnotationFile=1
 DItemRevisionGUID=
 ReportSuppressedErrorsInMessages=0
 
-[Document1]
-DocumentPath=schematics\goalLight.SchDoc
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=0
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-
-[Document2]
-DocumentPath=layout\goalLight.PcbDoc
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-
-[Document3]
-DocumentPath=libraries\components.SchLib
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-
-[Document4]
-DocumentPath=libraries\components.PcbLib
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-
-[GeneratedDocument1]
-DocumentPath=libraries\components.cmp
-DItemRevisionGUID=
-
-[SearchPath1]
-Path=C:\Users\Public\Documents\Altium\*.*
-IncludeSubFolders=1
-
 [PCBConfiguration1]
 ReleaseItemId=
 CurrentRevision=
@@ -914,45 +842,49 @@ NetClassAutoCompEnabled=0
 NetClassAutoNamedHarnessEnabled=0
 NetClassManualEnabled=1
 
+[Comparison Options]
+ComparisonOptions0=Kind=Net|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+ComparisonOptions1=Kind=Net Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+ComparisonOptions2=Kind=Component Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+ComparisonOptions3=Kind=Rule|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+ComparisonOptions4=Kind=Differential Pair|MinPercent=50|MinMatch=1|ShowMatch=0|Confirm=0|UseName=0|InclAllRules=0
+ComparisonOptions5=Kind=Structure Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
+
+[Document1]
+DocumentPath=AltiumDesigner.PcbLib
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+
+[Document2]
+DocumentPath=AltiumDesigner.SchLib
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+
 [LibraryUpdateOptions]
 SelectedOnly=0
 PartTypes=0
-ComponentLibIdentifierKind0=Library Name And Type
-ComponentLibraryIdentifier0=components.SchLib
-ComponentDesignItemID0=CD4017BE
-ComponentSymbolReference0=CD4017BE
-ComponentUpdate0=1
-ComponentIsDeviceSheet0=0
-ComponentLibIdentifierKind1=Library Name And Type
-ComponentLibraryIdentifier1=Miscellaneous Devices.IntLib
-ComponentDesignItemID1=Cap2
-ComponentSymbolReference1=Cap2
-ComponentUpdate1=0
-ComponentIsDeviceSheet1=0
-ComponentLibIdentifierKind2=Library Name And Type
-ComponentLibraryIdentifier2=Miscellaneous Devices.IntLib
-ComponentDesignItemID2=LED1
-ComponentSymbolReference2=LED1
-ComponentUpdate2=0
-ComponentIsDeviceSheet2=0
-ComponentLibIdentifierKind3=Library Name And Type
-ComponentLibraryIdentifier3=Miscellaneous Devices.IntLib
-ComponentDesignItemID3=Res1
-ComponentSymbolReference3=Res1
-ComponentUpdate3=0
-ComponentIsDeviceSheet3=0
-ComponentLibIdentifierKind4=Library Name And Type
-ComponentLibraryIdentifier4=Miscellaneous Devices.IntLib
-ComponentDesignItemID4=RPot SM
-ComponentSymbolReference4=RPot SM
-ComponentUpdate4=0
-ComponentIsDeviceSheet4=0
-ComponentLibIdentifierKind5=Library Name And Type
-ComponentLibraryIdentifier5=NSC Analog.IntLib
-ComponentDesignItemID5=LM555CN
-ComponentSymbolReference5=LM555CN
-ComponentUpdate5=0
-ComponentIsDeviceSheet5=0
 FullReplace=1
 UpdateDesignatorLock=1
 UpdatePartIDLock=1
@@ -965,116 +897,8 @@ RemoveParameters=0
 AddModels=1
 RemoveModels=1
 UpdateCurrentModels=1
-ParameterName0=Code_JEDEC
-ParameterUpdate0=1
-ParameterName1=Comment
-ParameterUpdate1=1
-ParameterName2=Component Kind
-ParameterUpdate2=1
-ParameterName3=ComponentLink1Description
-ParameterUpdate3=1
-ParameterName4=ComponentLink1URL
-ParameterUpdate4=1
-ParameterName5=ComponentLink2Description
-ParameterUpdate5=1
-ParameterName6=ComponentLink2URL
-ParameterUpdate6=1
-ParameterName7=ComponentLink3Description
-ParameterUpdate7=1
-ParameterName8=ComponentLink3URL
-ParameterUpdate8=1
-ParameterName9=CompType
-ParameterUpdate9=1
-ParameterName10=DatasheetVersion
-ParameterUpdate10=1
-ParameterName11=Description
-ParameterUpdate11=1
-ParameterName12=LatestRevisionDate
-ParameterUpdate12=1
-ParameterName13=LatestRevisionNote
-ParameterUpdate13=1
-ParameterName14=Library Reference
-ParameterUpdate14=1
-ParameterName15=Manufacturer
-ParameterUpdate15=1
-ParameterName16=PackageDescription
-ParameterUpdate16=1
-ParameterName17=PackageReference
-ParameterUpdate17=1
-ParameterName18=PackageTopMarking
-ParameterUpdate18=1
-ParameterName19=PackageVersion
-ParameterUpdate19=1
-ParameterName20=PartNumber
-ParameterUpdate20=1
-ParameterName21=PinCount
-ParameterUpdate21=1
-ParameterName22=PowerWise
-ParameterUpdate22=1
-ParameterName23=Published
-ParameterUpdate23=1
-ParameterName24=Publisher
-ParameterUpdate24=1
-ParameterName25=RoHS
-ParameterUpdate25=1
-ParameterName26=Supplier 1
-ParameterUpdate26=1
-ParameterName27=Supplier Part Number 1
-ParameterUpdate27=1
-ParameterName28=Value
-ParameterUpdate28=1
-ModelTypeGroup0=PCBLIB
-ModelTypeUpdate0=1
-ModelType0=PCBLIB
-ModelName0=AXIAL-0.3
-ModelUpdate0=1
-ModelType1=PCBLIB
-ModelName1=CAPR5-4X5
-ModelUpdate1=1
-ModelType2=PCBLIB
-ModelName2=LED-1
-ModelUpdate2=1
-ModelType3=PCBLIB
-ModelName3=N08E
-ModelUpdate3=1
-ModelType4=PCBLIB
-ModelName4=N16
-ModelUpdate4=1
-ModelType5=PCBLIB
-ModelName5=POT4MM-2
-ModelUpdate5=1
-ModelTypeGroup1=SI
-ModelTypeUpdate1=1
-ModelType6=SI
-ModelName6=Cap
-ModelUpdate6=1
-ModelType7=SI
-ModelName7=Res
-ModelUpdate7=1
-ModelTypeGroup2=SIM
-ModelTypeUpdate2=1
-ModelType8=SIM
-ModelName8=CAP
-ModelUpdate8=1
-ModelType9=SIM
-ModelName9=LED1
-ModelUpdate9=1
-ModelType10=SIM
-ModelName10=RESISTOR
-ModelUpdate10=1
 
 [DatabaseUpdateOptions]
 SelectedOnly=0
 PartTypes=0
-
-[Comparison Options]
-ComparisonOptions0=Kind=Net|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
-ComparisonOptions1=Kind=Net Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
-ComparisonOptions2=Kind=Component Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
-ComparisonOptions3=Kind=Rule|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
-ComparisonOptions4=Kind=Differential Pair|MinPercent=50|MinMatch=1|ShowMatch=0|Confirm=0|UseName=0|InclAllRules=0
-ComparisonOptions5=Kind=Structure Class|MinPercent=75|MinMatch=3|ShowMatch=-1|Confirm=-1|UseName=-1|InclAllRules=0
-
-[SmartPDF]
-PageOptions=Record=PageOptions|CenterHorizontal=True|CenterVertical=True|PrintScale=1.00|XCorrection=1.00|YCorrection=1.00|PrintKind=1|BorderSize=5000000|LeftOffset=0|BottomOffset=0|Orientation=2|PaperLength=1000|PaperWidth=1000|Scale=100|PaperSource=7|PrintQuality=-4|MediaType=1|DitherType=10|PaperKind=Letter|PrintScaleMode=1
 

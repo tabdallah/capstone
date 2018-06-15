@@ -1,0 +1,3 @@
+Added Component: Designator=U*(N16)
+Added Member To Class: ClassName=goalLight Member=Component U* CD4017BE
+Added Room: Name=goalLight

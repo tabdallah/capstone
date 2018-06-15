@@ -1,0 +1,12 @@
+Added Component: Designator=U2(N16)
+Added Pin To Net: NetName=NetU2_1 Pin=U2-1
+Added Pin To Net: NetName=NetR5_2 Pin=U2-2
+Added Pin To Net: NetName=NetR4_2 Pin=U2-3
+Added Pin To Net: NetName=NetR6_2 Pin=U2-4
+Added Pin To Net: NetName=NetR7_2 Pin=U2-7
+Added Pin To Net: NetName=GND Pin=U2-8
+Added Pin To Net: NetName=NetR8_2 Pin=U2-10
+Added Pin To Net: NetName=NetR3_2 Pin=U2-14
+Added Pin To Net: NetName=NetU2_1 Pin=U2-15
+Added Pin To Net: NetName=V5V Pin=U2-16
+Added Member To Class: ClassName=goalLight Member=Component U2 CD4017BE

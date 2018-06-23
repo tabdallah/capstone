@@ -1,0 +1,17 @@
+---------------------------------------------------------------------------
+NCDrill File Report For: goalLight.PcbDoc   6/22/2018  2:31:57 PM
+---------------------------------------------------------------------------
+
+Layer Pair : Top Layer to Bottom Layer
+ASCII Plated RoundHoles File : goalLight-Plated.TXT
+EIA File   : goalLight.DRL
+
+Tool         Hole Size           Hole Type     Hole Count Plated       Tool Travel
+---------------------------------------------------------------------------
+T1        31.5mil (0.8001mm)       Round          26               9.75 Inch (247.53 mm)
+T2        33.5mil (0.8509mm)       Round          28               11.73 Inch (297.90 mm)
+T3        35.4mil (0.89916mm)      Round          33               7.43 Inch (188.79 mm)
+---------------------------------------------------------------------------
+Totals                                            87               28.91 Inch (734.21 mm)
+
+Total Processing Time (hh:mm:ss) : 00:00:00

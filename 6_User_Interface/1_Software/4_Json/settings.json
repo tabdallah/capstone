@@ -92,7 +92,7 @@
         }, 
         "game_mode": 1, 
         "game_difficulty": 1, 
-        "game_length": 120
+        "game_length": 300
     }, 
     "master_controller": {
         "enumerations": {
@@ -204,8 +204,8 @@
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.6947397230504246, 
-            "mm_per_pixel_y": 1.7285866134917542
+            "mm_per_pixel_x": 2.732016308795844, 
+            "mm_per_pixel_y": 1.7503621752413514
         }
     }
 }

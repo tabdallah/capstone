@@ -1,0 +1,12 @@
+Removed Pin From Net: NetName=NetR1_1 Pin=R2-CCW
+Removed Pin From Net: NetName=NetC2_1 Pin=R2-CW
+Removed Pin From Net: NetName=NetC2_1 Pin=R2-W
+Change Component DesignItemId : Designator=R2 Old DesignItemId=RPot SM New DesignItemId=RPot-2
+Change Component Footprint: Designator=R2 Old Footprint=POT4MM-2 New Footprint=POT3
+Change Component Comment : Designator=R2 Old Comment=RPot 10K New Comment=RPot-2
+Added Pin To Net: NetName=NetR1_1 Pin=R2-1
+Added Pin To Net: NetName=NetC2_1 Pin=R2-2
+Added Pin To Net: NetName=NetC2_1 Pin=R2-3
+Added Member To Class: ClassName=goalLight Member=Component C1 Cap2
+Added Member To Class: ClassName=goalLight Member=Component R4 Res1
+Added Room: Name=goalLight

@@ -1,30 +1,1138 @@
-2018-06-24 17:14:06,145: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-06-24_19.txt
-2018-06-24 17:14:06,145: INFO *** Kivy: v1.10.0
-2018-06-24 17:14:06,145: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
+2018-06-24 17:43:05,836: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-06-24_27.txt
+2018-06-24 17:43:05,836: INFO *** Kivy: v1.10.0
+2018-06-24 17:43:05,837: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
 [GCC 5.4.0 20160609]
-2018-06-24 17:14:06,152: INFO *** Factory: 194 symbols loaded
-2018-06-24 17:14:06,230: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
-2018-06-24 17:14:06,234: INFO *** Text: Provider: sdl2
-2018-06-24 17:14:06,246: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
-2018-06-24 17:14:06,248: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
-2018-06-24 17:14:06,250: ERROR *** Error Initializing PCAN USB
-2018-06-24 17:14:06,250: ERROR *** (0, 'The driver is not loaded')
-2018-06-24 17:14:06,257: INFO *** MC: Entering main loop
-2018-06-24 17:14:06,281: INFO *** OSC: using <multiprocessing> for socket
-2018-06-24 17:14:06,283: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
-2018-06-24 17:14:06,497: INFO *** GL: Using the "OpenGL" graphics system
-2018-06-24 17:14:06,497: INFO *** GL: Backend used <gl>
-2018-06-24 17:14:06,497: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
-2018-06-24 17:14:06,497: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
-2018-06-24 17:14:06,497: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
-2018-06-24 17:14:06,497: INFO *** GL: OpenGL parsed version: 4, 5
-2018-06-24 17:14:06,497: INFO *** GL: Shading version <4.50 NVIDIA>
-2018-06-24 17:14:06,498: INFO *** GL: Texture max size <16384>
-2018-06-24 17:14:06,498: INFO *** GL: Texture max units <32>
-2018-06-24 17:14:06,510: INFO *** Window: auto add sdl2 input provider
-2018-06-24 17:14:06,511: INFO *** Window: virtual keyboard not allowed, single mode, not docked
-2018-06-24 17:14:06,539: INFO *** GL: NPOT texture support is available
-2018-06-24 17:14:06,826: INFO *** Base: Start application main loop
-2018-06-24 17:14:08,226: INFO *** Base: Leaving application in progress...
-2018-06-24 17:14:08,239: ERROR *** Error Uninitializing PCAN USB
-2018-06-24 17:14:08,239: ERROR *** (0, 'A PCAN Channel has not been initialized yet or the initialization process has failed')
+2018-06-24 17:43:05,844: INFO *** Factory: 194 symbols loaded
+2018-06-24 17:43:05,845: DEBUG *** Cache: register <kv.lang> with limit=None, timeout=None
+2018-06-24 17:43:05,916: DEBUG *** Cache: register <kv.image> with limit=None, timeout=60
+2018-06-24 17:43:05,916: DEBUG *** Cache: register <kv.atlas> with limit=None, timeout=None
+2018-06-24 17:43:05,920: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
+2018-06-24 17:43:05,921: DEBUG *** Cache: register <kv.texture> with limit=1000, timeout=60
+2018-06-24 17:43:05,921: DEBUG *** Cache: register <kv.shader> with limit=1000, timeout=3600
+2018-06-24 17:43:05,925: INFO *** Text: Provider: sdl2
+2018-06-24 17:43:05,937: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
+2018-06-24 17:43:05,937: DEBUG *** Audio: register SoundGstplayer
+2018-06-24 17:43:05,938: DEBUG *** Audio: register SoundSDL2
+2018-06-24 17:43:05,939: DEBUG *** Audio: register MusicSDL2
+2018-06-24 17:43:05,939: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
+2018-06-24 17:43:05,940: ERROR *** Error Initializing PCAN USB
+2018-06-24 17:43:05,941: ERROR *** (0, 'The driver is not loaded')
+2018-06-24 17:43:05,941: DEBUG *** Created PC_positions.hdf5 for logging
+2018-06-24 17:43:05,942: DEBUG *** Added hdf5 attributes
+2018-06-24 17:43:05,942: DEBUG *** Created hdf5 PC_data group
+2018-06-24 17:43:05,943: DEBUG *** Created hdf5 datasets for PC sent and received X-Y positions
+2018-06-24 17:43:05,944: DEBUG *** Created hdf5 datasets for PC sent and received X-Y times
+2018-06-24 17:43:05,946: DEBUG *** Created IPC Arrays & Queue
+2018-06-24 17:43:05,946: DEBUG *** Created User Interface process with Arrays and a Queue
+2018-06-24 17:43:05,946: DEBUG *** Created Puck Tracker process with Arrays and a Queue
+2018-06-24 17:43:05,947: DEBUG *** Started User Interface process
+2018-06-24 17:43:05,948: DEBUG *** Started Puck Tracker process
+2018-06-24 17:43:05,949: INFO *** MC: Entering main loop
+2018-06-24 17:43:05,950: DEBUG *** App: Loading kv <../../../6_User_Interface/1_Software/1_Source/userinterface.kv>
+2018-06-24 17:43:05,950: DEBUG *** Stored received XY position no. 0
+2018-06-24 17:43:05,951: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,951: DEBUG *** Stored sent XY position no. 0
+2018-06-24 17:43:05,957: DEBUG *** Stored received XY position no. 1
+2018-06-24 17:43:05,957: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,958: DEBUG *** Stored sent XY position no. 1
+2018-06-24 17:43:05,964: DEBUG *** Stored received XY position no. 2
+2018-06-24 17:43:05,964: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,964: DEBUG *** Stored sent XY position no. 2
+2018-06-24 17:43:05,970: DEBUG *** Window: Ignored <egl_rpi> (import error)
+2018-06-24 17:43:05,970: DEBUG *** Stored received XY position no. 3
+2018-06-24 17:43:05,970: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,971: DEBUG *** Stored sent XY position no. 3
+2018-06-24 17:43:05,974: INFO *** OSC: using <multiprocessing> for socket
+2018-06-24 17:43:05,976: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
+2018-06-24 17:43:05,977: DEBUG *** Stored received XY position no. 4
+2018-06-24 17:43:05,977: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,978: DEBUG *** Stored sent XY position no. 4
+2018-06-24 17:43:05,983: DEBUG *** Stored received XY position no. 5
+2018-06-24 17:43:05,984: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,984: DEBUG *** Stored sent XY position no. 5
+2018-06-24 17:43:05,990: DEBUG *** Stored received XY position no. 6
+2018-06-24 17:43:05,990: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,991: DEBUG *** Stored sent XY position no. 6
+2018-06-24 17:43:05,996: DEBUG *** Stored received XY position no. 7
+2018-06-24 17:43:05,996: DEBUG *** MC: making decisions
+2018-06-24 17:43:05,997: DEBUG *** Stored sent XY position no. 7
+2018-06-24 17:43:06,003: DEBUG *** Stored received XY position no. 8
+2018-06-24 17:43:06,003: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,004: DEBUG *** Stored sent XY position no. 8
+2018-06-24 17:43:06,009: DEBUG *** Stored received XY position no. 9
+2018-06-24 17:43:06,009: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,010: DEBUG *** Stored sent XY position no. 9
+2018-06-24 17:43:06,016: DEBUG *** Stored received XY position no. 10
+2018-06-24 17:43:06,016: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,016: DEBUG *** Stored sent XY position no. 10
+2018-06-24 17:43:06,022: DEBUG *** Stored received XY position no. 11
+2018-06-24 17:43:06,022: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,023: DEBUG *** Stored sent XY position no. 11
+2018-06-24 17:43:06,029: DEBUG *** Stored received XY position no. 12
+2018-06-24 17:43:06,029: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,029: DEBUG *** Stored sent XY position no. 12
+2018-06-24 17:43:06,035: DEBUG *** Stored received XY position no. 13
+2018-06-24 17:43:06,036: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,036: DEBUG *** Stored sent XY position no. 13
+2018-06-24 17:43:06,042: DEBUG *** Stored received XY position no. 14
+2018-06-24 17:43:06,042: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,043: DEBUG *** Stored sent XY position no. 14
+2018-06-24 17:43:06,049: DEBUG *** Stored received XY position no. 15
+2018-06-24 17:43:06,049: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,050: DEBUG *** Stored sent XY position no. 15
+2018-06-24 17:43:06,055: DEBUG *** Stored received XY position no. 16
+2018-06-24 17:43:06,056: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,056: DEBUG *** Stored sent XY position no. 16
+2018-06-24 17:43:06,062: DEBUG *** Stored received XY position no. 17
+2018-06-24 17:43:06,062: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,063: DEBUG *** Stored sent XY position no. 17
+2018-06-24 17:43:06,069: DEBUG *** Stored received XY position no. 18
+2018-06-24 17:43:06,069: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,069: DEBUG *** Stored sent XY position no. 18
+2018-06-24 17:43:06,075: DEBUG *** Stored received XY position no. 19
+2018-06-24 17:43:06,075: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,076: DEBUG *** Stored sent XY position no. 19
+2018-06-24 17:43:06,082: DEBUG *** Stored received XY position no. 20
+2018-06-24 17:43:06,082: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,082: DEBUG *** Stored sent XY position no. 20
+2018-06-24 17:43:06,088: DEBUG *** Stored received XY position no. 21
+2018-06-24 17:43:06,088: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,089: DEBUG *** Stored sent XY position no. 21
+2018-06-24 17:43:06,095: DEBUG *** Stored received XY position no. 22
+2018-06-24 17:43:06,095: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,096: DEBUG *** Stored sent XY position no. 22
+2018-06-24 17:43:06,101: DEBUG *** Stored received XY position no. 23
+2018-06-24 17:43:06,101: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,102: DEBUG *** Stored sent XY position no. 23
+2018-06-24 17:43:06,108: DEBUG *** Stored received XY position no. 24
+2018-06-24 17:43:06,108: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,109: DEBUG *** Stored sent XY position no. 24
+2018-06-24 17:43:06,114: DEBUG *** Stored received XY position no. 25
+2018-06-24 17:43:06,114: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,115: DEBUG *** Stored sent XY position no. 25
+2018-06-24 17:43:06,121: DEBUG *** Stored received XY position no. 26
+2018-06-24 17:43:06,121: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,122: DEBUG *** Stored sent XY position no. 26
+2018-06-24 17:43:06,128: DEBUG *** Stored received XY position no. 27
+2018-06-24 17:43:06,128: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,128: DEBUG *** Stored sent XY position no. 27
+2018-06-24 17:43:06,134: DEBUG *** Stored received XY position no. 28
+2018-06-24 17:43:06,134: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,135: DEBUG *** Stored sent XY position no. 28
+2018-06-24 17:43:06,141: DEBUG *** Stored received XY position no. 29
+2018-06-24 17:43:06,141: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,141: DEBUG *** Stored sent XY position no. 29
+2018-06-24 17:43:06,147: DEBUG *** Stored received XY position no. 30
+2018-06-24 17:43:06,147: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,148: DEBUG *** Stored sent XY position no. 30
+2018-06-24 17:43:06,154: DEBUG *** Stored received XY position no. 31
+2018-06-24 17:43:06,154: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,154: DEBUG *** Stored sent XY position no. 31
+2018-06-24 17:43:06,160: DEBUG *** Stored received XY position no. 32
+2018-06-24 17:43:06,160: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,161: DEBUG *** Stored sent XY position no. 32
+2018-06-24 17:43:06,167: DEBUG *** Stored received XY position no. 33
+2018-06-24 17:43:06,167: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,167: DEBUG *** Stored sent XY position no. 33
+2018-06-24 17:43:06,173: DEBUG *** Stored received XY position no. 34
+2018-06-24 17:43:06,173: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,174: DEBUG *** Stored sent XY position no. 34
+2018-06-24 17:43:06,180: DEBUG *** Stored received XY position no. 35
+2018-06-24 17:43:06,180: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,180: DEBUG *** Stored sent XY position no. 35
+2018-06-24 17:43:06,186: DEBUG *** Stored received XY position no. 36
+2018-06-24 17:43:06,186: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,187: DEBUG *** Stored sent XY position no. 36
+2018-06-24 17:43:06,193: INFO *** GL: Using the "OpenGL" graphics system
+2018-06-24 17:43:06,193: DEBUG *** GL: glShaderBinary is not available
+2018-06-24 17:43:06,193: INFO *** GL: Backend used <gl>
+2018-06-24 17:43:06,193: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
+2018-06-24 17:43:06,193: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
+2018-06-24 17:43:06,193: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
+2018-06-24 17:43:06,193: INFO *** GL: OpenGL parsed version: 4, 5
+2018-06-24 17:43:06,193: INFO *** GL: Shading version <4.50 NVIDIA>
+2018-06-24 17:43:06,193: DEBUG *** Stored received XY position no. 37
+2018-06-24 17:43:06,193: INFO *** GL: Texture max size <16384>
+2018-06-24 17:43:06,193: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,193: INFO *** GL: Texture max units <32>
+2018-06-24 17:43:06,194: DEBUG *** Stored sent XY position no. 37
+2018-06-24 17:43:06,200: DEBUG *** Stored received XY position no. 38
+2018-06-24 17:43:06,201: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,201: DEBUG *** Stored sent XY position no. 38
+2018-06-24 17:43:06,205: DEBUG *** Shader: Fragment compiled successfully
+2018-06-24 17:43:06,205: DEBUG *** Shader: Vertex compiled successfully
+2018-06-24 17:43:06,206: DEBUG *** ImageSDL2: Load </usr/lib/python2.7/dist-packages/kivy/data/glsl/default.png>
+2018-06-24 17:43:06,207: INFO *** Window: auto add sdl2 input provider
+2018-06-24 17:43:06,207: INFO *** Window: virtual keyboard not allowed, single mode, not docked
+2018-06-24 17:43:06,207: DEBUG *** Stored received XY position no. 39
+2018-06-24 17:43:06,208: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,208: DEBUG *** Stored sent XY position no. 39
+2018-06-24 17:43:06,209: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/logo.png>
+2018-06-24 17:43:06,214: DEBUG *** Stored received XY position no. 40
+2018-06-24 17:43:06,215: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,215: DEBUG *** Stored sent XY position no. 40
+2018-06-24 17:43:06,221: DEBUG *** Stored received XY position no. 41
+2018-06-24 17:43:06,221: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,222: DEBUG *** Stored sent XY position no. 41
+2018-06-24 17:43:06,228: DEBUG *** Stored received XY position no. 42
+2018-06-24 17:43:06,228: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,229: DEBUG *** Stored sent XY position no. 42
+2018-06-24 17:43:06,235: DEBUG *** Stored received XY position no. 43
+2018-06-24 17:43:06,235: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,235: INFO *** GL: NPOT texture support is available
+2018-06-24 17:43:06,236: DEBUG *** Stored sent XY position no. 43
+2018-06-24 17:43:06,242: DEBUG *** Stored received XY position no. 44
+2018-06-24 17:43:06,242: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,242: DEBUG *** Stored sent XY position no. 44
+2018-06-24 17:43:06,248: DEBUG *** Stored received XY position no. 45
+2018-06-24 17:43:06,248: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,249: DEBUG *** Stored sent XY position no. 45
+2018-06-24 17:43:06,252: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/menu_background.jpg>
+2018-06-24 17:43:06,255: DEBUG *** Stored received XY position no. 46
+2018-06-24 17:43:06,255: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,257: DEBUG *** Stored sent XY position no. 46
+2018-06-24 17:43:06,263: DEBUG *** Stored received XY position no. 47
+2018-06-24 17:43:06,263: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,264: DEBUG *** Stored sent XY position no. 47
+2018-06-24 17:43:06,270: DEBUG *** Stored received XY position no. 48
+2018-06-24 17:43:06,270: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,271: DEBUG *** Stored sent XY position no. 48
+2018-06-24 17:43:06,277: DEBUG *** Stored received XY position no. 49
+2018-06-24 17:43:06,277: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,278: DEBUG *** Stored sent XY position no. 49
+2018-06-24 17:43:06,281: DEBUG *** Resource: add </usr/share/fonts> in path list
+2018-06-24 17:43:06,282: DEBUG *** Resource: add </usr/share/fonts/X11> in path list
+2018-06-24 17:43:06,282: DEBUG *** Resource: add </usr/share/fonts/X11/Type1> in path list
+2018-06-24 17:43:06,282: DEBUG *** Resource: add </usr/share/fonts/X11/encodings> in path list
+2018-06-24 17:43:06,282: DEBUG *** Resource: add </usr/share/fonts/X11/encodings/large> in path list
+2018-06-24 17:43:06,282: DEBUG *** Resource: add </usr/share/fonts/X11/util> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/X11/misc> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/cmap> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/opentype> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/opentype/noto> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/opentype/stix-word> in path list
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/opentype/stix> in path list
+2018-06-24 17:43:06,284: DEBUG *** Stored received XY position no. 50
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/truetype> in path list
+2018-06-24 17:43:06,284: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,284: DEBUG *** Resource: add </usr/share/fonts/truetype/ancient-scripts> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/lao> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/ttf-khmeros-core> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/ubuntu-font-family> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/kacst-one> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/tlwg> in path list
+2018-06-24 17:43:06,285: DEBUG *** Stored sent XY position no. 50
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/kacst> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/lohit-punjabi> in path list
+2018-06-24 17:43:06,285: DEBUG *** Resource: add </usr/share/fonts/truetype/takao-gothic> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/freefont> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/padauk> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/nanum> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/abyssinica> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/dejavu> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/openoffice> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/tibetan-machine> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/sinhala> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/liberation> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/truetype/fonts-guru-extra> in path list
+2018-06-24 17:43:06,286: DEBUG *** Resource: add </usr/share/fonts/type1> in path list
+2018-06-24 17:43:06,287: DEBUG *** Resource: add </usr/share/fonts/type1/gsfonts> in path list
+2018-06-24 17:43:06,287: DEBUG *** Resource: add </usr/local/share/fonts> in path list
+2018-06-24 17:43:06,287: DEBUG *** Resource: add </usr/lib/python2.7/dist-packages/kivy/data/fonts> in path list
+2018-06-24 17:43:06,291: DEBUG *** Stored received XY position no. 51
+2018-06-24 17:43:06,291: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,292: DEBUG *** Stored sent XY position no. 51
+2018-06-24 17:43:06,298: DEBUG *** Stored received XY position no. 52
+2018-06-24 17:43:06,298: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,298: DEBUG *** Stored sent XY position no. 52
+2018-06-24 17:43:06,304: DEBUG *** Stored received XY position no. 53
+2018-06-24 17:43:06,305: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,305: DEBUG *** Stored sent XY position no. 53
+2018-06-24 17:43:06,309: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/hockeySurface.png>
+2018-06-24 17:43:06,311: DEBUG *** Stored received XY position no. 54
+2018-06-24 17:43:06,311: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,312: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/paddle.png>
+2018-06-24 17:43:06,312: DEBUG *** Stored sent XY position no. 54
+2018-06-24 17:43:06,318: DEBUG *** Stored received XY position no. 55
+2018-06-24 17:43:06,318: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,319: DEBUG *** Stored sent XY position no. 55
+2018-06-24 17:43:06,325: DEBUG *** Stored received XY position no. 56
+2018-06-24 17:43:06,325: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,325: DEBUG *** Stored sent XY position no. 56
+2018-06-24 17:43:06,331: DEBUG *** Stored received XY position no. 57
+2018-06-24 17:43:06,331: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,332: DEBUG *** Stored sent XY position no. 57
+2018-06-24 17:43:06,338: DEBUG *** Stored received XY position no. 58
+2018-06-24 17:43:06,338: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,339: DEBUG *** Stored sent XY position no. 58
+2018-06-24 17:43:06,339: DEBUG *** Atlas: Load </usr/lib/python2.7/dist-packages/kivy/data/images/defaulttheme.atlas>
+2018-06-24 17:43:06,339: DEBUG *** Atlas: Need to load 1 images
+2018-06-24 17:43:06,339: DEBUG *** Atlas: Load </usr/lib/python2.7/dist-packages/kivy/data/images/defaulttheme-0.png>
+2018-06-24 17:43:06,339: DEBUG *** ImageSDL2: Load </usr/lib/python2.7/dist-packages/kivy/data/images/defaulttheme-0.png>
+2018-06-24 17:43:06,346: DEBUG *** Stored received XY position no. 59
+2018-06-24 17:43:06,346: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,346: DEBUG *** Stored sent XY position no. 59
+2018-06-24 17:43:06,352: DEBUG *** Stored received XY position no. 60
+2018-06-24 17:43:06,353: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,353: DEBUG *** Stored sent XY position no. 60
+2018-06-24 17:43:06,359: DEBUG *** Stored received XY position no. 61
+2018-06-24 17:43:06,359: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,360: DEBUG *** Stored sent XY position no. 61
+2018-06-24 17:43:06,363: DEBUG *** Base: Create provider from mouse
+2018-06-24 17:43:06,363: DEBUG *** Base: Create provider from probesysfs
+2018-06-24 17:43:06,366: DEBUG *** Stored received XY position no. 62
+2018-06-24 17:43:06,366: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,366: DEBUG *** Stored sent XY position no. 62
+2018-06-24 17:43:06,373: DEBUG *** Stored received XY position no. 63
+2018-06-24 17:43:06,373: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,374: DEBUG *** Stored sent XY position no. 63
+2018-06-24 17:43:06,380: DEBUG *** Stored received XY position no. 64
+2018-06-24 17:43:06,380: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,381: DEBUG *** Stored sent XY position no. 64
+2018-06-24 17:43:06,387: DEBUG *** Stored received XY position no. 65
+2018-06-24 17:43:06,387: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,387: DEBUG *** Stored sent XY position no. 65
+2018-06-24 17:43:06,393: DEBUG *** Stored received XY position no. 66
+2018-06-24 17:43:06,394: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,394: DEBUG *** Stored sent XY position no. 66
+2018-06-24 17:43:06,401: DEBUG *** Stored received XY position no. 67
+2018-06-24 17:43:06,401: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,402: DEBUG *** Stored sent XY position no. 67
+2018-06-24 17:43:06,408: DEBUG *** Stored received XY position no. 68
+2018-06-24 17:43:06,408: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,409: DEBUG *** Stored sent XY position no. 68
+2018-06-24 17:43:06,415: DEBUG *** Stored received XY position no. 69
+2018-06-24 17:43:06,415: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,416: DEBUG *** Stored sent XY position no. 69
+2018-06-24 17:43:06,422: DEBUG *** Stored received XY position no. 70
+2018-06-24 17:43:06,422: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,422: DEBUG *** Stored sent XY position no. 70
+2018-06-24 17:43:06,429: DEBUG *** Stored received XY position no. 71
+2018-06-24 17:43:06,429: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,430: DEBUG *** Stored sent XY position no. 71
+2018-06-24 17:43:06,436: DEBUG *** Stored received XY position no. 72
+2018-06-24 17:43:06,436: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,437: DEBUG *** Stored sent XY position no. 72
+2018-06-24 17:43:06,436: DEBUG *** ProbeSysfs: using probesysfs!
+2018-06-24 17:43:06,443: DEBUG *** Stored received XY position no. 73
+2018-06-24 17:43:06,443: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,443: DEBUG *** Stored sent XY position no. 73
+2018-06-24 17:43:06,449: DEBUG *** Stored received XY position no. 74
+2018-06-24 17:43:06,450: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,450: DEBUG *** Stored sent XY position no. 74
+2018-06-24 17:43:06,456: DEBUG *** Stored received XY position no. 75
+2018-06-24 17:43:06,456: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,457: DEBUG *** Stored sent XY position no. 75
+2018-06-24 17:43:06,463: DEBUG *** Stored received XY position no. 76
+2018-06-24 17:43:06,463: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,464: DEBUG *** Stored sent XY position no. 76
+2018-06-24 17:43:06,470: DEBUG *** Stored received XY position no. 77
+2018-06-24 17:43:06,470: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,471: DEBUG *** Stored sent XY position no. 77
+2018-06-24 17:43:06,477: DEBUG *** Stored received XY position no. 78
+2018-06-24 17:43:06,477: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,477: DEBUG *** Stored sent XY position no. 78
+2018-06-24 17:43:06,483: DEBUG *** Stored received XY position no. 79
+2018-06-24 17:43:06,484: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,484: DEBUG *** Stored sent XY position no. 79
+2018-06-24 17:43:06,490: DEBUG *** Stored received XY position no. 80
+2018-06-24 17:43:06,490: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,491: DEBUG *** Stored sent XY position no. 80
+2018-06-24 17:43:06,497: DEBUG *** Stored received XY position no. 81
+2018-06-24 17:43:06,497: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,498: DEBUG *** Stored sent XY position no. 81
+2018-06-24 17:43:06,504: DEBUG *** Stored received XY position no. 82
+2018-06-24 17:43:06,504: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,505: DEBUG *** Stored sent XY position no. 82
+2018-06-24 17:43:06,511: DEBUG *** Stored received XY position no. 83
+2018-06-24 17:43:06,511: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,511: INFO *** Base: Start application main loop
+2018-06-24 17:43:06,511: DEBUG *** Stored sent XY position no. 83
+2018-06-24 17:43:06,513: DEBUG *** Shader: Fragment compiled successfully
+2018-06-24 17:43:06,517: DEBUG *** Stored received XY position no. 84
+2018-06-24 17:43:06,517: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,518: DEBUG *** Stored sent XY position no. 84
+2018-06-24 17:43:06,524: DEBUG *** Stored received XY position no. 85
+2018-06-24 17:43:06,524: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,525: DEBUG *** Stored sent XY position no. 85
+2018-06-24 17:43:06,530: DEBUG *** Stored received XY position no. 86
+2018-06-24 17:43:06,531: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,531: DEBUG *** Stored sent XY position no. 86
+2018-06-24 17:43:06,536: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/menu_unclicked.png>
+2018-06-24 17:43:06,537: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/unclicked.png>
+2018-06-24 17:43:06,537: DEBUG *** Stored received XY position no. 87
+2018-06-24 17:43:06,537: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,538: DEBUG *** Stored sent XY position no. 87
+2018-06-24 17:43:06,538: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/settings_unclicked.png>
+2018-06-24 17:43:06,543: DEBUG *** Stored received XY position no. 88
+2018-06-24 17:43:06,544: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,544: DEBUG *** Stored sent XY position no. 88
+2018-06-24 17:43:06,550: DEBUG *** Stored received XY position no. 89
+2018-06-24 17:43:06,550: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,551: DEBUG *** Stored sent XY position no. 89
+2018-06-24 17:43:06,556: DEBUG *** Stored received XY position no. 90
+2018-06-24 17:43:06,556: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,557: DEBUG *** Stored sent XY position no. 90
+2018-06-24 17:43:06,563: DEBUG *** Stored received XY position no. 91
+2018-06-24 17:43:06,563: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,563: DEBUG *** Stored sent XY position no. 91
+2018-06-24 17:43:06,569: DEBUG *** Stored received XY position no. 92
+2018-06-24 17:43:06,569: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,570: DEBUG *** Stored sent XY position no. 92
+2018-06-24 17:43:06,576: DEBUG *** Stored received XY position no. 93
+2018-06-24 17:43:06,576: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,576: DEBUG *** Stored sent XY position no. 93
+2018-06-24 17:43:06,582: DEBUG *** Stored received XY position no. 94
+2018-06-24 17:43:06,582: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,583: DEBUG *** Stored sent XY position no. 94
+2018-06-24 17:43:06,588: DEBUG *** Stored received XY position no. 95
+2018-06-24 17:43:06,589: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,589: DEBUG *** Stored sent XY position no. 95
+2018-06-24 17:43:06,595: DEBUG *** Stored received XY position no. 96
+2018-06-24 17:43:06,595: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,596: DEBUG *** Stored sent XY position no. 96
+2018-06-24 17:43:06,601: DEBUG *** Stored received XY position no. 97
+2018-06-24 17:43:06,601: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,602: DEBUG *** Stored sent XY position no. 97
+2018-06-24 17:43:06,608: DEBUG *** Stored received XY position no. 98
+2018-06-24 17:43:06,608: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,608: DEBUG *** Stored sent XY position no. 98
+2018-06-24 17:43:06,614: DEBUG *** Stored received XY position no. 99
+2018-06-24 17:43:06,615: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,615: DEBUG *** Stored sent XY position no. 99
+2018-06-24 17:43:06,621: DEBUG *** Stored received XY position no. 100
+2018-06-24 17:43:06,622: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,622: DEBUG *** Stored sent XY position no. 100
+2018-06-24 17:43:06,628: DEBUG *** Stored received XY position no. 101
+2018-06-24 17:43:06,629: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,629: DEBUG *** Stored sent XY position no. 101
+2018-06-24 17:43:06,635: DEBUG *** Stored received XY position no. 102
+2018-06-24 17:43:06,636: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,636: DEBUG *** Stored sent XY position no. 102
+2018-06-24 17:43:06,642: DEBUG *** Stored received XY position no. 103
+2018-06-24 17:43:06,643: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,643: DEBUG *** Stored sent XY position no. 103
+2018-06-24 17:43:06,649: DEBUG *** Stored received XY position no. 104
+2018-06-24 17:43:06,650: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,650: DEBUG *** Stored sent XY position no. 104
+2018-06-24 17:43:06,656: DEBUG *** Stored received XY position no. 105
+2018-06-24 17:43:06,657: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,657: DEBUG *** Stored sent XY position no. 105
+2018-06-24 17:43:06,664: DEBUG *** Stored received XY position no. 106
+2018-06-24 17:43:06,664: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,665: DEBUG *** Stored sent XY position no. 106
+2018-06-24 17:43:06,671: DEBUG *** Stored received XY position no. 107
+2018-06-24 17:43:06,671: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,672: DEBUG *** Stored sent XY position no. 107
+2018-06-24 17:43:06,678: DEBUG *** Stored received XY position no. 108
+2018-06-24 17:43:06,678: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,679: DEBUG *** Stored sent XY position no. 108
+2018-06-24 17:43:06,685: DEBUG *** Stored received XY position no. 109
+2018-06-24 17:43:06,685: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,685: DEBUG *** Stored sent XY position no. 109
+2018-06-24 17:43:06,691: DEBUG *** Stored received XY position no. 110
+2018-06-24 17:43:06,692: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,692: DEBUG *** Stored sent XY position no. 110
+2018-06-24 17:43:06,698: DEBUG *** Stored received XY position no. 111
+2018-06-24 17:43:06,698: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,699: DEBUG *** Stored sent XY position no. 111
+2018-06-24 17:43:06,705: DEBUG *** Stored received XY position no. 112
+2018-06-24 17:43:06,705: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,706: DEBUG *** Stored sent XY position no. 112
+2018-06-24 17:43:06,712: DEBUG *** Stored received XY position no. 113
+2018-06-24 17:43:06,712: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,713: DEBUG *** Stored sent XY position no. 113
+2018-06-24 17:43:06,719: DEBUG *** Stored received XY position no. 114
+2018-06-24 17:43:06,719: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,720: DEBUG *** Stored sent XY position no. 114
+2018-06-24 17:43:06,726: DEBUG *** Stored received XY position no. 115
+2018-06-24 17:43:06,726: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,726: DEBUG *** Stored sent XY position no. 115
+2018-06-24 17:43:06,732: DEBUG *** Stored received XY position no. 116
+2018-06-24 17:43:06,732: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,733: DEBUG *** Stored sent XY position no. 116
+2018-06-24 17:43:06,739: DEBUG *** Stored received XY position no. 117
+2018-06-24 17:43:06,739: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,740: DEBUG *** Stored sent XY position no. 117
+2018-06-24 17:43:06,746: DEBUG *** Stored received XY position no. 118
+2018-06-24 17:43:06,746: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,747: DEBUG *** Stored sent XY position no. 118
+2018-06-24 17:43:06,753: DEBUG *** Stored received XY position no. 119
+2018-06-24 17:43:06,753: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,754: DEBUG *** Stored sent XY position no. 119
+2018-06-24 17:43:06,759: DEBUG *** Stored received XY position no. 120
+2018-06-24 17:43:06,760: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,760: DEBUG *** Stored sent XY position no. 120
+2018-06-24 17:43:06,766: DEBUG *** Stored received XY position no. 121
+2018-06-24 17:43:06,766: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,767: DEBUG *** Stored sent XY position no. 121
+2018-06-24 17:43:06,773: DEBUG *** Stored received XY position no. 122
+2018-06-24 17:43:06,773: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,774: DEBUG *** Stored sent XY position no. 122
+2018-06-24 17:43:06,780: DEBUG *** Stored received XY position no. 123
+2018-06-24 17:43:06,780: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,781: DEBUG *** Stored sent XY position no. 123
+2018-06-24 17:43:06,787: DEBUG *** Stored received XY position no. 124
+2018-06-24 17:43:06,787: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,787: DEBUG *** Stored sent XY position no. 124
+2018-06-24 17:43:06,793: DEBUG *** Stored received XY position no. 125
+2018-06-24 17:43:06,793: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,794: DEBUG *** Stored sent XY position no. 125
+2018-06-24 17:43:06,800: DEBUG *** Stored received XY position no. 126
+2018-06-24 17:43:06,800: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,801: DEBUG *** Stored sent XY position no. 126
+2018-06-24 17:43:06,807: DEBUG *** Stored received XY position no. 127
+2018-06-24 17:43:06,807: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,808: DEBUG *** Stored sent XY position no. 127
+2018-06-24 17:43:06,814: DEBUG *** Stored received XY position no. 128
+2018-06-24 17:43:06,814: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,815: DEBUG *** Stored sent XY position no. 128
+2018-06-24 17:43:06,821: DEBUG *** Stored received XY position no. 129
+2018-06-24 17:43:06,821: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,821: DEBUG *** Stored sent XY position no. 129
+2018-06-24 17:43:06,827: DEBUG *** Stored received XY position no. 130
+2018-06-24 17:43:06,827: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,828: DEBUG *** Stored sent XY position no. 130
+2018-06-24 17:43:06,834: DEBUG *** Stored received XY position no. 131
+2018-06-24 17:43:06,834: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,835: DEBUG *** Stored sent XY position no. 131
+2018-06-24 17:43:06,841: DEBUG *** Stored received XY position no. 132
+2018-06-24 17:43:06,841: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,842: DEBUG *** Stored sent XY position no. 132
+2018-06-24 17:43:06,848: DEBUG *** Stored received XY position no. 133
+2018-06-24 17:43:06,848: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,848: DEBUG *** Stored sent XY position no. 133
+2018-06-24 17:43:06,854: DEBUG *** Stored received XY position no. 134
+2018-06-24 17:43:06,854: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,855: DEBUG *** Stored sent XY position no. 134
+2018-06-24 17:43:06,861: DEBUG *** Stored received XY position no. 135
+2018-06-24 17:43:06,861: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,862: DEBUG *** Stored sent XY position no. 135
+2018-06-24 17:43:06,868: DEBUG *** Stored received XY position no. 136
+2018-06-24 17:43:06,868: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,868: DEBUG *** Stored sent XY position no. 136
+2018-06-24 17:43:06,874: DEBUG *** Stored received XY position no. 137
+2018-06-24 17:43:06,874: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,875: DEBUG *** Stored sent XY position no. 137
+2018-06-24 17:43:06,881: DEBUG *** Stored received XY position no. 138
+2018-06-24 17:43:06,881: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,882: DEBUG *** Stored sent XY position no. 138
+2018-06-24 17:43:06,888: DEBUG *** Stored received XY position no. 139
+2018-06-24 17:43:06,888: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,889: DEBUG *** Stored sent XY position no. 139
+2018-06-24 17:43:06,895: DEBUG *** Stored received XY position no. 140
+2018-06-24 17:43:06,895: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,896: DEBUG *** Stored sent XY position no. 140
+2018-06-24 17:43:06,901: DEBUG *** Stored received XY position no. 141
+2018-06-24 17:43:06,902: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,902: DEBUG *** Stored sent XY position no. 141
+2018-06-24 17:43:06,908: DEBUG *** Stored received XY position no. 142
+2018-06-24 17:43:06,908: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,909: DEBUG *** Stored sent XY position no. 142
+2018-06-24 17:43:06,915: DEBUG *** Stored received XY position no. 143
+2018-06-24 17:43:06,915: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,916: DEBUG *** Stored sent XY position no. 143
+2018-06-24 17:43:06,922: DEBUG *** Stored received XY position no. 144
+2018-06-24 17:43:06,922: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,922: DEBUG *** Stored sent XY position no. 144
+2018-06-24 17:43:06,928: DEBUG *** Stored received XY position no. 145
+2018-06-24 17:43:06,928: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,929: DEBUG *** Stored sent XY position no. 145
+2018-06-24 17:43:06,935: DEBUG *** Stored received XY position no. 146
+2018-06-24 17:43:06,935: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,936: DEBUG *** Stored sent XY position no. 146
+2018-06-24 17:43:06,942: DEBUG *** Stored received XY position no. 147
+2018-06-24 17:43:06,942: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,942: DEBUG *** Stored sent XY position no. 147
+2018-06-24 17:43:06,948: DEBUG *** Stored received XY position no. 148
+2018-06-24 17:43:06,948: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,949: DEBUG *** Stored sent XY position no. 148
+2018-06-24 17:43:06,955: DEBUG *** Stored received XY position no. 149
+2018-06-24 17:43:06,955: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,956: DEBUG *** Stored sent XY position no. 149
+2018-06-24 17:43:06,961: DEBUG *** Stored received XY position no. 150
+2018-06-24 17:43:06,962: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,962: DEBUG *** Stored sent XY position no. 150
+2018-06-24 17:43:06,968: DEBUG *** Stored received XY position no. 151
+2018-06-24 17:43:06,968: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,969: DEBUG *** Stored sent XY position no. 151
+2018-06-24 17:43:06,975: DEBUG *** Stored received XY position no. 152
+2018-06-24 17:43:06,975: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,976: DEBUG *** Stored sent XY position no. 152
+2018-06-24 17:43:06,981: DEBUG *** Stored received XY position no. 153
+2018-06-24 17:43:06,982: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,982: DEBUG *** Stored sent XY position no. 153
+2018-06-24 17:43:06,988: DEBUG *** Stored received XY position no. 154
+2018-06-24 17:43:06,988: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,989: DEBUG *** Stored sent XY position no. 154
+2018-06-24 17:43:06,995: DEBUG *** Stored received XY position no. 155
+2018-06-24 17:43:06,995: DEBUG *** MC: making decisions
+2018-06-24 17:43:06,995: DEBUG *** Stored sent XY position no. 155
+2018-06-24 17:43:07,001: DEBUG *** Stored received XY position no. 156
+2018-06-24 17:43:07,001: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,002: DEBUG *** Stored sent XY position no. 156
+2018-06-24 17:43:07,008: DEBUG *** Stored received XY position no. 157
+2018-06-24 17:43:07,008: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,009: DEBUG *** Stored sent XY position no. 157
+2018-06-24 17:43:07,015: DEBUG *** Stored received XY position no. 158
+2018-06-24 17:43:07,015: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,015: DEBUG *** Stored sent XY position no. 158
+2018-06-24 17:43:07,021: DEBUG *** Stored received XY position no. 159
+2018-06-24 17:43:07,021: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,022: DEBUG *** Stored sent XY position no. 159
+2018-06-24 17:43:07,028: DEBUG *** Stored received XY position no. 160
+2018-06-24 17:43:07,028: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,028: DEBUG *** Stored sent XY position no. 160
+2018-06-24 17:43:07,034: DEBUG *** Stored received XY position no. 161
+2018-06-24 17:43:07,034: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,035: DEBUG *** Stored sent XY position no. 161
+2018-06-24 17:43:07,041: DEBUG *** Stored received XY position no. 162
+2018-06-24 17:43:07,041: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,042: DEBUG *** Stored sent XY position no. 162
+2018-06-24 17:43:07,048: DEBUG *** Stored received XY position no. 163
+2018-06-24 17:43:07,048: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,048: DEBUG *** Stored sent XY position no. 163
+2018-06-24 17:43:07,054: DEBUG *** Stored received XY position no. 164
+2018-06-24 17:43:07,054: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,055: DEBUG *** Stored sent XY position no. 164
+2018-06-24 17:43:07,061: DEBUG *** Stored received XY position no. 165
+2018-06-24 17:43:07,061: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,062: DEBUG *** Stored sent XY position no. 165
+2018-06-24 17:43:07,067: DEBUG *** Stored received XY position no. 166
+2018-06-24 17:43:07,067: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,068: DEBUG *** Stored sent XY position no. 166
+2018-06-24 17:43:07,074: DEBUG *** Stored received XY position no. 167
+2018-06-24 17:43:07,074: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,075: DEBUG *** Stored sent XY position no. 167
+2018-06-24 17:43:07,081: DEBUG *** Stored received XY position no. 168
+2018-06-24 17:43:07,081: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,081: DEBUG *** Stored sent XY position no. 168
+2018-06-24 17:43:07,087: DEBUG *** Stored received XY position no. 169
+2018-06-24 17:43:07,088: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,088: DEBUG *** Stored sent XY position no. 169
+2018-06-24 17:43:07,094: DEBUG *** Stored received XY position no. 170
+2018-06-24 17:43:07,094: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,095: DEBUG *** Stored sent XY position no. 170
+2018-06-24 17:43:07,101: DEBUG *** Stored received XY position no. 171
+2018-06-24 17:43:07,101: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,102: DEBUG *** Stored sent XY position no. 171
+2018-06-24 17:43:07,107: DEBUG *** Stored received XY position no. 172
+2018-06-24 17:43:07,107: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,108: DEBUG *** Stored sent XY position no. 172
+2018-06-24 17:43:07,114: DEBUG *** Stored received XY position no. 173
+2018-06-24 17:43:07,114: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,115: DEBUG *** Stored sent XY position no. 173
+2018-06-24 17:43:07,121: DEBUG *** Stored received XY position no. 174
+2018-06-24 17:43:07,121: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,121: DEBUG *** Stored sent XY position no. 174
+2018-06-24 17:43:07,127: DEBUG *** Stored received XY position no. 175
+2018-06-24 17:43:07,127: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,128: DEBUG *** Stored sent XY position no. 175
+2018-06-24 17:43:07,134: DEBUG *** Stored received XY position no. 176
+2018-06-24 17:43:07,134: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,135: DEBUG *** Stored sent XY position no. 176
+2018-06-24 17:43:07,140: DEBUG *** Stored received XY position no. 177
+2018-06-24 17:43:07,140: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,141: DEBUG *** Stored sent XY position no. 177
+2018-06-24 17:43:07,147: DEBUG *** Stored received XY position no. 178
+2018-06-24 17:43:07,147: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,148: DEBUG *** Stored sent XY position no. 178
+2018-06-24 17:43:07,153: DEBUG *** Stored received XY position no. 179
+2018-06-24 17:43:07,154: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,154: DEBUG *** Stored sent XY position no. 179
+2018-06-24 17:43:07,160: DEBUG *** Stored received XY position no. 180
+2018-06-24 17:43:07,160: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,161: DEBUG *** Stored sent XY position no. 180
+2018-06-24 17:43:07,167: DEBUG *** Stored received XY position no. 181
+2018-06-24 17:43:07,167: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,167: DEBUG *** Stored sent XY position no. 181
+2018-06-24 17:43:07,173: DEBUG *** Stored received XY position no. 182
+2018-06-24 17:43:07,173: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,174: DEBUG *** Stored sent XY position no. 182
+2018-06-24 17:43:07,180: DEBUG *** Stored received XY position no. 183
+2018-06-24 17:43:07,180: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,181: DEBUG *** Stored sent XY position no. 183
+2018-06-24 17:43:07,186: DEBUG *** Stored received XY position no. 184
+2018-06-24 17:43:07,187: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,187: DEBUG *** Stored sent XY position no. 184
+2018-06-24 17:43:07,193: DEBUG *** Stored received XY position no. 185
+2018-06-24 17:43:07,193: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,194: DEBUG *** Stored sent XY position no. 185
+2018-06-24 17:43:07,200: DEBUG *** Stored received XY position no. 186
+2018-06-24 17:43:07,200: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,200: DEBUG *** Stored sent XY position no. 186
+2018-06-24 17:43:07,206: DEBUG *** Stored received XY position no. 187
+2018-06-24 17:43:07,206: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,207: DEBUG *** Stored sent XY position no. 187
+2018-06-24 17:43:07,213: DEBUG *** Stored received XY position no. 188
+2018-06-24 17:43:07,213: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,214: DEBUG *** Stored sent XY position no. 188
+2018-06-24 17:43:07,219: DEBUG *** Stored received XY position no. 189
+2018-06-24 17:43:07,220: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,220: DEBUG *** Stored sent XY position no. 189
+2018-06-24 17:43:07,226: DEBUG *** Stored received XY position no. 190
+2018-06-24 17:43:07,226: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,227: DEBUG *** Stored sent XY position no. 190
+2018-06-24 17:43:07,233: DEBUG *** Stored received XY position no. 191
+2018-06-24 17:43:07,233: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,233: DEBUG *** Stored sent XY position no. 191
+2018-06-24 17:43:07,239: DEBUG *** Stored received XY position no. 192
+2018-06-24 17:43:07,239: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,240: DEBUG *** Stored sent XY position no. 192
+2018-06-24 17:43:07,246: DEBUG *** Stored received XY position no. 193
+2018-06-24 17:43:07,246: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,247: DEBUG *** Stored sent XY position no. 193
+2018-06-24 17:43:07,252: DEBUG *** Stored received XY position no. 194
+2018-06-24 17:43:07,253: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,253: DEBUG *** Stored sent XY position no. 194
+2018-06-24 17:43:07,259: DEBUG *** Stored received XY position no. 195
+2018-06-24 17:43:07,259: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,260: DEBUG *** Stored sent XY position no. 195
+2018-06-24 17:43:07,266: DEBUG *** Stored received XY position no. 196
+2018-06-24 17:43:07,266: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,266: DEBUG *** Stored sent XY position no. 196
+2018-06-24 17:43:07,272: DEBUG *** Stored received XY position no. 197
+2018-06-24 17:43:07,272: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,273: DEBUG *** Stored sent XY position no. 197
+2018-06-24 17:43:07,279: DEBUG *** Stored received XY position no. 198
+2018-06-24 17:43:07,279: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,280: DEBUG *** Stored sent XY position no. 198
+2018-06-24 17:43:07,286: DEBUG *** Stored received XY position no. 199
+2018-06-24 17:43:07,286: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,286: DEBUG *** Stored sent XY position no. 199
+2018-06-24 17:43:07,292: DEBUG *** Stored received XY position no. 200
+2018-06-24 17:43:07,292: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,293: DEBUG *** Stored sent XY position no. 200
+2018-06-24 17:43:07,299: DEBUG *** Stored received XY position no. 201
+2018-06-24 17:43:07,299: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,299: DEBUG *** Stored sent XY position no. 201
+2018-06-24 17:43:07,305: DEBUG *** Stored received XY position no. 202
+2018-06-24 17:43:07,305: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,306: DEBUG *** Stored sent XY position no. 202
+2018-06-24 17:43:07,312: DEBUG *** Stored received XY position no. 203
+2018-06-24 17:43:07,312: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,313: DEBUG *** Stored sent XY position no. 203
+2018-06-24 17:43:07,318: DEBUG *** Stored received XY position no. 204
+2018-06-24 17:43:07,319: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,319: DEBUG *** Stored sent XY position no. 204
+2018-06-24 17:43:07,325: DEBUG *** Stored received XY position no. 205
+2018-06-24 17:43:07,325: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,326: DEBUG *** Stored sent XY position no. 205
+2018-06-24 17:43:07,332: DEBUG *** Stored received XY position no. 206
+2018-06-24 17:43:07,332: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,332: DEBUG *** Stored sent XY position no. 206
+2018-06-24 17:43:07,338: DEBUG *** Stored received XY position no. 207
+2018-06-24 17:43:07,338: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,339: DEBUG *** Stored sent XY position no. 207
+2018-06-24 17:43:07,345: DEBUG *** Stored received XY position no. 208
+2018-06-24 17:43:07,345: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,345: DEBUG *** Stored sent XY position no. 208
+2018-06-24 17:43:07,351: DEBUG *** Stored received XY position no. 209
+2018-06-24 17:43:07,351: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,352: DEBUG *** Stored sent XY position no. 209
+2018-06-24 17:43:07,358: DEBUG *** Stored received XY position no. 210
+2018-06-24 17:43:07,358: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,359: DEBUG *** Stored sent XY position no. 210
+2018-06-24 17:43:07,364: DEBUG *** Stored received XY position no. 211
+2018-06-24 17:43:07,364: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,365: DEBUG *** Stored sent XY position no. 211
+2018-06-24 17:43:07,371: DEBUG *** Stored received XY position no. 212
+2018-06-24 17:43:07,371: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,372: DEBUG *** Stored sent XY position no. 212
+2018-06-24 17:43:07,378: DEBUG *** Stored received XY position no. 213
+2018-06-24 17:43:07,378: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,378: DEBUG *** Stored sent XY position no. 213
+2018-06-24 17:43:07,384: DEBUG *** Stored received XY position no. 214
+2018-06-24 17:43:07,384: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,385: DEBUG *** Stored sent XY position no. 214
+2018-06-24 17:43:07,391: DEBUG *** Stored received XY position no. 215
+2018-06-24 17:43:07,391: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,391: DEBUG *** Stored sent XY position no. 215
+2018-06-24 17:43:07,397: DEBUG *** Stored received XY position no. 216
+2018-06-24 17:43:07,397: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,398: DEBUG *** Stored sent XY position no. 216
+2018-06-24 17:43:07,404: DEBUG *** Stored received XY position no. 217
+2018-06-24 17:43:07,404: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,404: DEBUG *** Stored sent XY position no. 217
+2018-06-24 17:43:07,410: DEBUG *** Stored received XY position no. 218
+2018-06-24 17:43:07,410: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,411: DEBUG *** Stored sent XY position no. 218
+2018-06-24 17:43:07,417: DEBUG *** Stored received XY position no. 219
+2018-06-24 17:43:07,417: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,418: DEBUG *** Stored sent XY position no. 219
+2018-06-24 17:43:07,424: DEBUG *** Stored received XY position no. 220
+2018-06-24 17:43:07,424: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,424: DEBUG *** Stored sent XY position no. 220
+2018-06-24 17:43:07,430: DEBUG *** Stored received XY position no. 221
+2018-06-24 17:43:07,430: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,431: DEBUG *** Stored sent XY position no. 221
+2018-06-24 17:43:07,437: DEBUG *** Stored received XY position no. 222
+2018-06-24 17:43:07,437: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,437: DEBUG *** Stored sent XY position no. 222
+2018-06-24 17:43:07,443: DEBUG *** Stored received XY position no. 223
+2018-06-24 17:43:07,443: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,444: DEBUG *** Stored sent XY position no. 223
+2018-06-24 17:43:07,450: DEBUG *** Stored received XY position no. 224
+2018-06-24 17:43:07,450: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,451: DEBUG *** Stored sent XY position no. 224
+2018-06-24 17:43:07,456: DEBUG *** Stored received XY position no. 225
+2018-06-24 17:43:07,457: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,457: DEBUG *** Stored sent XY position no. 225
+2018-06-24 17:43:07,463: DEBUG *** Stored received XY position no. 226
+2018-06-24 17:43:07,463: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,464: DEBUG *** Stored sent XY position no. 226
+2018-06-24 17:43:07,470: DEBUG *** Stored received XY position no. 227
+2018-06-24 17:43:07,470: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,470: DEBUG *** Stored sent XY position no. 227
+2018-06-24 17:43:07,476: DEBUG *** Stored received XY position no. 228
+2018-06-24 17:43:07,476: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,477: DEBUG *** Stored sent XY position no. 228
+2018-06-24 17:43:07,483: DEBUG *** Stored received XY position no. 229
+2018-06-24 17:43:07,483: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,483: DEBUG *** Stored sent XY position no. 229
+2018-06-24 17:43:07,489: DEBUG *** Stored received XY position no. 230
+2018-06-24 17:43:07,489: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,490: DEBUG *** Stored sent XY position no. 230
+2018-06-24 17:43:07,496: DEBUG *** Stored received XY position no. 231
+2018-06-24 17:43:07,496: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,497: DEBUG *** Stored sent XY position no. 231
+2018-06-24 17:43:07,502: DEBUG *** Stored received XY position no. 232
+2018-06-24 17:43:07,503: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,503: DEBUG *** Stored sent XY position no. 232
+2018-06-24 17:43:07,509: DEBUG *** Stored received XY position no. 233
+2018-06-24 17:43:07,509: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,510: DEBUG *** Stored sent XY position no. 233
+2018-06-24 17:43:07,516: DEBUG *** Stored received XY position no. 234
+2018-06-24 17:43:07,516: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,516: DEBUG *** Stored sent XY position no. 234
+2018-06-24 17:43:07,522: DEBUG *** Stored received XY position no. 235
+2018-06-24 17:43:07,522: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,523: DEBUG *** Stored sent XY position no. 235
+2018-06-24 17:43:07,529: DEBUG *** Stored received XY position no. 236
+2018-06-24 17:43:07,529: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,530: DEBUG *** Stored sent XY position no. 236
+2018-06-24 17:43:07,535: DEBUG *** Stored received XY position no. 237
+2018-06-24 17:43:07,535: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,536: DEBUG *** Stored sent XY position no. 237
+2018-06-24 17:43:07,542: DEBUG *** Stored received XY position no. 238
+2018-06-24 17:43:07,542: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,543: DEBUG *** Stored sent XY position no. 238
+2018-06-24 17:43:07,548: DEBUG *** Stored received XY position no. 239
+2018-06-24 17:43:07,549: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,549: DEBUG *** Stored sent XY position no. 239
+2018-06-24 17:43:07,555: DEBUG *** Stored received XY position no. 240
+2018-06-24 17:43:07,555: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,556: DEBUG *** Stored sent XY position no. 240
+2018-06-24 17:43:07,562: DEBUG *** Stored received XY position no. 241
+2018-06-24 17:43:07,562: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,562: DEBUG *** Stored sent XY position no. 241
+2018-06-24 17:43:07,568: DEBUG *** Stored received XY position no. 242
+2018-06-24 17:43:07,568: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,569: DEBUG *** Stored sent XY position no. 242
+2018-06-24 17:43:07,575: DEBUG *** Stored received XY position no. 243
+2018-06-24 17:43:07,575: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,575: DEBUG *** Stored sent XY position no. 243
+2018-06-24 17:43:07,581: DEBUG *** Stored received XY position no. 244
+2018-06-24 17:43:07,581: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,582: DEBUG *** Stored sent XY position no. 244
+2018-06-24 17:43:07,588: DEBUG *** Stored received XY position no. 245
+2018-06-24 17:43:07,588: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,588: DEBUG *** Stored sent XY position no. 245
+2018-06-24 17:43:07,594: DEBUG *** Stored received XY position no. 246
+2018-06-24 17:43:07,594: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,595: DEBUG *** Stored sent XY position no. 246
+2018-06-24 17:43:07,601: DEBUG *** Stored received XY position no. 247
+2018-06-24 17:43:07,601: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,602: DEBUG *** Stored sent XY position no. 247
+2018-06-24 17:43:07,607: DEBUG *** Stored received XY position no. 248
+2018-06-24 17:43:07,607: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,608: DEBUG *** Stored sent XY position no. 248
+2018-06-24 17:43:07,614: DEBUG *** Stored received XY position no. 249
+2018-06-24 17:43:07,614: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,615: DEBUG *** Stored sent XY position no. 249
+2018-06-24 17:43:07,620: DEBUG *** Stored received XY position no. 250
+2018-06-24 17:43:07,621: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,621: DEBUG *** Stored sent XY position no. 250
+2018-06-24 17:43:07,627: DEBUG *** Stored received XY position no. 251
+2018-06-24 17:43:07,627: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,628: DEBUG *** Stored sent XY position no. 251
+2018-06-24 17:43:07,634: DEBUG *** Stored received XY position no. 252
+2018-06-24 17:43:07,634: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,634: DEBUG *** Stored sent XY position no. 252
+2018-06-24 17:43:07,641: DEBUG *** Stored received XY position no. 253
+2018-06-24 17:43:07,641: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,641: DEBUG *** Stored sent XY position no. 253
+2018-06-24 17:43:07,647: DEBUG *** Stored received XY position no. 254
+2018-06-24 17:43:07,647: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,648: DEBUG *** Stored sent XY position no. 254
+2018-06-24 17:43:07,654: DEBUG *** Stored received XY position no. 255
+2018-06-24 17:43:07,654: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,655: DEBUG *** Stored sent XY position no. 255
+2018-06-24 17:43:07,660: DEBUG *** Stored received XY position no. 256
+2018-06-24 17:43:07,661: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,661: DEBUG *** Stored sent XY position no. 256
+2018-06-24 17:43:07,667: DEBUG *** Stored received XY position no. 257
+2018-06-24 17:43:07,667: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,668: DEBUG *** Stored sent XY position no. 257
+2018-06-24 17:43:07,674: DEBUG *** Stored received XY position no. 258
+2018-06-24 17:43:07,674: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,674: DEBUG *** Stored sent XY position no. 258
+2018-06-24 17:43:07,680: DEBUG *** Stored received XY position no. 259
+2018-06-24 17:43:07,680: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,681: DEBUG *** Stored sent XY position no. 259
+2018-06-24 17:43:07,687: DEBUG *** Stored received XY position no. 260
+2018-06-24 17:43:07,687: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,687: DEBUG *** Stored sent XY position no. 260
+2018-06-24 17:43:07,693: DEBUG *** Stored received XY position no. 261
+2018-06-24 17:43:07,693: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,694: DEBUG *** Stored sent XY position no. 261
+2018-06-24 17:43:07,700: DEBUG *** Stored received XY position no. 262
+2018-06-24 17:43:07,700: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,700: DEBUG *** Stored sent XY position no. 262
+2018-06-24 17:43:07,706: DEBUG *** Stored received XY position no. 263
+2018-06-24 17:43:07,706: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,707: DEBUG *** Stored sent XY position no. 263
+2018-06-24 17:43:07,713: DEBUG *** Stored received XY position no. 264
+2018-06-24 17:43:07,713: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,713: DEBUG *** Stored sent XY position no. 264
+2018-06-24 17:43:07,719: DEBUG *** Stored received XY position no. 265
+2018-06-24 17:43:07,719: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,720: DEBUG *** Stored sent XY position no. 265
+2018-06-24 17:43:07,726: DEBUG *** Stored received XY position no. 266
+2018-06-24 17:43:07,726: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,727: DEBUG *** Stored sent XY position no. 266
+2018-06-24 17:43:07,733: DEBUG *** Stored received XY position no. 267
+2018-06-24 17:43:07,733: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,733: DEBUG *** Stored sent XY position no. 267
+2018-06-24 17:43:07,739: DEBUG *** Stored received XY position no. 268
+2018-06-24 17:43:07,739: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,740: DEBUG *** Stored sent XY position no. 268
+2018-06-24 17:43:07,746: DEBUG *** Stored received XY position no. 269
+2018-06-24 17:43:07,746: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,747: DEBUG *** Stored sent XY position no. 269
+2018-06-24 17:43:07,752: DEBUG *** Stored received XY position no. 270
+2018-06-24 17:43:07,752: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,753: DEBUG *** Stored sent XY position no. 270
+2018-06-24 17:43:07,759: DEBUG *** Stored received XY position no. 271
+2018-06-24 17:43:07,759: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,760: DEBUG *** Stored sent XY position no. 271
+2018-06-24 17:43:07,765: DEBUG *** Stored received XY position no. 272
+2018-06-24 17:43:07,766: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,766: DEBUG *** Stored sent XY position no. 272
+2018-06-24 17:43:07,772: DEBUG *** Stored received XY position no. 273
+2018-06-24 17:43:07,772: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,773: DEBUG *** Stored sent XY position no. 273
+2018-06-24 17:43:07,779: DEBUG *** Stored received XY position no. 274
+2018-06-24 17:43:07,779: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,779: DEBUG *** Stored sent XY position no. 274
+2018-06-24 17:43:07,785: DEBUG *** Stored received XY position no. 275
+2018-06-24 17:43:07,785: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,786: DEBUG *** Stored sent XY position no. 275
+2018-06-24 17:43:07,793: DEBUG *** Stored received XY position no. 276
+2018-06-24 17:43:07,793: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,795: DEBUG *** Stored sent XY position no. 276
+2018-06-24 17:43:07,801: DEBUG *** Stored received XY position no. 277
+2018-06-24 17:43:07,802: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,803: DEBUG *** Stored sent XY position no. 277
+2018-06-24 17:43:07,810: DEBUG *** Stored received XY position no. 278
+2018-06-24 17:43:07,810: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,812: DEBUG *** Stored sent XY position no. 278
+2018-06-24 17:43:07,819: DEBUG *** Stored received XY position no. 279
+2018-06-24 17:43:07,819: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,821: DEBUG *** Stored sent XY position no. 279
+2018-06-24 17:43:07,827: DEBUG *** Stored received XY position no. 280
+2018-06-24 17:43:07,828: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,829: DEBUG *** Stored sent XY position no. 280
+2018-06-24 17:43:07,835: DEBUG *** Stored received XY position no. 281
+2018-06-24 17:43:07,836: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,837: DEBUG *** Stored sent XY position no. 281
+2018-06-24 17:43:07,843: DEBUG *** Stored received XY position no. 282
+2018-06-24 17:43:07,843: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,845: DEBUG *** Stored sent XY position no. 282
+2018-06-24 17:43:07,851: DEBUG *** Stored received XY position no. 283
+2018-06-24 17:43:07,851: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,852: DEBUG *** Stored sent XY position no. 283
+2018-06-24 17:43:07,859: DEBUG *** Stored received XY position no. 284
+2018-06-24 17:43:07,859: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,859: DEBUG *** Stored sent XY position no. 284
+2018-06-24 17:43:07,866: DEBUG *** Stored received XY position no. 285
+2018-06-24 17:43:07,866: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,867: DEBUG *** Stored sent XY position no. 285
+2018-06-24 17:43:07,873: DEBUG *** Stored received XY position no. 286
+2018-06-24 17:43:07,874: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,875: DEBUG *** Stored sent XY position no. 286
+2018-06-24 17:43:07,881: DEBUG *** Stored received XY position no. 287
+2018-06-24 17:43:07,881: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,882: DEBUG *** Stored sent XY position no. 287
+2018-06-24 17:43:07,888: DEBUG *** Stored received XY position no. 288
+2018-06-24 17:43:07,888: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,889: DEBUG *** Stored sent XY position no. 288
+2018-06-24 17:43:07,895: DEBUG *** Stored received XY position no. 289
+2018-06-24 17:43:07,895: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,896: DEBUG *** Stored sent XY position no. 289
+2018-06-24 17:43:07,902: DEBUG *** Stored received XY position no. 290
+2018-06-24 17:43:07,902: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,903: DEBUG *** Stored sent XY position no. 290
+2018-06-24 17:43:07,909: DEBUG *** Stored received XY position no. 291
+2018-06-24 17:43:07,910: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,911: DEBUG *** Stored sent XY position no. 291
+2018-06-24 17:43:07,917: DEBUG *** Stored received XY position no. 292
+2018-06-24 17:43:07,917: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,918: DEBUG *** Stored sent XY position no. 292
+2018-06-24 17:43:07,925: DEBUG *** Stored received XY position no. 293
+2018-06-24 17:43:07,925: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,926: DEBUG *** Stored sent XY position no. 293
+2018-06-24 17:43:07,933: DEBUG *** Stored received XY position no. 294
+2018-06-24 17:43:07,933: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,935: DEBUG *** Stored sent XY position no. 294
+2018-06-24 17:43:07,942: DEBUG *** Stored received XY position no. 295
+2018-06-24 17:43:07,942: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,943: DEBUG *** Stored sent XY position no. 295
+2018-06-24 17:43:07,950: DEBUG *** Stored received XY position no. 296
+2018-06-24 17:43:07,950: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,951: DEBUG *** Stored sent XY position no. 296
+2018-06-24 17:43:07,958: DEBUG *** Stored received XY position no. 297
+2018-06-24 17:43:07,958: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,959: DEBUG *** Stored sent XY position no. 297
+2018-06-24 17:43:07,966: DEBUG *** Stored received XY position no. 298
+2018-06-24 17:43:07,966: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,967: DEBUG *** Stored sent XY position no. 298
+2018-06-24 17:43:07,974: DEBUG *** Stored received XY position no. 299
+2018-06-24 17:43:07,974: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,975: DEBUG *** Stored sent XY position no. 299
+2018-06-24 17:43:07,981: DEBUG *** Stored received XY position no. 300
+2018-06-24 17:43:07,982: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,983: DEBUG *** Stored sent XY position no. 300
+2018-06-24 17:43:07,989: DEBUG *** Stored received XY position no. 301
+2018-06-24 17:43:07,989: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,991: DEBUG *** Stored sent XY position no. 301
+2018-06-24 17:43:07,997: DEBUG *** Stored received XY position no. 302
+2018-06-24 17:43:07,997: DEBUG *** MC: making decisions
+2018-06-24 17:43:07,998: DEBUG *** Stored sent XY position no. 302
+2018-06-24 17:43:08,004: DEBUG *** Stored received XY position no. 303
+2018-06-24 17:43:08,005: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,006: DEBUG *** Stored sent XY position no. 303
+2018-06-24 17:43:08,012: DEBUG *** Stored received XY position no. 304
+2018-06-24 17:43:08,012: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,013: DEBUG *** Stored sent XY position no. 304
+2018-06-24 17:43:08,019: DEBUG *** Stored received XY position no. 305
+2018-06-24 17:43:08,020: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,021: DEBUG *** Stored sent XY position no. 305
+2018-06-24 17:43:08,027: DEBUG *** Stored received XY position no. 306
+2018-06-24 17:43:08,027: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,028: DEBUG *** Stored sent XY position no. 306
+2018-06-24 17:43:08,034: DEBUG *** Stored received XY position no. 307
+2018-06-24 17:43:08,034: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,035: DEBUG *** Stored sent XY position no. 307
+2018-06-24 17:43:08,041: DEBUG *** Stored received XY position no. 308
+2018-06-24 17:43:08,042: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,043: DEBUG *** Stored sent XY position no. 308
+2018-06-24 17:43:08,049: DEBUG *** Stored received XY position no. 309
+2018-06-24 17:43:08,049: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,050: DEBUG *** Stored sent XY position no. 309
+2018-06-24 17:43:08,056: DEBUG *** Stored received XY position no. 310
+2018-06-24 17:43:08,057: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,058: DEBUG *** Stored sent XY position no. 310
+2018-06-24 17:43:08,064: DEBUG *** Stored received XY position no. 311
+2018-06-24 17:43:08,064: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,065: DEBUG *** Stored sent XY position no. 311
+2018-06-24 17:43:08,071: DEBUG *** Stored received XY position no. 312
+2018-06-24 17:43:08,071: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,072: DEBUG *** Stored sent XY position no. 312
+2018-06-24 17:43:08,078: DEBUG *** Stored received XY position no. 313
+2018-06-24 17:43:08,078: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,079: DEBUG *** Stored sent XY position no. 313
+2018-06-24 17:43:08,085: DEBUG *** Stored received XY position no. 314
+2018-06-24 17:43:08,085: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,086: DEBUG *** Stored sent XY position no. 314
+2018-06-24 17:43:08,092: DEBUG *** Stored received XY position no. 315
+2018-06-24 17:43:08,093: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,094: DEBUG *** Stored sent XY position no. 315
+2018-06-24 17:43:08,100: DEBUG *** Stored received XY position no. 316
+2018-06-24 17:43:08,100: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,101: DEBUG *** Stored sent XY position no. 316
+2018-06-24 17:43:08,107: DEBUG *** Stored received XY position no. 317
+2018-06-24 17:43:08,108: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,108: DEBUG *** Stored sent XY position no. 317
+2018-06-24 17:43:08,115: DEBUG *** Stored received XY position no. 318
+2018-06-24 17:43:08,115: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,116: DEBUG *** Stored sent XY position no. 318
+2018-06-24 17:43:08,122: DEBUG *** Stored received XY position no. 319
+2018-06-24 17:43:08,122: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,123: DEBUG *** Stored sent XY position no. 319
+2018-06-24 17:43:08,129: DEBUG *** Stored received XY position no. 320
+2018-06-24 17:43:08,129: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,130: DEBUG *** Stored sent XY position no. 320
+2018-06-24 17:43:08,136: DEBUG *** Stored received XY position no. 321
+2018-06-24 17:43:08,136: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,137: DEBUG *** Stored sent XY position no. 321
+2018-06-24 17:43:08,144: DEBUG *** Stored received XY position no. 322
+2018-06-24 17:43:08,144: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,145: DEBUG *** Stored sent XY position no. 322
+2018-06-24 17:43:08,151: DEBUG *** Stored received XY position no. 323
+2018-06-24 17:43:08,151: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,152: DEBUG *** Stored sent XY position no. 323
+2018-06-24 17:43:08,158: DEBUG *** Stored received XY position no. 324
+2018-06-24 17:43:08,158: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,159: DEBUG *** Stored sent XY position no. 324
+2018-06-24 17:43:08,165: DEBUG *** Stored received XY position no. 325
+2018-06-24 17:43:08,165: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,166: DEBUG *** Stored sent XY position no. 325
+2018-06-24 17:43:08,172: DEBUG *** Stored received XY position no. 326
+2018-06-24 17:43:08,172: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,174: DEBUG *** Stored sent XY position no. 326
+2018-06-24 17:43:08,176: DEBUG *** ImageSDL2: Load </home/thomas/Desktop/capstone/6_User_Interface/1_Software/2_Images/clicked.png>
+2018-06-24 17:43:08,181: DEBUG *** Stored received XY position no. 327
+2018-06-24 17:43:08,181: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,182: DEBUG *** Stored sent XY position no. 327
+2018-06-24 17:43:08,189: DEBUG *** Stored received XY position no. 328
+2018-06-24 17:43:08,189: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,190: DEBUG *** Stored sent XY position no. 328
+2018-06-24 17:43:08,197: DEBUG *** Stored received XY position no. 329
+2018-06-24 17:43:08,197: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,198: DEBUG *** Stored sent XY position no. 329
+2018-06-24 17:43:08,204: DEBUG *** Stored received XY position no. 330
+2018-06-24 17:43:08,204: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,206: DEBUG *** Stored sent XY position no. 330
+2018-06-24 17:43:08,212: DEBUG *** Stored received XY position no. 331
+2018-06-24 17:43:08,212: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,213: DEBUG *** Stored sent XY position no. 331
+2018-06-24 17:43:08,219: DEBUG *** Stored received XY position no. 332
+2018-06-24 17:43:08,219: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,220: DEBUG *** Stored sent XY position no. 332
+2018-06-24 17:43:08,227: DEBUG *** Stored received XY position no. 333
+2018-06-24 17:43:08,227: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,228: DEBUG *** Stored sent XY position no. 333
+2018-06-24 17:43:08,234: DEBUG *** Stored received XY position no. 334
+2018-06-24 17:43:08,234: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,235: DEBUG *** Stored sent XY position no. 334
+2018-06-24 17:43:08,241: DEBUG *** Stored received XY position no. 335
+2018-06-24 17:43:08,241: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,242: DEBUG *** Stored sent XY position no. 335
+2018-06-24 17:43:08,249: DEBUG *** Stored received XY position no. 336
+2018-06-24 17:43:08,249: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,250: DEBUG *** Stored sent XY position no. 336
+2018-06-24 17:43:08,256: DEBUG *** Stored received XY position no. 337
+2018-06-24 17:43:08,257: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,258: DEBUG *** Stored sent XY position no. 337
+2018-06-24 17:43:08,264: DEBUG *** Stored received XY position no. 338
+2018-06-24 17:43:08,264: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,265: DEBUG *** Stored sent XY position no. 338
+2018-06-24 17:43:08,271: DEBUG *** Stored received XY position no. 339
+2018-06-24 17:43:08,271: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,272: DEBUG *** Stored sent XY position no. 339
+2018-06-24 17:43:08,278: DEBUG *** Stored received XY position no. 340
+2018-06-24 17:43:08,279: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,280: DEBUG *** Stored sent XY position no. 340
+2018-06-24 17:43:08,286: DEBUG *** Stored received XY position no. 341
+2018-06-24 17:43:08,286: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,287: DEBUG *** Stored sent XY position no. 341
+2018-06-24 17:43:08,293: DEBUG *** Stored received XY position no. 342
+2018-06-24 17:43:08,293: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,294: DEBUG *** Stored sent XY position no. 342
+2018-06-24 17:43:08,299: INFO *** Base: Leaving application in progress...
+2018-06-24 17:43:08,301: DEBUG *** Stored received XY position no. 343
+2018-06-24 17:43:08,301: DEBUG *** MC: making decisions
+2018-06-24 17:43:08,317: DEBUG *** Closed hdf5 file
+2018-06-24 17:43:08,318: ERROR *** Error Uninitializing PCAN USB
+2018-06-24 17:43:08,318: ERROR *** (0, 'A PCAN Channel has not been initialized yet or the initialization process has failed')

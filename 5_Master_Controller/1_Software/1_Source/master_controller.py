@@ -18,15 +18,22 @@ import json
 import cv2
 import Queue
 
-# DO NOT CHANGE! now Kivy logger works with default python logger
+### DO NOT CHANGE logging setup! now Kivy logger works with default python logger
 # Create and set format of the logging file
-# If you want to disable the logger then set "level=logging.ERROR"
 import logging
-logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG, format='%(asctime)s: %(levelname)s *** %(message)s')
+logging.basicConfig(filename='debug.log', filemode='w', format='%(asctime)s: %(levelname)s *** %(message)s')
 
 #os.environ["KIVY_NO_FILELOG"] = "1"
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
+# To disable the logger change 'log_level' from 'debug' to 'error'
+from kivy.config import Config 
+Config.set('kivy', 'log_level', 'debug')
+Config.write()
+
+# Replace default logger with Kivy logger
 from kivy.logger import logging
+### END logging setup
 
 # add file path for puck tracker and user interface modules
 sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')

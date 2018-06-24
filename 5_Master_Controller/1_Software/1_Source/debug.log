@@ -1,0 +1,30 @@
+2018-06-24 17:14:06,145: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-06-24_19.txt
+2018-06-24 17:14:06,145: INFO *** Kivy: v1.10.0
+2018-06-24 17:14:06,145: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
+[GCC 5.4.0 20160609]
+2018-06-24 17:14:06,152: INFO *** Factory: 194 symbols loaded
+2018-06-24 17:14:06,230: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
+2018-06-24 17:14:06,234: INFO *** Text: Provider: sdl2
+2018-06-24 17:14:06,246: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
+2018-06-24 17:14:06,248: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
+2018-06-24 17:14:06,250: ERROR *** Error Initializing PCAN USB
+2018-06-24 17:14:06,250: ERROR *** (0, 'The driver is not loaded')
+2018-06-24 17:14:06,257: INFO *** MC: Entering main loop
+2018-06-24 17:14:06,281: INFO *** OSC: using <multiprocessing> for socket
+2018-06-24 17:14:06,283: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
+2018-06-24 17:14:06,497: INFO *** GL: Using the "OpenGL" graphics system
+2018-06-24 17:14:06,497: INFO *** GL: Backend used <gl>
+2018-06-24 17:14:06,497: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
+2018-06-24 17:14:06,497: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
+2018-06-24 17:14:06,497: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
+2018-06-24 17:14:06,497: INFO *** GL: OpenGL parsed version: 4, 5
+2018-06-24 17:14:06,497: INFO *** GL: Shading version <4.50 NVIDIA>
+2018-06-24 17:14:06,498: INFO *** GL: Texture max size <16384>
+2018-06-24 17:14:06,498: INFO *** GL: Texture max units <32>
+2018-06-24 17:14:06,510: INFO *** Window: auto add sdl2 input provider
+2018-06-24 17:14:06,511: INFO *** Window: virtual keyboard not allowed, single mode, not docked
+2018-06-24 17:14:06,539: INFO *** GL: NPOT texture support is available
+2018-06-24 17:14:06,826: INFO *** Base: Start application main loop
+2018-06-24 17:14:08,226: INFO *** Base: Leaving application in progress...
+2018-06-24 17:14:08,239: ERROR *** Error Uninitializing PCAN USB
+2018-06-24 17:14:08,239: ERROR *** (0, 'A PCAN Channel has not been initialized yet or the initialization process has failed')

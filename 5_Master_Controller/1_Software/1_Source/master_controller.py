@@ -9,11 +9,7 @@ import sys
 import math
 import select
 import os
-#disable kivy logger that block our logger (didn't fix the whole problem)
-os.environ["KIVY_NO_FILELOG"] = "1"
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
-import logging
 import h5py
 import numpy as np
 import datetime
@@ -22,10 +18,15 @@ import json
 import cv2
 import Queue
 
+# DO NOT CHANGE! now Kivy logger works with default python logger
 # Create and set format of the logging file
 # If you want to disable the logger then set "level=logging.ERROR"
-logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
-#logger = logging.getLoger().getChild(__name__)
+import logging
+logging.basicConfig(filename='debug.log', filemode='w', level=logging.DEBUG, format='%(asctime)s: %(levelname)s *** %(message)s')
+
+#os.environ["KIVY_NO_FILELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
+from kivy.logger import logging
 
 # add file path for puck tracker and user interface modules
 sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')
@@ -780,6 +781,8 @@ def make_decisions():
 	# pass state data to the UI
 	send_UI_states()
 
+	logging.debug("MC: making decisions")
+
 	# Check ALL states (NEED to include PC CAN states)
 	if (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error):
 		handle_errors()
@@ -894,7 +897,7 @@ def handle_visual_game():
 def handle_manual_game():
 	mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
 	mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
-	logging.debug("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
+	logging.error("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
 	filter_Tx_PC_Cmd()
 	Tx_PC_Cmd(PCAN)
 ## end of function
@@ -986,6 +989,8 @@ try:
 
 	# Initialize IPC between MC - PC - UI
 	Init_IPC()
+
+	logging.info("MC: Entering main loop")
 
 	# Master Controller loop
 	while True:

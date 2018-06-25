@@ -28,7 +28,7 @@ os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
 # To disable the logger change 'log_level' from 'debug' to 'error'
 from kivy.config import Config 
-Config.set('kivy', 'log_level', 'debug')
+Config.set('kivy', 'log_level', 'info')
 Config.write()
 
 # Replace default logger with Kivy logger
@@ -73,6 +73,8 @@ ui_diagnostic_request_enum = 0
 ui_game_state = 0
 ui_screen = 0
 ui_goal_enum = 0
+mc_state_enum = 0
+mc_error_enum = 0
 
 settings = 0
 
@@ -117,6 +119,10 @@ pt_state = 0
 pt_error = 0
 ui_state = 0
 ui_error = 0
+mc_state = 0
+mc_error = 0
+pc_state = 0
+pc_error = 0
 ui_diagnostic_request = 0
 
 # puck prediction
@@ -187,6 +193,9 @@ def get_enums():
 	global ui_game_mode_enum
 	global ui_paddle_pos_enum
 
+	global mc_state_enum
+	global mc_error_enum
+
 	global settings
 
 	# get settings from file
@@ -211,6 +220,9 @@ def get_enums():
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
 	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
+
+	mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
+	mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])	
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -249,7 +261,7 @@ def Init_PCAN(device):
 		logging.error("Error Initializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 	else:
-		logging.debug("PCAN USB Initialized")
+		logging.info("PCAN USB Initialized")
 
 ## end of method
 
@@ -264,7 +276,7 @@ def Uninit_PCAN(device):
 		logging.error("Error Uninitializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 	else:
-		logging.debug("PCAN USB Uninitialized")
+		logging.info("PCAN USB Uninitialized")
 
 ## end of method
 
@@ -276,6 +288,8 @@ def Uninit_PCAN(device):
 def Rx_CAN(device):
 	global pc_pos_status_x_mm
 	global pc_pos_status_y_mm
+	global pc_state
+	global goal_scored
 
 	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
 
@@ -287,6 +301,10 @@ def Rx_CAN(device):
 			pc_pos_status_x_mm_b1 = message[1].DATA[1]
 			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
 			logging.debug("Incoming message from PC, Status X: %s", pc_pos_status_x_mm)
+
+			#pc_pos_status_x_mm_b2 = message[1].DATA[2]
+			#pc_state = pc_pos_status_x_m
+			#goal_scored = 
 
 		# Process PC Status Y message
 		elif message[1].ID == ID_pc_status_y:
@@ -788,8 +806,6 @@ def make_decisions():
 	# pass state data to the UI
 	send_UI_states()
 
-	logging.debug("MC: making decisions")
-
 	# Check ALL states (NEED to include PC CAN states)
 	if (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error):
 		handle_errors()
@@ -829,10 +845,6 @@ def make_decisions():
 ## pass state data of other modules to the UI
 ##
 def send_UI_states():
-
-	# TODO get real data for these vars
-	mc_state = 0
-	mc_error = 0
 	pc_state = 0
 	pc_error = 0
 
@@ -842,6 +854,10 @@ def send_UI_states():
 	ui_rx[ui_rx_enum.mc_error] = mc_error
 	ui_rx[ui_rx_enum.pc_state] = pc_state
 	ui_rx[ui_rx_enum.pc_error] = pc_error
+
+	logging.debug("MC: pt_state: %s, pt_error: %s", pt_state, pt_error)
+	logging.debug("MC: mc_state: %s, mc_error: %s", mc_state, mc_error)
+	logging.debug("MC: pc_state: %s, pc_error: %s", pc_state, pc_error)
 ## end of function
 
 
@@ -904,7 +920,7 @@ def handle_visual_game():
 def handle_manual_game():
 	mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
 	mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
-	logging.error("Manual position from UI: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
+	logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
 	filter_Tx_PC_Cmd()
 	Tx_PC_Cmd(PCAN)
 ## end of function
@@ -999,16 +1015,24 @@ try:
 
 	logging.info("MC: Entering main loop")
 
+	# Set MC states
+	mc_state = mc_state_enum.running
+	mc_error = mc_error_enum.idle
+
 	# Master Controller loop
 	while True:
 		Rx_IPC()
 		Rx_CAN(PCAN)
-		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		make_decisions()
-		add_pos_sent_HDF5(str(datetime.datetime.now()))
-		update_dset_HDF5()
+		#add_pos_sent_HDF5(str(datetime.datetime.now()))
+		#update_dset_HDF5()
 		sleep(timeout)
+
 except KeyboardInterrupt:
+	mc_state = mc_state_enum.stopped
+	mc_error = mc_error_enum.crashed
+	send_UI_states()
 	sys.exit()
 
 ## end of function

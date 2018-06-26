@@ -488,7 +488,7 @@ def get_enums():
     ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
     ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
     ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
-    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
     ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
     ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 

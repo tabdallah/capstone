@@ -75,6 +75,12 @@ ui_screen = 0
 ui_goal_scored_enum = 0
 mc_state_enum = 0
 mc_error_enum = 0
+pc_motor_speed_x_enum = 0
+pc_motor_speed_y_enum = 0
+pc_state_enum = 0
+pc_error_enum = 0
+pc_state_cmd_enum = 0
+
 
 settings = 0
 
@@ -211,6 +217,9 @@ def get_enums():
 	global ui_game_difficulty_enum
 	global ui_game_mode_enum
 	global ui_paddle_pos_enum
+	global pc_motor_speed_y_enum 
+	global pc_motor_speed_x_enum 
+
 
 	global mc_state_enum
 	global mc_error_enum
@@ -246,8 +255,8 @@ def get_enums():
 	pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
 	pc_state_cmd_enum = enum(settings['paddle_controller']['enumerations']['pc_state_cmd'])
 	pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
-	pc_motor_speed_enum = enum(settings['paddle_controller']['enumerations']['pc_motor_speed'])
-
+	pc_motor_speed_x_enum = enum(settings['paddle_controller']['enumerations']['pc_motor_speed_x'])
+	pc_motor_speed_y_enum = enum(settings['paddle_controller']['enumerations']['pc_motor_speed_y'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -878,12 +887,12 @@ def make_decisions():
 	elif ui_state != ui_state_enum.running:
 		return
 
-	elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off)
+	elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off):
 		Tx_PC_Cmd(PCAN)
 		return
 
 	# Check which UI screen we are on, this dictates a large part of what state we'll be in
-	if ui_screen == ui_screen_enum.visual
+	if ui_screen == ui_screen_enum.visual:
 		handle_visual_game()
 
 	elif ui_screen == ui_screen_enum.manual:
@@ -941,7 +950,7 @@ def handle_errors():
 			logging.error("MC: Commanding PC to Clear Error State to resolve the issue")
 	
 	# UI error	
-	elif ui_state == ui_state_enum.error
+	elif ui_state == ui_state_enum.error:
 		logging.error("MC: UI Error: %i. Starting a process to shut off PC, PT, UI, MC", ui_error)
 		# shut off PC
 		if (pc_state != pc_state_enum.off):
@@ -951,14 +960,14 @@ def handle_errors():
 		# shut off PT and MC
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 		if (pt_state == pt_state_enum.quit):
-		prepare_to_quit()
-		sys.exit(0)
+			prepare_to_quit()
+			sys.exit(0)
 
 	# PT error
-	elif pt_state == pt_state_enum.error
-		if pt_error == pt_error_enum.calibration_failed
+	elif pt_state == pt_state_enum.error:
+		if pt_error == pt_error_enum.calibration_failed:
 			logging.error("MC: PT Error: %i (Calibration Failed), try recalibrating or restarting the system", ui_error)
-		else 
+		else:
 			logging.error("MC: PT Error: %i, Starting a process to shut off PC, PT, UI, MC", ui_error)
 			# shut off PC
 			if (pc_state != pc_state_enum.off):
@@ -968,8 +977,8 @@ def handle_errors():
 			# shut off UI and MC
 			ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 			if (ui_state == ui_state_enum.quit):
-			prepare_to_quit()
-			sys.exit(0)
+				prepare_to_quit()
+				sys.exit(0)
 
 
 ## end of function
@@ -980,15 +989,15 @@ def handle_errors():
 ##
 def prepare_to_quit():
 	while True:
-			if ui_process.is_alive() or pt_process.is_alive():
-				ui_process.terminate()
-				pt_process.terminate()
-			else:
-				break
-		Close_HDF5()
-		Uninit_PCAN(PCAN)
-		visualization_data_tx.close()
-		visualization_data_rx.close()
+		if ui_process.is_alive() or pt_process.is_alive():
+			ui_process.terminate()
+			pt_process.terminate()
+		else:
+			break
+	Close_HDF5()
+	Uninit_PCAN(PCAN)
+	visualization_data_tx.close()
+	visualization_data_rx.close()
 ## end of function
 
 ##  
@@ -1028,7 +1037,7 @@ def handle_quits():
 ##
 def handle_visual_game():
 	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
-	if pt_state != pt_state_enum.tracking
+	if pt_state != pt_state_enum.tracking:
 		logging.debug("MC: Camera isn't in tracking state, can't start visual game")	
 		return
 
@@ -1036,7 +1045,7 @@ def handle_visual_game():
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
 		if pc_goal_scored == goal_scored_enum.none:
 			get_paddle_position()
-		Tx_PC_Cmd(PCAN).
+		Tx_PC_Cmd(PCAN)
 
 	elif ui_game_state == ui_game_state_enum.stopped:
 		Tx_PC_Cmd(PCAN)
@@ -1050,7 +1059,7 @@ def handle_manual_game():
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
 
-	if (pt_state != pt_state_enum.tracking)	and (pt_state != pt_state_enum.idle)
+	if (pt_state != pt_state_enum.tracking)	and (pt_state != pt_state_enum.idle):
 		logging.debug("MC: Camera isn't in tracking or idle state, can't start manual game")
 		return
 

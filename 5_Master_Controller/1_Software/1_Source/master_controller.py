@@ -171,7 +171,7 @@ def get_enums():
 	global ui_game_state_enum
 	global ui_screen_enum
 	global ui_goal_enum
-	global ui_game_difficulty_enum
+	global ui_game_speed_enum
 	global ui_game_mode_enum
 
 	global settings
@@ -196,7 +196,7 @@ def get_enums():
 	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
 	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
 	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
-	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
+	ui_game_speed_enum = enum(settings['user_interface']['enumerations']['ui_game_speed'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
 
 ##############################################################################################
@@ -909,7 +909,8 @@ def make_decisions():
 ##
 def update_game_settings():
     global game_mode
-    global game_difficulty
+    global game_speed_x
+    global game_speed_y
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
@@ -917,7 +918,8 @@ def update_game_settings():
         fp.close()
 
     game_mode = settings['user_interface']['game_mode']
-    game_difficulty = settings['user_interface']['game_difficulty']
+    game_speed_x = settings['user_interface']['game_speed_x']
+    game_speed_y = settings['user_interface']['game_speed_y']
 
 ## end of function
 

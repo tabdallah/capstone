@@ -11,10 +11,12 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.audio import SoundLoader
+from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.uix.scatter import Scatter
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.widget import Widget
@@ -82,16 +84,30 @@ class DiagnosticsScreen(BoxLayout, Screen):
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.diagnostic
 
+    def clear_errors(self, *args):
+        global ui_error
+        self.manager.ui_rx[ui_rx_enum.pt_error] = pt_error_enum.idle
+        self.manager.ui_rx[ui_rx_enum.pc_error] = pc_error_enum.idle
+        self.manager.ui_rx[ui_rx_enum.mc_error] = mc_error_enum.idle
+        ui_error = ui_error_enum.idle
+
 class SettingsScreen(BoxLayout, Screen):
     def on_enter(self):
         get_settings() #TODO: remove as this is likely up to date already
 
-        if game_difficulty == ui_game_difficulty_enum.easy:
-            self.ids['easy_button'].state = 'down'
-        elif game_difficulty == ui_game_difficulty_enum.medium:
-            self.ids['medium_button'].state = 'down'
-        elif game_difficulty == ui_game_difficulty_enum.hard:
-            self.ids['hard_button'].state = 'down'
+        if game_speed_x == ui_game_speed_enum.slow:
+            self.ids['slow_button_x'].state = 'down'
+        elif game_speed_x == ui_game_speed_enum.medium:
+            self.ids['medium_button_x'].state = 'down'
+        elif game_speed_x == ui_game_speed_enum.fast:
+            self.ids['fast_button_x'].state = 'down'
+
+        if game_speed_y == ui_game_speed_enum.slow:
+            self.ids['slow_button_y'].state = 'down'
+        elif game_speed_y == ui_game_speed_enum.medium:
+            self.ids['medium_button_y'].state = 'down'
+        elif game_speed_y == ui_game_speed_enum.fast:
+            self.ids['fast_button_y'].state = 'down'
 
         if game_length == 60:
             self.ids['one_min_button'].state = 'down'
@@ -105,17 +121,19 @@ class SettingsScreen(BoxLayout, Screen):
         elif game_mode == ui_game_mode_enum.offense:
             self.ids['offense_button'].state = 'down'
 
-    def change_game_difficulty(self, *args):
-        global game_difficulty
-        if self.ids['easy_button'].state == 'down':
-            game_difficulty = ui_game_difficulty_enum.easy
-        elif self.ids['medium_button'].state == 'down':
-            game_difficulty = ui_game_difficulty_enum.medium
-        elif self.ids['hard_button'].state == 'down':
-            game_difficulty = ui_game_difficulty_enum.hard
-
-    def change_game_length(self, *args):
+    def change_game_setting(self, *args):
+        global game_mode
         global game_length
+        global game_speed_x
+        global game_speed_y
+
+        # game mode
+        if self.ids['offense_button'].state == 'down':
+            game_mode = ui_game_mode_enum.offense
+        elif self.ids['defense_button'].state == 'down':
+            game_mode = ui_game_mode_enum.defense
+
+        # game length
         if self.ids['one_min_button'].state == 'down':
             game_length = 60
         elif self.ids['two_min_button'].state == 'down':
@@ -123,12 +141,21 @@ class SettingsScreen(BoxLayout, Screen):
         elif self.ids['five_min_button'].state == 'down':
             game_length = 300
 
-    def change_game_mode(self, *args):
-        global game_mode
-        if self.ids['offense_button'].state == 'down':
-            game_mode = ui_game_mode_enum.offense
-        elif self.ids['defense_button'].state == 'down':
-            game_mode = ui_game_mode_enum.defense
+        # game x axis speed
+        if self.ids['slow_button_x'].state == 'down':
+            game_speed_x = ui_game_speed_enum.slow
+        elif self.ids['medium_button_x'].state == 'down':
+            game_speed_x = ui_game_speed_enum.medium
+        elif self.ids['fast_button_x'].state == 'down':
+            game_speed_x = ui_game_speed_enum.fast
+
+        # game y axis speed
+        if self.ids['slow_button_y'].state == 'down':
+            game_speed_y = ui_game_speed_enum.slow
+        elif self.ids['medium_button_y'].state == 'down':
+            game_speed_y = ui_game_speed_enum.medium
+        elif self.ids['fast_button_y'].state == 'down':
+            game_speed_y = ui_game_speed_enum.fast
 
     def go_menu(self, *args):
         self.manager.current = 'menu'
@@ -224,17 +251,20 @@ class PuckCalibrationScreen(BoxLayout, Screen):
     def on_leave(self):
         self.ids['camera_data'].on_leave()
 
+error_set = 0
 ##############################################################################################
 # Screen Manager
 ##############################################################################################
 class ScreenManagement(ScreenManager):
     def __init__(self, ui_rx, ui_tx, visualization_data, **kwargs):
         super(ScreenManagement, self).__init__(**kwargs)
-        
+        global ui_error
         # IPC management
         self.ui_rx = ui_rx
         self.ui_tx = ui_tx
         self.visualization_data = visualization_data
+
+        ui_error = 1
 
         # screen management
         self.transition = FadeTransition()
@@ -253,7 +283,22 @@ class ScreenManagement(ScreenManager):
 
     def process_data(self, *args):
         self.update_diagnostic_screen()
-        
+        global error_set
+
+        # check for errors
+        if ((self.ui_rx[ui_rx_enum.pt_error] != 0) or
+            (self.ui_rx[ui_rx_enum.pc_error] != 0) or
+            (self.ui_rx[ui_rx_enum.mc_error] != 0) or
+            ui_error != 0) and (error_set == 0):
+            error_set = 1
+            with self.canvas.after:
+                Color(1,0,0,0.2)
+                Rectangle(pos=self.pos, size=self.size)
+        else:
+            with self.canvas.after:
+                Color(0,0,0,0)
+                Rectangle(pos=self.pos, size=self.size)
+            
         # keep track of score
         if int(self.ui_rx[ui_rx_enum.goal]) != ui_goal_enum.idle:
             self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal])
@@ -272,20 +317,13 @@ class ScreenManagement(ScreenManager):
         self.get_screen('diagnostics').ids['mc_error_label'].text = mc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_error]]
         self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
         self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
-        if self.current == 'fiducial_calibration':
-            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('fiducial_calibration').ids['lower_hue'].value
-            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('fiducial_calibration').ids['lower_sat'].value
-            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('fiducial_calibration').ids['lower_val'].value
-            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('fiducial_calibration').ids['upper_hue'].value
-            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('fiducial_calibration').ids['upper_sat'].value
-            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('fiducial_calibration').ids['upper_val'].value
-        elif self.current == 'puck_calibration':
-            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen('puck_calibration').ids['lower_hue'].value
-            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen('puck_calibration').ids['lower_sat'].value
-            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen('puck_calibration').ids['lower_val'].value
-            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen('puck_calibration').ids['upper_hue'].value
-            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen('puck_calibration').ids['upper_sat'].value
-            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen('puck_calibration').ids['upper_val'].value
+        if self.current == 'fiducial_calibration' or self.current == 'puck_calibration':
+            self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen(self.current).ids['lower_hue'].value
+            self.ui_tx[ui_tx_enum.lower_sat] = self.get_screen(self.current).ids['lower_sat'].value
+            self.ui_tx[ui_tx_enum.lower_val] = self.get_screen(self.current).ids['lower_val'].value
+            self.ui_tx[ui_tx_enum.upper_hue] = self.get_screen(self.current).ids['upper_hue'].value
+            self.ui_tx[ui_tx_enum.upper_sat] = self.get_screen(self.current).ids['upper_sat'].value
+            self.ui_tx[ui_tx_enum.upper_val] = self.get_screen(self.current).ids['upper_val'].value
 
 ##############################################################################################
 # Widget definitions
@@ -302,7 +340,6 @@ class GameControl(BoxLayout):
 
     def get_settings(self, *args):
         self.game_length = game_length
-        self.game_difficulty = game_difficulty
         
         # update 
         mins, secs = divmod(self.game_length, 60)
@@ -442,7 +479,7 @@ def get_enums():
     global pt_state_enum
     global ui_error_enum
     global ui_diagnostic_request_enum
-    global ui_game_difficulty_enum
+    global ui_game_speed_enum
     global ui_game_mode_enum
     global ui_game_state_enum
     global ui_goal_enum
@@ -469,7 +506,7 @@ def get_enums():
     # user interface enums
     ui_error_enum = enum(settings['user_interface']['enumerations']['ui_error'])   
     ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
-    ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
+    ui_game_speed_enum = enum(settings['user_interface']['enumerations']['ui_game_speed'])
     ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
     ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
     ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
@@ -486,7 +523,8 @@ def get_settings():
     global puck_lower_hsv
     global puck_upper_hsv
     global game_mode
-    global game_difficulty
+    global game_speed_x
+    global game_speed_y
     global game_length
 
     # get settings from file
@@ -509,7 +547,8 @@ def get_settings():
                       settings['puck_tracker']['puck']['color']['val']['upper'])
 
     game_mode = settings['user_interface']['game_mode']
-    game_difficulty = settings['user_interface']['game_difficulty']
+    game_speed_x = settings['user_interface']['game_speed_x']
+    game_speed_y = settings['user_interface']['game_speed_y']
     game_length = settings['user_interface']['game_length']
 
 def update_fiducial_values():
@@ -551,7 +590,8 @@ def update_puck_values():
 
 def update_game_settings():
     """Update things. TODO: Fix this"""
-    global game_difficulty
+    global game_speed_x
+    global game_speed_y
     global game_mode
     global game_length
     
@@ -560,7 +600,8 @@ def update_game_settings():
         fp.close()
     
     settings['user_interface']['game_mode'] = game_mode
-    settings['user_interface']['game_difficulty'] = game_difficulty
+    settings['user_interface']['game_speed_x'] = game_speed_x
+    settings['user_interface']['game_speed_y'] = game_speed_y
     settings['user_interface']['game_length'] = game_length
     
     with open((settings_filepath + "settings.json"), 'w+') as fp:

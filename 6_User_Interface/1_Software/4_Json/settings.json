@@ -1,14 +1,31 @@
 {
     "paddle_controller": {
         "enumerations": {
-            "pc_error": [
-                "idle", 
-                "crashed"
-            ], 
             "pc_state": [
-                "idle", 
-                "running", 
-                "stopped"
+                "off",
+                "calibration",
+                "on",
+                "error"
+            ],
+            "pc_state_cmd": [
+                "off",
+                "calibration",
+                "on",
+                "clear_error"
+            ],
+             "pc_error": [
+                "none",
+                "calibration"
+            ],
+             "pc_motor_speed_x": [
+                "slow", 
+                "medium", 
+                "fast"
+            ],
+            "pc_motor_speed_y": [
+                "slow", 
+                "medium", 
+                "fast"
             ]
         }
     }, 
@@ -54,13 +71,15 @@
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
-                "goal", 
+                "goal_scored", 
                 "pt_state", 
                 "pt_error", 
                 "pc_state", 
                 "pc_error", 
                 "mc_state", 
-                "mc_error"
+                "mc_error",
+                "pc_motor_speed_x",
+                "pc_motor_speed_y"
             ], 
             "ui_tx": [
                 "idle", 
@@ -76,15 +95,18 @@
                 "upper_sat", 
                 "upper_val", 
                 "paddle_position_x", 
-                "paddle_position_y"
+                "paddle_position_y",
+                "pc_motor_speed_cmd_x",
+                "pc_motor_speed_cmd_y",
+                "pc_state_cmd"
             ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
                 "stopped"
             ], 
-            "ui_goal": [
-                "idle", 
+            "ui_goal_scored": [
+                "none", 
                 "human", 
                 "robot"
             ], 

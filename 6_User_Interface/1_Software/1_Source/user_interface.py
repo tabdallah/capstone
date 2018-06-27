@@ -450,7 +450,7 @@ def get_enums():
     global ui_game_mode_enum
     global ui_game_state_enum
     global ui_goal_enum
-<<<<<<< HEAD
+    global ui_paddle_pos_enum
     global ui_rx_enum
     global ui_screen_enum
     global ui_state_cmd_enum
@@ -459,24 +459,6 @@ def get_enums():
 
     # load enums from settings file
     with open((settings_filepath + 'settings.json'), 'r') as fp:
-=======
-    global ui_game_mode_enum
-    global ui_game_difficulty_enum    
-    global ui_paddle_pos_enum
-
-    global pt_state_enum
-    global pt_error_enum
-    
-    global mc_state_enum
-    global mc_error_enum
-    
-    global pc_state_enum
-    global pc_error_enum
-
-
-    # get settings from file
-    with open((settings_path + 'settings.json'), 'r') as fp:
->>>>>>> srashevskyi/supervisory_control
         settings = json.load(fp)
         fp.close()
 
@@ -495,28 +477,12 @@ def get_enums():
     ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
     ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
     ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
-<<<<<<< HEAD
-    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
     ui_rx_enum = enum(settings['user_interface']['enumerations']['ui_rx'])
     ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
     ui_state_cmd_enum = enum(settings['user_interface']['enumerations']['ui_state_cmd'])
     ui_state_enum = enum(settings['user_interface']['enumerations']['ui_state'])
     ui_tx_enum = enum(settings['user_interface']['enumerations']['ui_tx'])
-=======
-    ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
-    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
-    ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
-    ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
-
-    pt_state_enum = enum(settings['puck_tracker']['enumerations']['pt_state'])
-    pt_error_enum = enum(settings['puck_tracker']['enumerations']['pt_error'])
-
-    mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
-    mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])
-
-    pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
-    pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
->>>>>>> srashevskyi/supervisory_control
 
 def get_settings():
     """Load settings saved in JSON file"""
@@ -606,11 +572,6 @@ def update_game_settings():
         json.dump(settings, fp, indent=4)
         fp.close()
 
-<<<<<<< HEAD
-##############################################################################################
-# Main Process
-##############################################################################################
-=======
 '''
 def update_paddle_position():
     
@@ -627,7 +588,9 @@ def update_paddle_position():
         fp.close()
 '''
 
->>>>>>> srashevskyi/supervisory_control
+##############################################################################################
+# Main Process
+##############################################################################################
 def ui_process(ui_rx, ui_tx, visualization_data):
     """All things user interface happen here. Communicates directly with master controller"""
     global ui_state

@@ -1,27 +1,27 @@
 {
     "paddle_controller": {
         "enumerations": {
-            "pc_state": [
-                "off",
-                "calibration",
-                "on",
-                "error"
-            ],
-            "pc_state_cmd": [
-                "off",
-                "calibration",
-                "on",
-                "clear_error"
-            ],
-             "pc_error": [
-                "none",
-                "calibration"
-            ],
-             "pc_motor_speed_x": [
+            "pc_motor_speed_x": [
                 "slow", 
                 "medium", 
                 "fast"
-            ],
+            ], 
+            "pc_error": [
+                "none", 
+                "calibration"
+            ], 
+            "pc_state_cmd": [
+                "off", 
+                "calibration", 
+                "on", 
+                "clear_error"
+            ], 
+            "pc_state": [
+                "off", 
+                "calibration", 
+                "on", 
+                "error"
+            ], 
             "pc_motor_speed_y": [
                 "slow", 
                 "medium", 
@@ -64,10 +64,6 @@
                 "medium", 
                 "hard"
             ], 
-            "ui_diagnostic_request": [
-                "idle", 
-                "calibrate_fiducials"
-            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -77,8 +73,8 @@
                 "pc_state", 
                 "pc_error", 
                 "mc_state", 
-                "mc_error",
-                "pc_motor_speed_x",
+                "mc_error", 
+                "pc_motor_speed_x", 
                 "pc_motor_speed_y"
             ], 
             "ui_tx": [
@@ -95,10 +91,14 @@
                 "upper_sat", 
                 "upper_val", 
                 "paddle_position_x", 
-                "paddle_position_y",
-                "pc_motor_speed_cmd_x",
-                "pc_motor_speed_cmd_y",
+                "paddle_position_y", 
+                "pc_motor_speed_cmd_x", 
+                "pc_motor_speed_cmd_y", 
                 "pc_state_cmd"
+            ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
             ], 
             "ui_game_state": [
                 "idle", 
@@ -110,9 +110,9 @@
                 "human", 
                 "robot"
             ], 
-            "ui_error": [
+            "ui_diagnostic_request": [
                 "idle", 
-                "crashed"
+                "calibrate_fiducials"
             ]
         }, 
         "game_mode": 1, 

@@ -40,15 +40,16 @@
                 text: "Play Using Robot"
                 on_release: root.manager.current = 'manual'
             MainMenuButton:
-                text: "About"
-                on_release: root.manager.current = 'about'
+                text: "Diagnostics"
+                on_release: root.manager.current = 'diagnostics'
+            
         BoxLayout:
             orientation: 'vertical'
             padding: 10
             spacing: 10
             MainMenuButton:
-                text: "Diagnostics"
-                on_release: root.manager.current = 'diagnostics'
+                text: "Demo"
+                on_release: root.manager.current = 'demo'
             MainMenuButton:
                 text: "Quit"
                 on_release: root.go_quit()
@@ -271,7 +272,7 @@
             text: "Main Menu"
             on_release: root.manager.current = 'menu'
 
-<AboutScreen>:
+<DemoScreen>:
     orientation: 'vertical'
     canvas:
         Rectangle:
@@ -279,7 +280,7 @@
             pos: root.pos 
             size: root.size
     ScreenLabel:
-        text: "About"
+        text: "Demo"
     LineSeparator:    
     BoxLayout:
         orientation: 'vertical'
@@ -462,13 +463,12 @@
             text: "Back to Diagnostics"
             on_release: root.manager.current = 'diagnostics'
         SquareButton:
-            id: skip_redo_button
             text: "Skip"
-            on_release: root.skip_redo_button()
+            on_release: root.manager.current = 'diagnostics'
         SquareButton:
-            id: calibrate_continue_button
+            id: calibrate_button
             text: "Save & Calibrate"
-            on_release: root.calibrate_continue_button()
+            on_release: root.calibrate_button()
 
 # Widget definitions
 

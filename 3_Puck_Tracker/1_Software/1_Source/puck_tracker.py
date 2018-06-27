@@ -306,7 +306,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
         # grab the next frame from camera
         ret, frame = video_stream.read()
         if ret == False:
-            pt_tx[pt_tx_enum.error] = pt_error_enum.camera
+            pt_error = pt_error_enum.camera
 
         # set state of puck tracker to that commanded by mc and do required setup   
         if mc_cmd == pt_state_cmd_enum.calibrate_fiducials and pt_state != pt_state_enum.calibrate_fiducials:

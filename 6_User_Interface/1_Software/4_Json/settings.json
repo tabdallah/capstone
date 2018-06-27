@@ -26,9 +26,9 @@
                 "menu", 
                 "visual", 
                 "manual", 
-                "diagnostic", 
-                "about", 
+                "demo", 
                 "settings", 
+                "diagnostic", 
                 "fiducial_calibration", 
                 "puck_calibration"
             ], 
@@ -40,10 +40,6 @@
                 "idle", 
                 "run", 
                 "quit"
-            ], 
-            "ui_diagnostic_request": [
-                "idle", 
-                "calibrate_fiducials"
             ], 
             "ui_rx": [
                 "idle", 
@@ -70,6 +66,10 @@
                 "upper_sat", 
                 "upper_val"
             ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
+            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -85,9 +85,9 @@
                 "medium", 
                 "fast"
             ], 
-            "ui_error": [
+            "ui_diagnostic_request": [
                 "idle", 
-                "crashed"
+                "calibrate_fiducials"
             ]
         }, 
         "game_mode": 1, 

@@ -217,9 +217,12 @@ def get_enums():
 	global ui_game_difficulty_enum
 	global ui_game_mode_enum
 	global ui_paddle_pos_enum
+
 	global pc_motor_speed_y_enum 
 	global pc_motor_speed_x_enum 
-
+	global pc_state_enum
+	global pc_state_cmd_enum
+	global pc_error_enum
 
 	global mc_state_enum
 	global mc_error_enum
@@ -355,7 +358,7 @@ def Rx_CAN(device):
 			pc_goal_scored = pc_status_motor_goal_b4 & mask_goal_scored_b4
 			logging.debug("Incoming message from PC: Goal Scored: %s", pc_goal_scored)
 		
-			pc_state = message[1].DATA[5]
+			pc_state = int(message[1].DATA[5])
 			logging.debug("Incoming message from PC: State: %s", pc_state)
 			
 			pc_error = message[1].DATA[6]
@@ -876,7 +879,7 @@ def make_decisions():
 	#ui_rx[ui_rx_enum.motor_speed_y] = pc_motor_speed_y
 
 	# Check ALL states
-	if (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error):
+	if ((pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
 		handle_errors()
 		return
 	
@@ -990,14 +993,18 @@ def handle_errors():
 def prepare_to_quit():
 	while True:
 		if ui_process.is_alive() or pt_process.is_alive():
+			logging.debug("Terminating UI and PT processes")
 			ui_process.terminate()
 			pt_process.terminate()
 		else:
+			logging.info("UI and PT processes are terminated")
 			break
 	Close_HDF5()
 	Uninit_PCAN(PCAN)
+	logging.info("Closing visualization pipes")
 	visualization_data_tx.close()
 	visualization_data_rx.close()
+	logging.info("Ready to quit MC")
 ## end of function
 
 ##  
@@ -1024,8 +1031,7 @@ def handle_quits():
 		Tx_PC_Cmd(PCAN)	
 		
 	if (ui_state == ui_state_enum.quit and pt_state == pt_state_enum.quit):
-		logging.debug("MC: PT is in OFF state")
-		logging.debug("MC: UI and PT are in quit state, PC is in off, ready to be terminated")
+		logging.info("MC: UI and PT are in quit state, PC is in OFF, ready to be terminated")
 		prepare_to_quit()
 		sys.exit(0)	
 

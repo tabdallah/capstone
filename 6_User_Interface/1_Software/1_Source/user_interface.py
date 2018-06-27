@@ -398,9 +398,9 @@ class ScreenManagement(ScreenManager):
         self.update_diagnostic_screen()
         
         # keep track of score
-        if int(self.ui_rx[ui_rx_enum.goal]) != ui_goal_enum.idle:
-            self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal])
-            self.ui_rx[ui_rx_enum.goal] = ui_goal_enum.idle
+        if int(self.ui_rx[ui_rx_enum.goal_scored]) != ui_goal_enum.none:
+            self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal_scored])
+            self.ui_rx[ui_rx_enum.goal_scored] = ui_goal_enum.none
 
         # only quit this app once everything else has shut down properly
         if int(self.ui_rx[ui_rx_enum.state_cmd]) == ui_state_cmd_enum.quit:

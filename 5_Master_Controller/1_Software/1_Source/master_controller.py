@@ -9,9 +9,7 @@ import sys
 import math
 import select
 import os
-import logging
-logging.basicConfig(filename='example.log', level=logging.DEBUG)
-logging.debug('Test')
+
 import h5py
 import numpy as np
 import datetime
@@ -19,6 +17,23 @@ import time
 import json
 import cv2
 import Queue
+
+### DO NOT CHANGE logging setup! now Kivy logger works with default python logger
+# Create and set format of the logging file
+import logging
+logging.basicConfig(filename='debug.log', filemode='w', format='%(asctime)s: %(levelname)s *** %(message)s')
+
+#os.environ["KIVY_NO_FILELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
+# To disable the logger change 'log_level' from 'debug' to 'error'
+from kivy.config import Config 
+Config.set('kivy', 'log_level', 'info')
+Config.write()
+
+# Replace default logger with Kivy logger
+from kivy.logger import logging
+### END logging setup
 
 # add file path for puck tracker and user interface modules
 sys.path.insert(0, '../../../3_Puck_Tracker/1_Software/1_Source/')
@@ -39,9 +54,6 @@ PCAN = PCANBasic()
 ## Global data storage
 ## Maybe improve this later
 ##############################################################################################
-
-log_fileName = "debug.log"		# File name for debug logging
-
 timeout = 0.005 			# Timeout for keyboard input in seconds
 
 operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
@@ -60,10 +72,19 @@ ui_tx_enum = 0
 ui_diagnostic_request_enum = 0
 ui_game_state = 0
 ui_screen = 0
-ui_goal_enum = 0
+ui_goal_scored_enum = 0
+mc_state_enum = 0
+mc_error_enum = 0
+pc_motor_speed_x_enum = 0
+pc_motor_speed_y_enum = 0
+pc_state_enum = 0
+pc_error_enum = 0
+pc_state_cmd_enum = 0
+
 
 settings = 0
 
+# CAN Communication (MC-PC and PC-MC) 
 # PC positions
 mc_pos_cmd_x_mm = 0
 mc_pos_cmd_y_mm = 0
@@ -72,6 +93,20 @@ mc_pos_cmd_sent_y_mm = 0
 pc_pos_status_x_mm = 0
 pc_pos_status_y_mm = 0
 filter_pos_value_mm = 5		# Threshold filter value for the UI position control
+# Motor Speed
+mc_motor_speed_cmd_x = 2
+mc_motor_speed_cmd_y = 2
+pc_motor_speed_x = 2	
+pc_motor_speed_y = 2
+# State	
+pc_state_cmd = 0 # command pc to go to such state
+pc_state = 0
+pc_error = 0
+# Other
+pc_goal_scored = 0
+mc_cmd_pc_debug = 0		# for debug purposes in mc_cmd_pc msg 
+pc_status_debug = 0		# for debug purposes in pc_status msg 
+
 
 # IPC 
 ui_rx = 0
@@ -105,6 +140,8 @@ pt_state = 0
 pt_error = 0
 ui_state = 0
 ui_error = 0
+mc_state = 0
+mc_error = 0
 ui_diagnostic_request = 0
 
 # puck prediction
@@ -130,14 +167,20 @@ paddle_defense_position_mm_y = 0
 
 # CAN message ID's
 ID_mc_cmd_pc =		0x100		# CAN message ID for Master Controller Command to PC on X and Y position
-ID_pc_status_x = 	0x101 		# CAN message ID for Paddle Controller Status on X-axis
-ID_pc_status_y = 	0x102		# CAN message ID for Paddle Controller Status on Y-axis
+ID_pc_status = 		0x101 		# CAN message ID for Paddle Controller Status
 
-# CAN signal masks
-mask_pos_cmd_x_mm_b0 = 		0x00FF		# Hex mask for pos_cmd_x_mm signal (msg byte0)
-mask_pos_cmd_x_mm_b1 = 		0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
-mask_pos_cmd_y_mm_b2 = 		0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
-mask_pos_cmd_y_mm_b3 = 		0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
+# CAN signal masks for Tx
+mask_pos_cmd_x_mm_b0 		=	0x00FF		# Hex mask for pos_cmd_x_mm signal (msg byte0)
+mask_pos_cmd_x_mm_b1 		=	0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
+mask_pos_cmd_y_mm_b2 		=	0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
+mask_pos_cmd_y_mm_b3		=	0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
+mask_motor_speed_cmd_x_b4 	=	0x0003		# Hex mask for motor_speed_cmd_x signal (msg byte4) 	
+mask_motor_speed_cmd_y_b4 	=	0x000C		# Hex mask for motor_speed_cmd_y signal (msg byte4)
+
+# CAN signal masks for Rx
+mask_motor_speed_x_b4 		=	0x0003		# Hex mask for motor_speed_x signal (msg byte4) 	
+mask_motor_speed_y_b4 		=	0x000C		# Hex mask for motor_speed_y signal (msg byte4)
+mask_goal_scored_b4			=	0x00F0		# Hex mask for goal_scored signal (msg byte5)
 
 ##############################################################################################
 ## Enumeration functions
@@ -170,9 +213,19 @@ def get_enums():
 	global ui_diagnostic_request_enum
 	global ui_game_state_enum
 	global ui_screen_enum
-	global ui_goal_enum
+	global ui_goal_scored_enum
 	global ui_game_difficulty_enum
 	global ui_game_mode_enum
+	global ui_paddle_pos_enum
+
+	global pc_motor_speed_y_enum 
+	global pc_motor_speed_x_enum 
+	global pc_state_enum
+	global pc_state_cmd_enum
+	global pc_error_enum
+
+	global mc_state_enum
+	global mc_error_enum
 
 	global settings
 
@@ -195,9 +248,18 @@ def get_enums():
 	ui_diagnostic_request_enum = enum(settings['user_interface']['enumerations']['ui_diagnostic_request'])
 	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
 	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
-	ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal'])
+	ui_goal_scored_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
 	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
+
+	mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
+	mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])	
+
+	pc_state_enum = enum(settings['paddle_controller']['enumerations']['pc_state'])
+	pc_state_cmd_enum = enum(settings['paddle_controller']['enumerations']['pc_state_cmd'])
+	pc_error_enum = enum(settings['paddle_controller']['enumerations']['pc_error'])
+	pc_motor_speed_x_enum = enum(settings['paddle_controller']['enumerations']['pc_motor_speed_x'])
+	pc_motor_speed_y_enum = enum(settings['paddle_controller']['enumerations']['pc_motor_speed_y'])
 
 ##############################################################################################
 ## Retrieve Settings from JSON
@@ -221,48 +283,6 @@ def get_settings():
 	mm_per_pixel_y = settings['puck_tracker']['scaling_factors']['mm_per_pixel_x']
 
 ##############################################################################################
-## Command line output functions
-##############################################################################################
-
-##
-## process_input()
-## Debug mode - allow user to set parameters and stuff
-##
-def process_input():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-
-	print "Air Hockey Command Input"
-	mc_pos_cmd_x_mm = input("Enter Position X: ")
-	logging.debug("New entered pos X: %s", mc_pos_cmd_x_mm)
-	mc_pos_cmd_y_mm = input("Enter Position Y: ")	
-	logging.debug("New entered pos Y: %s", mc_pos_cmd_y_mm)	
-## end of method
-
-
-##
-## update_display()
-## Show master controller status and command
-##
-def update_display():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
-
-	os.system('clear')
-	print("Air Hockey Robot Status")
-	print("---------------")
-	print "Position X Status: ", pc_pos_status_x_mm
-	print "Position Y Status: ", pc_pos_status_y_mm
-	print "Position X Command: ", mc_pos_cmd_x_mm
-	print "Position Y Command: ", mc_pos_cmd_y_mm
-	print " "
-	print "Press 'Enter' for debug mode (keyboard mode only)"
-## end of method
-
-
-##############################################################################################
 ## CAN functions
 ##############################################################################################
 
@@ -278,7 +298,7 @@ def Init_PCAN(device):
 		logging.error("Error Initializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 	else:
-		logging.debug("PCAN USB Initialized")
+		logging.info("PCAN USB Initialized")
 
 ## end of method
 
@@ -293,7 +313,7 @@ def Uninit_PCAN(device):
 		logging.error("Error Uninitializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 	else:
-		logging.debug("PCAN USB Uninitialized")
+		logging.info("PCAN USB Uninitialized")
 
 ## end of method
 
@@ -305,50 +325,81 @@ def Uninit_PCAN(device):
 def Rx_CAN(device):
 	global pc_pos_status_x_mm
 	global pc_pos_status_y_mm
+	global pc_state
+	global pc_error
+	global pc_goal_scored
+	global pc_motor_speed_y
+	global pc_motor_speed_x
+	global pc_status_debug
 
 	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
 
 	# Keep reading messages until there aren't any more
 	while message[1].ID > 1:
 		# Process PC Status X message
-		if message[1].ID == ID_pc_status_x:
+		if message[1].ID == ID_pc_status:
 			pc_pos_status_x_mm_b0 = message[1].DATA[0]
 			pc_pos_status_x_mm_b1 = message[1].DATA[1]
 			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
-			logging.debug("Incoming message from PC, Status X: %s", pc_pos_status_x_mm)
+			logging.debug("Incoming message from PC: Paddle Pos X: %s", pc_pos_status_x_mm)
 
-		# Process PC Status Y message
-		elif message[1].ID == ID_pc_status_y:
-			pc_pos_status_y_mm_b0 = message[1].DATA[0]
-			pc_pos_status_y_mm_b1 = message[1].DATA[1]
-			pc_pos_status_y_mm = pc_pos_status_y_mm_b0 | (pc_pos_status_y_mm_b1 << 8)
-			logging.debug("Incoming message from PC, Status Y: %s", pc_pos_status_y_mm)
+			pc_pos_status_y_mm_b2 = message[1].DATA[2]
+			pc_pos_status_y_mm_b3 = message[1].DATA[3]
+			pc_pos_status_y_mm = pc_pos_status_y_mm_b2 | (pc_pos_status_y_mm_b3 << 8)
+			logging.debug("Incoming message from PC: Paddle Pos Y: %s", pc_pos_status_y_mm)
+
+			pc_status_motor_goal_b4 = message[1].DATA[4]
+			pc_motor_speed_x = pc_status_motor_goal_b4 & mask_motor_speed_x_b4
+			logging.debug("Incoming message from PC: Motor Speed X: %s", pc_motor_speed_x)
+
+			pc_motor_speed_y = pc_status_motor_goal_b4 & mask_motor_speed_y_b4
+			logging.debug("Incoming message from PC: Motor Speed Y: %s", pc_motor_speed_y)
+
+			pc_goal_scored = pc_status_motor_goal_b4 & mask_goal_scored_b4
+			logging.debug("Incoming message from PC: Goal Scored: %s", pc_goal_scored)
+		
+			pc_state = int(message[1].DATA[5])
+			logging.debug("Incoming message from PC: State: %s", pc_state)
+			
+			pc_error = message[1].DATA[6]
+			logging.debug("Incoming message from PC: Error: %s", pc_error)
+
+			# empty byte for debugging
+			#pc_status_debug = message[1].DATA[7]
+			#logging.debug("Incoming message from PC: Debug: %s", pc_status_debug)
 
 		# Read next message
 		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
 
 ## end of method
 
-
 ## 
 ## Tx_PC_Cmd(device)
-## Transmit the command message to the Paddcle Controller
+## Transmit the command message to the Paddle Controller
 ##
 def Tx_PC_Cmd(device):
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
 	global mc_pos_cmd_sent_x_mm
 	global mc_pos_cmd_sent_y_mm
+	global mc_motor_speed_cmd_x
+	global mc_motor_speed_cmd_y
+	global pc_state_cmd
+	global mc_cmd_pc_debug
 
 	message = TPCANMsg()
 
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
-	message.LEN = 4
+	message.LEN = 8
 	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
 	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
 	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
 	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
+	message.DATA[4] = (mc_motor_speed_cmd_x & (mc_motor_speed_cmd_y << 2))
+	message.DATA[5] = pc_state_cmd 
+	#message.DATA[6] = 0 				# not defined yet
+	#message.DATA[7] = mc_cmd_pc_debug  # for debugging
 
 	# Save last sent position command
 	mc_pos_cmd_sent_x_mm = mc_pos_cmd_x_mm
@@ -596,6 +647,9 @@ def Rx_IPC():
 	global ui_diagnostic_request
 	global ui_game_state
 	global ui_screen
+	global pc_state_cmd
+	global pc_motor_speed_cmd_x
+	global pc_motor_speed_cmd_y
 
 	# get data from puck tracker
 	pt_state = int(pt_tx[pt_tx_enum.state])
@@ -611,6 +665,9 @@ def Rx_IPC():
 	ui_diagnostic_request = int(ui_tx[ui_tx_enum.diagnostic_request])
 	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
 	ui_screen = int(ui_tx[ui_tx_enum.screen])
+	pc_state_cmd = int(ui_tx[ui_tx_enum.pc_state_cmd])
+	mc_motor_speed_cmd_x = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_x])
+	mc_motor_speed_cmd_y = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_y])
 
 	# pass through data from ui to pt
 	pt_rx[pt_rx_enum.lower_hue] = ui_tx[ui_tx_enum.lower_hue]
@@ -813,18 +870,57 @@ def get_paddle_position():
 ##
 def make_decisions():
 	global last_ui_screen
-	global visualization_data_tx
-	global visualization_data_rx
-	global ui_process
-	global pt_process
-
-	# TODO get real data for these vars
-	mc_state = 0
-	mc_error = 0
-	pc_state = 0
-	pc_error = 0
 
 	# pass state data to the UI
+	send_UI_states()
+
+	#send PC motor speeds
+	#ui_rx[ui_rx_enum.motor_speed_x] = pc_motor_speed_x
+	#ui_rx[ui_rx_enum.motor_speed_y] = pc_motor_speed_y
+
+	# Check ALL states
+	if ((pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
+		handle_errors()
+		return
+	
+	elif (pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit):
+		handle_quits()
+		return
+
+	elif ui_state != ui_state_enum.running:
+		return
+
+	elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off):
+		Tx_PC_Cmd(PCAN)
+		return
+
+	# Check which UI screen we are on, this dictates a large part of what state we'll be in
+	if ui_screen == ui_screen_enum.visual:
+		handle_visual_game()
+
+	elif ui_screen == ui_screen_enum.manual:
+		handle_manual_game()
+
+	elif ui_screen == ui_screen_enum.menu:
+		update_game_settings()
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+
+	elif ui_screen == ui_screen_enum.fiducial_calibration:
+		calibrate_fiducials()
+
+	elif ui_screen == ui_screen_enum.puck_calibration:
+		calibrate_puck()
+
+	elif ui_screen == ui_screen_enum.diagnostic:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+
+## end of function
+
+## 
+## send_UI_states()
+## pass state data of other modules to the UI
+##
+def send_UI_states():
 	ui_rx[ui_rx_enum.pt_state] = pt_state
 	ui_rx[ui_rx_enum.pt_error] = pt_error
 	ui_rx[ui_rx_enum.mc_state] = mc_state
@@ -832,75 +928,155 @@ def make_decisions():
 	ui_rx[ui_rx_enum.pc_state] = pc_state
 	ui_rx[ui_rx_enum.pc_error] = pc_error
 
-	# check which UI screen we are on, this dictates a large part of what state we'll be in
-	if ui_screen == ui_screen_enum.visual:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
-		get_paddle_position()
-		if ui_game_state == ui_game_state_enum.playing:
+	logging.debug("MC: pt_state: %s, pt_error: %s", pt_state, pt_error)
+	logging.debug("MC: mc_state: %s, mc_error: %s", mc_state, mc_error)
+	logging.debug("MC: pc_state: %s, pc_error: %s", pc_state, pc_error)
+## end of function
+
+
+##   
+## handle_errors()
+## Take care of all errors from UI, PT, PC
+##
+def handle_errors():
+	global pc_state_cmd
+	global visualization_data_tx
+	global visualization_data_rx
+	global ui_process
+	global pt_process
+	
+	# PC error
+	if pc_state == pc_state_enum.error:
+		logging.error("MC: PC Error: %i. Resolve the error and click Clear Error btn under Diagnostics menu", pc_error)
+		if pc_state_cmd == pc_state_cmd_enum.clear_error:
 			Tx_PC_Cmd(PCAN)
-		elif ui_game_state == ui_game_state_enum.stopped:
-			pass
+			logging.error("MC: Commanding PC to Clear Error State to resolve the issue")
+	
+	# UI error	
+	elif ui_state == ui_state_enum.error:
+		logging.error("MC: UI Error: %i. Starting a process to shut off PC, PT, UI, MC", ui_error)
+		# shut off PC
+		if (pc_state != pc_state_enum.off):
+			pc_state_cmd = pc_state_cmd_enum.off
+			Tx_PC_Cmd(PCAN)
 
-	elif ui_screen == ui_screen_enum.menu:
-		update_game_settings()
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+		# shut off PT and MC
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
+		if (pt_state == pt_state_enum.quit):
+			prepare_to_quit()
+			sys.exit(0)
 
-	elif ui_screen == ui_screen_enum.fiducial_calibration:
-		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
+	# PT error
+	elif pt_state == pt_state_enum.error:
+		if pt_error == pt_error_enum.calibration_failed:
+			logging.error("MC: PT Error: %i (Calibration Failed), try recalibrating or restarting the system", ui_error)
 		else:
-			pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
+			logging.error("MC: PT Error: %i, Starting a process to shut off PC, PT, UI, MC", ui_error)
+			# shut off PC
+			if (pc_state != pc_state_enum.off):
+				pc_state_cmd = pc_state_cmd_enum.off
+				Tx_PC_Cmd(PCAN)
 
-		# get frame for visualization
-		try:
-			frame = visualization_data_rx.get(False)
-		except Queue.Empty:
-			pass
+			# shut off UI and MC
+			ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
+			if (ui_state == ui_state_enum.quit):
+				prepare_to_quit()
+				sys.exit(0)
+
+
+## end of function
+
+##
+## prepare_to_quit()
+## terminate processes, close files, uninit CAN, etc before exit
+##
+def prepare_to_quit():
+	while True:
+		if ui_process.is_alive() or pt_process.is_alive():
+			logging.debug("Terminating UI and PT processes")
+			ui_process.terminate()
+			pt_process.terminate()
 		else:
-			try:
-				visualization_data_tx.get_nowait()
-				visualization_data_tx.put(frame)
-			except Queue.Empty:
-				visualization_data_tx.put(frame)
+			logging.info("UI and PT processes are terminated")
+			break
+	Close_HDF5()
+	Uninit_PCAN(PCAN)
+	logging.info("Closing visualization pipes")
+	visualization_data_tx.close()
+	visualization_data_rx.close()
+	logging.info("Ready to quit MC")
+## end of function
 
-	elif ui_screen == ui_screen_enum.puck_calibration:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_puck
-
-		# get frame for visualization
-		try:
-			frame = visualization_data_rx.get(False)
-		except Queue.Empty:
-			pass
-		else:
-			try:
-				visualization_data_tx.get_nowait()
-				visualization_data_tx.put(frame)
-			except Queue.Empty:
-				visualization_data_tx.put(frame)
-
-	elif ui_screen == ui_screen_enum.diagnostic:
-		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
-
-	# go through steps of shutting down if UI requests
+##  
+## handle_quits()
+## go through steps of shutting down if UI requests
+##
+def handle_quits():
+	global visualization_data_tx
+	global visualization_data_rx
+	global ui_process
+	global pt_process
+	global pc_state_cmd
+	
 	if ui_state == ui_state_enum.request_quit:
+		logging.debug("MC: UI is requesting to quit")
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 
 	if pt_state == pt_state_enum.quit:
+		logging.debug("MC: PT is in quit state")
 		ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.quit
 
+	if (pc_state != pc_state_enum.off):
+		pc_state_cmd = pc_state_cmd_enum.off
+		Tx_PC_Cmd(PCAN)	
+		
 	if (ui_state == ui_state_enum.quit and pt_state == pt_state_enum.quit):
-		while True:
-			if ui_process.is_alive() or pt_process.is_alive():
-				ui_process.terminate()
-				pt_process.terminate()
-			else:
-				break
-		Close_HDF5()
-		Uninit_PCAN(PCAN)
-		visualization_data_tx.close()
-		visualization_data_rx.close()
-		sys.exit(0)
+		logging.info("MC: UI and PT are in quit state, PC is in OFF, ready to be terminated")
+		prepare_to_quit()
+		sys.exit(0)	
 
+## end of function
+
+##  
+## handle_visual_game()
+## Take care of visual game decisions (robot vs human)
+##
+def handle_visual_game():
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
+	if pt_state != pt_state_enum.tracking:
+		logging.debug("MC: Camera isn't in tracking state, can't start visual game")	
+		return
+
+	if ui_game_state == ui_game_state_enum.playing:
+		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		if pc_goal_scored == goal_scored_enum.none:
+			get_paddle_position()
+		Tx_PC_Cmd(PCAN)
+
+	elif ui_game_state == ui_game_state_enum.stopped:
+		Tx_PC_Cmd(PCAN)
+## end of function
+
+##  
+## handle_manual_game()
+## Take care of manual game decisions (human operating robot vs human)
+##
+def handle_manual_game():
+	global mc_pos_cmd_x_mm
+	global mc_pos_cmd_y_mm
+
+	if (pt_state != pt_state_enum.tracking)	and (pt_state != pt_state_enum.idle):
+		logging.debug("MC: Camera isn't in tracking or idle state, can't start manual game")
+		return
+
+	if ui_game_state == ui_game_state_enum.playing:
+		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		if pc_goal_scored == goal_scored_enum.none:
+			mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
+			mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
+			logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
+			filter_Tx_PC_Cmd()
+			Tx_PC_Cmd(PCAN)
 ## end of function
 
 ## 
@@ -921,6 +1097,54 @@ def update_game_settings():
 
 ## end of function
 
+##  
+## calibrate_fiducials()
+## Calibrate fiducials when in the UI settings 
+##
+def calibrate_fiducials():
+	global visualization_data_tx
+	global visualization_data_rx
+
+	if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_fiducials:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.calibrate_fiducials
+	else:
+		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_fiducials
+
+	# get frame for visualization
+	try:
+		frame = visualization_data_rx.get(False)
+	except Queue.Empty:
+		pass
+	else:
+		try:
+			visualization_data_tx.get_nowait()
+			visualization_data_tx.put(frame)
+		except Queue.Empty:
+			visualization_data_tx.put(frame)
+	
+## end of function
+
+##  
+## calibrate_puck()
+## Calibrate puck when in the UI settings
+##
+def calibrate_puck():
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.find_puck
+
+	# get frame for visualization
+	try:
+		frame = visualization_data_rx.get(False)
+	except Queue.Empty:
+		pass
+	else:
+		try:
+			visualization_data_tx.get_nowait()
+			visualization_data_tx.put(frame)
+		except Queue.Empty:
+			visualization_data_tx.put(frame)	
+
+## end of function
+
 ##############################################################################################
 ## MAIN() function
 ##############################################################################################
@@ -929,9 +1153,6 @@ def update_game_settings():
 ## main()
 ##
 try:
-	# Create and set format of the logging file
-	# If you want to disable the logger then set "level=logging.ERROR"
-	logging.basicConfig(filename=log_fileName, filemode='w', level=logging.DEBUG, format='%(asctime)s in %(funcName)s(): %(levelname)s *** %(message)s')
 
 	# Create enums
 	get_enums()
@@ -946,24 +1167,30 @@ try:
 	# Initialize IPC between MC - PC - UI
 	Init_IPC()
 
+	logging.info("MC: Entering main loop")
+
+	# Set MC states
+	mc_state = mc_state_enum.running
+	mc_error = mc_error_enum.idle
+
 	# Master Controller loop
 	while True:
 		Rx_IPC()
 		Rx_CAN(PCAN)
-		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		make_decisions()
-		add_pos_sent_HDF5(str(datetime.datetime.now()))
-		update_dset_HDF5()
+		#add_pos_sent_HDF5(str(datetime.datetime.now()))
+		#update_dset_HDF5()
 		sleep(timeout)
+
 except KeyboardInterrupt:
+	mc_state = mc_state_enum.stopped
+	mc_error = mc_error_enum.crashed
+	send_UI_states()
+	prepare_to_quit()
 	sys.exit()
 
 ## end of function
 
 ##############################################################################################
-## Garbage
-##############################################################################################
-def playground(device):
-
-	if (pc_pos_status_x_mm != mc_pos_cmd_x_mm) or (pc_pos_status_y_mm != mc_pos_cmd_y_mm):
-		Tx_PC_Cmd(PCAN)
+## THE END

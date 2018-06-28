@@ -116,7 +116,7 @@
             ]
         }, 
         "game_mode": 1, 
-        "game_speed_y": 1, 
+        "game_speed_y": 0, 
         "game_speed_x": 1, 
         "game_length": 120
     }, 

@@ -41,6 +41,10 @@
                 "run", 
                 "quit"
             ], 
+            "ui_diagnostic_request": [
+                "idle", 
+                "calibrate_fiducials"
+            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -66,10 +70,6 @@
                 "upper_sat", 
                 "upper_val"
             ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
-            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -85,9 +85,9 @@
                 "medium", 
                 "fast"
             ], 
-            "ui_diagnostic_request": [
+            "ui_error": [
                 "idle", 
-                "calibrate_fiducials"
+                "crashed"
             ]
         }, 
         "game_mode": 1, 

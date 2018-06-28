@@ -209,7 +209,6 @@ class FiducialCalibrationScreen(BoxLayout, Screen):
             fiducial_upper_hsv = (self.ids['upper_hue'].value, self.ids['upget_settingper_sat'].value, self.ids['upper_val'].value)
             update_hsv_settings()
             self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_fiducials
-            
             self.ids['slider_layout'].disabled = True
             self.ids['skip_redo_button'].text = "Redo"
             self.ids['calibrate_continue_button'].text = "Continue"
@@ -456,7 +455,18 @@ class CameraData(Image):
             self.texture = image_texture
 
 class ManualPaddle(Scatter):
-    pass
+    def on_touch_move(self, touch):
+        super(ManualPaddle, self).on_touch_move(touch)
+        
+        # this code makes sure our paddle stays on the playing surface
+        if (self.center[0] + 50) > self.parent.size[0]:
+            self.center = ((self.parent.size[0] - 50),self.center[1])
+        if (self.center[0] - 50) < 0:
+            self.center = (50, self.center[1])
+        if (self.center[1] - 50) < 0:
+            self.center = (self.center[0], 50) 
+        if (self.center[1] + 50) > self.parent.size[1]:
+            self.center = (self.center[0],(self.parent.size[1] - 50))
 
 class ManualPlayingSurface(Widget):
     pass

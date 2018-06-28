@@ -94,9 +94,9 @@ settings = 0
 
 # CAN Communication (MC-PC and PC-MC) 
 # PC positions
-mc_pos_cmd_x_mm = goal_center_mm_x
+mc_pos_cmd_x_mm = int(goal_center_mm_x)
 mc_pos_cmd_y_mm = 0
-mc_pos_cmd_sent_x_mm = goal_center_mm_x
+mc_pos_cmd_sent_x_mm = int(goal_center_mm_x)
 mc_pos_cmd_sent_y_mm = 0
 pc_pos_status_x_mm = 0
 pc_pos_status_y_mm = 0

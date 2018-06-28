@@ -40,15 +40,16 @@
                 text: "Play Using Robot"
                 on_release: root.manager.current = 'manual'
             MainMenuButton:
-                text: "About"
-                on_release: root.manager.current = 'about'
+                text: "Diagnostics"
+                on_release: root.manager.current = 'diagnostics'
+            
         BoxLayout:
             orientation: 'vertical'
             padding: 10
             spacing: 10
             MainMenuButton:
-                text: "Diagnostics"
-                on_release: root.manager.current = 'diagnostics'
+                text: "Demo"
+                on_release: root.manager.current = 'demo'
             MainMenuButton:
                 text: "Quit"
                 on_release: root.go_quit()
@@ -78,6 +79,7 @@
             pos: root.pos 
             size: root.size
     ManualPlayingSurface:
+        id: playing_surface
     GameControl:
         id: game_control
         size_hint: (0.3,1)
@@ -158,6 +160,16 @@
                 text: "Calibrate Puck Tracker"
                 on_release: root.manager.current = 'fiducial_calibration'
             SquareButton:
+                text: "Calibrate Paddle Controller"
+                on_release:
+        BoxLayout:
+            orientation: 'horizontal'
+            padding: 5
+            spacing: 5
+            SquareButton:
+                text: "Clear Errors"
+                on_release: root.clear_errors() 
+            SquareButton:
                 text: "Main Menu"
                 on_release: root.manager.current = 'menu'
 
@@ -187,34 +199,13 @@
                 id: offense_button
                 text: "Offense"
                 group: "game_mode"
-                on_release: root.change_game_mode()
+                on_release: root.change_game_setting()
             SettingsButton:
                 id: defense_button
                 text: "Defense"
                 group: "game_mode"
-                on_release: root.change_game_mode()
+                on_release: root.change_game_setting()
             Label:
-        BoxLayout:
-            padding: 5
-            spacing: 5
-            orientation: 'horizontal'
-            SettingsLabel:
-                text: "Game Difficulty:"
-            SettingsButton:
-                id: easy_button
-                text: "Easy"
-                group: "game_difficulty"
-                on_release: root.change_game_difficulty()
-            SettingsButton:
-                id: medium_button
-                text: "Medium"
-                group: "game_difficulty"
-                on_release: root.change_game_difficulty()
-            SettingsButton:
-                id: hard_button
-                text: "Hard"
-                group: "game_difficulty"
-                on_release: root.change_game_difficulty()
         BoxLayout:
             padding: 5
             spacing: 5
@@ -225,22 +216,64 @@
                 id: one_min_button
                 text: "1:00"
                 group: "game_length"
-                on_release: root.change_game_length()
+                on_release: root.change_game_setting()
             SettingsButton:
                 id: two_min_button
                 text: "2:00"
                 group: "game_length"
-                on_release: root.change_game_length()
+                on_release: root.change_game_setting()
             SettingsButton:
                 id: five_min_button
                 text: "5:00"
                 group: "game_length"
-                on_release: root.change_game_length()
+                on_release: root.change_game_setting()
+        BoxLayout:
+            padding: 5
+            spacing: 5
+            orientation: 'horizontal'
+            SettingsLabel:
+                text: "X-Axis Speed:"
+            SettingsButton:
+                id: slow_button_x
+                text: "Easy"
+                group: "game_speed_x"
+                on_release: root.change_game_setting()
+            SettingsButton:
+                id: medium_button_x
+                text: "Medium"
+                group: "game_speed_x"
+                on_release: root.change_game_setting()
+            SettingsButton:
+                id: fast_button_x
+                text: "Fast"
+                group: "game_speed_x"
+                on_release: root.change_game_setting()
+        BoxLayout:
+            padding: 5
+            spacing: 5
+            orientation: 'horizontal'
+            SettingsLabel:
+                text: "Y-Axis Speed:"
+            SettingsButton:
+                id: slow_button_y
+                text: "Easy"
+                group: "game_speed_y"
+                on_release: root.change_game_setting()
+            SettingsButton:
+                id: medium_button_y
+                text: "Medium"
+                group: "game_speed_y"
+                on_release: root.change_game_setting()
+            SettingsButton:
+                id: fast_button_y
+                text: "Fast"
+                group: "game_speed_y"
+                on_release: root.change_game_setting()
         SquareButton:
             text: "Main Menu"
-            on_release: root.manager.current = 'menu'
+            on_release: root.go_menu()
 
-<AboutScreen>:
+<DemoScreen>:
     orientation: 'vertical'
     canvas:
         Rectangle:
@@ -248,7 +281,7 @@
             pos: root.pos 
             size: root.size
     ScreenLabel:
-        text: "About"
+        text: "Demo"
     LineSeparator:    
     BoxLayout:
         orientation: 'vertical'
@@ -431,13 +464,12 @@
             text: "Back to Diagnostics"
             on_release: root.manager.current = 'diagnostics'
         SquareButton:
-            id: skip_redo_button
             text: "Skip"
-            on_release: root.skip_redo_button()
+            on_release: root.manager.current = 'diagnostics'
         SquareButton:
-            id: calibrate_continue_button
+            id: calibrate_button
             text: "Save & Calibrate"
-            on_release: root.calibrate_continue_button()
+            on_release: root.calibrate_button()
 
 # Widget definitions
 
@@ -495,8 +527,8 @@
         on_release: root.go_menu()
 
 <ManualPaddle>:
-    size_hint: (None, None) 
     Image:
+        id: paddle_image
         source: (app.app_images_filepath + 'paddle.png')
 
 <ManualPlayingSurface>:
@@ -508,6 +540,7 @@
             pos: self.pos
             size: self.size
     ManualPaddle:
+        id: paddle
         center: self.parent.center
 
 <LineSeparator>:
@@ -558,7 +591,7 @@
     allow_no_selection: False
     outline_width: 1.6
     outline_color: (0,0,0)
-    font_size: 25
+    font_size: 30
     background_normal: ('../../../6_User_Interface/1_Software/2_Images/settings_unclicked.png')
     background_down: ('../../../6_User_Interface/1_Software/2_Images/settings_clicked.png')
 

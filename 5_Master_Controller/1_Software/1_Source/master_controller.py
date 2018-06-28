@@ -214,7 +214,7 @@ def get_enums():
 	global ui_game_state_enum
 	global ui_screen_enum
 	global ui_goal_scored_enum
-	global ui_game_difficulty_enum
+	global ui_game_speed_enum
 	global ui_game_mode_enum
 	global ui_paddle_pos_enum
 
@@ -249,7 +249,7 @@ def get_enums():
 	ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
 	ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
 	ui_goal_scored_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
-	ui_game_difficulty_enum = enum(settings['user_interface']['enumerations']['ui_game_difficulty'])
+	ui_game_speed_enum = enum(settings['user_interface']['enumerations']['ui_game_speed'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
 
 	mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
@@ -1072,8 +1072,8 @@ def handle_manual_game():
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
-		mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
-		mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
+		mc_pos_cmd_x_mm = int(ui_tx[ui_tx_enum.paddle_position_x])
+		mc_pos_cmd_y_mm = int(ui_tx[ui_tx_enum.paddle_position_y])
 		logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
 		filter_Tx_PC_Cmd()
 		Tx_PC_Cmd(PCAN)
@@ -1085,7 +1085,8 @@ def handle_manual_game():
 ##
 def update_game_settings():
     global game_mode
-    global game_difficulty
+    global game_speed_x
+    global game_speed_y
 
     # get settings from file
     with open((settings_path + 'settings.json'), 'r') as fp:
@@ -1093,7 +1094,8 @@ def update_game_settings():
         fp.close()
 
     game_mode = settings['user_interface']['game_mode']
-    game_difficulty = settings['user_interface']['game_difficulty']
+    game_speed_x = settings['user_interface']['game_speed_x']
+    game_speed_y = settings['user_interface']['game_speed_y']
 
 ## end of function
 

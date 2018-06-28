@@ -6,15 +6,15 @@
                 "medium", 
                 "fast"
             ], 
-            "pc_error": [
-                "none", 
-                "calibration"
-            ], 
             "pc_state_cmd": [
                 "off", 
                 "calibration", 
                 "on", 
                 "clear_error"
+            ], 
+            "pc_error": [
+                "none", 
+                "calibration"
             ], 
             "pc_state": [
                 "off", 
@@ -44,9 +44,9 @@
                 "menu", 
                 "visual", 
                 "manual", 
-                "diagnostic", 
-                "about", 
+                "demo", 
                 "settings", 
+                "diagnostic", 
                 "fiducial_calibration", 
                 "puck_calibration"
             ], 
@@ -58,11 +58,6 @@
                 "idle", 
                 "run", 
                 "quit"
-            ], 
-            "ui_game_difficulty": [
-                "easy", 
-                "medium", 
-                "hard"
             ], 
             "ui_rx": [
                 "idle", 
@@ -110,14 +105,20 @@
                 "human", 
                 "robot"
             ], 
+            "ui_game_speed": [
+                "slow", 
+                "medium", 
+                "fast"
+            ], 
             "ui_diagnostic_request": [
                 "idle", 
                 "calibrate_fiducials"
             ]
         }, 
         "game_mode": 1, 
-        "game_difficulty": 1, 
-        "game_length": 300
+        "game_speed_y": 1, 
+        "game_speed_x": 1, 
+        "game_length": 120
     }, 
     "master_controller": {
         "enumerations": {
@@ -229,7 +230,7 @@
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.7320163087958438, 
+            "mm_per_pixel_x": 2.732016308795844, 
             "mm_per_pixel_y": 1.7503621752413514
         }
     }

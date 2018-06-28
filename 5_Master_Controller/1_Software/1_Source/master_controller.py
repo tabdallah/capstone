@@ -883,16 +883,16 @@ def make_decisions():
 		handle_errors()
 		return
 	
-	elif (pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit):
+	elif ((pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit)):
 		handle_quits()
 		return
-
+	
 	elif ui_state != ui_state_enum.running:
 		return
 
-	elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off):
+	"""elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off):
 		Tx_PC_Cmd(PCAN)
-		return
+		return"""
 
 	# Check which UI screen we are on, this dictates a large part of what state we'll be in
 	if ui_screen == ui_screen_enum.visual:
@@ -1043,14 +1043,15 @@ def handle_quits():
 ##
 def handle_visual_game():
 	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
+
 	if pt_state != pt_state_enum.tracking:
 		logging.debug("MC: Camera isn't in tracking state, can't start visual game")	
 		return
+	
+	get_paddle_position()
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
-		if pc_goal_scored == goal_scored_enum.none:
-			get_paddle_position()
 		Tx_PC_Cmd(PCAN)
 
 	elif ui_game_state == ui_game_state_enum.stopped:
@@ -1071,12 +1072,11 @@ def handle_manual_game():
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
-		if pc_goal_scored == goal_scored_enum.none:
-			mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
-			mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
-			logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
-			filter_Tx_PC_Cmd()
-			Tx_PC_Cmd(PCAN)
+		mc_pos_cmd_x_mm = ui_tx[ui_tx_enum.paddle_position_x]
+		mc_pos_cmd_y_mm = ui_tx[ui_tx_enum.paddle_position_y]
+		logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
+		filter_Tx_PC_Cmd()
+		Tx_PC_Cmd(PCAN)
 ## end of function
 
 ## 

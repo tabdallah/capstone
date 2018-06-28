@@ -77,9 +77,8 @@ class ManualScreen(BoxLayout, Screen):
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.manual
         # for debugging
-        self.manager.ui_tx[ui_tx_enum.state] = ui_state_enum.running
-        self.manager.ui_tx[ui_tx_enum.paddle_position_x] = 120
-        self.manager.ui_tx[ui_tx_enum.paddle_position_y] = 20
+        #self.manager.ui_tx[ui_tx_enum.paddle_position_x] = 120
+        #self.manager.ui_tx[ui_tx_enum.paddle_position_y] = 20
         self.ids['game_control'].on_enter()
 
 class DiagnosticsScreen(BoxLayout, Screen):
@@ -258,6 +257,9 @@ class ScreenManagement(ScreenManager):
     def process_data(self, *args):
         self.update_diagnostic_screen()
         
+        # update ui state
+        self.ui_tx[ui_tx_enum.state] = ui_state
+
         # keep track of score
         if int(self.ui_rx[ui_rx_enum.goal_scored]) != ui_goal_enum.none:
             self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal_scored])

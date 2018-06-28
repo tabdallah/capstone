@@ -58,6 +58,15 @@ timeout = 0.005 			# Timeout for keyboard input in seconds
 
 operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
 
+# object dimensions & distances
+table_width_mm = 774.7
+table_length_mm = 1692.3
+puck_radius_mm = 31.75
+paddle_radius_mm = 40
+goal_center_mm_x = 387.35
+goal_left_post_mm_x = 257.35
+goal_right_post_mm_x = 517.35
+
 # enums
 pt_state_cmd_enum = 0
 pt_state_enum = 0
@@ -81,14 +90,13 @@ pc_state_enum = 0
 pc_error_enum = 0
 pc_state_cmd_enum = 0
 
-
 settings = 0
 
 # CAN Communication (MC-PC and PC-MC) 
 # PC positions
-mc_pos_cmd_x_mm = 0
+mc_pos_cmd_x_mm = goal_center_mm_x
 mc_pos_cmd_y_mm = 0
-mc_pos_cmd_sent_x_mm = 0
+mc_pos_cmd_sent_x_mm = goal_center_mm_x
 mc_pos_cmd_sent_y_mm = 0
 pc_pos_status_x_mm = 0
 pc_pos_status_y_mm = 0
@@ -125,15 +133,6 @@ hdf5_dset_max_size = 30000 		# dataset max number of elements  after resize when
 hdf5_dset_stop_resize = False	# flag that indicates whether to continue dataset resize or not
 hdf5_dset_count = 0				# count to track current element in hdf5 PC_data dataset
 hdf5_file_handle = 0			# handle to hdf5 file
-
-# object dimensions & distances
-table_width_mm = 774.7
-table_length_mm = 1692.3
-puck_radius_mm = 31.75
-paddle_radius_mm = 40
-goal_center_mm_x = 387.35
-goal_left_post_mm_x = 257.35
-goal_right_post_mm_x = 517.35
 
 # general
 pt_state = 0
@@ -386,6 +385,11 @@ def Tx_PC_Cmd(device):
 	global mc_motor_speed_cmd_y
 	global pc_state_cmd
 	global mc_cmd_pc_debug
+	
+	# Don't send new position if PC is not in ON state
+	if pc_state != pc_state_enum.on:
+		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
+		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
 
 	message = TPCANMsg()
 
@@ -889,10 +893,6 @@ def make_decisions():
 	
 	elif ui_state != ui_state_enum.running:
 		return
-
-	"""elif (pc_state == pc_state_enum.calibration) or (pc_state == pc_state_enum.off):
-		Tx_PC_Cmd(PCAN)
-		return"""
 
 	# Check which UI screen we are on, this dictates a large part of what state we'll be in
 	if ui_screen == ui_screen_enum.visual:

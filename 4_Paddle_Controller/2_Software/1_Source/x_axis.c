@@ -305,15 +305,15 @@ interrupt 8 void x_axis_encoder_a(void)
 	// Track direction
 	if (X_AXIS_ENC_PORT & X_AXIS_ENC_B) {
 		// Phase B leads Phase A
-		x_axis.quadrature_direction = dcm_quad_dir_reverse;
-		if (x_axis.position_enc_ticks > 0) {
-			x_axis.position_enc_ticks --;
-		}
-	} else {
-		// Phase A leads Phase B
 		x_axis.quadrature_direction = dcm_quad_dir_forward;
 		if (x_axis.position_enc_ticks < MAX_UINT) {
 			x_axis.position_enc_ticks ++;
+		}
+	} else {
+		// Phase A leads Phase B
+		x_axis.quadrature_direction = dcm_quad_dir_reverse;
+		if (x_axis.position_enc_ticks > 0) {
+			x_axis.position_enc_ticks --;
 		}
 	}
 

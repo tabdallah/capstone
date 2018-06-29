@@ -6,7 +6,7 @@
 #include "TA_Header_W2016.h"  /* my macros and constants */
 #include "dcm.h"
 
-#define SLOW
+//#define SLOW
 
 // Left motor PWM channel
 #define Y_AXIS_L_SET_PWM_PERIOD(period) PWMPER4 = period

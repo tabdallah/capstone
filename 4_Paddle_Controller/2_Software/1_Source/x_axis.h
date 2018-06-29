@@ -6,7 +6,7 @@
 #include "TA_Header_W2016.h"  /* my macros and constants */
 #include "dcm.h"
 
-#define SLOW
+//#define SLOW
 
 // Motor control PWM channel setup and control macros
 #ifdef SLOW

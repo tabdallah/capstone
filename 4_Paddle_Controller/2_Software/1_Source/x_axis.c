@@ -11,13 +11,11 @@
 #include "x_axis.h"
 #include "can.h"
 
-static dcm_t x_axis = {X_AXIS_LIMIT_1_ENC_TICKS, X_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0, dcm_limit_switch_pressed, dcm_limit_switch_pressed, dcm_ctrl_mode_disable};
+static dcm_t x_axis = {X_AXIS_LIMIT_1_ENC_TICKS, X_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
 static x_axis_error_e x_axis_error = x_axis_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
 static can_msg_pc_status_t can_msg_pc_status;
-
-unsigned int encoder_ticks = 0;
 
 //;**************************************************************
 //;*                 x_axis_configure(void)
@@ -27,25 +25,24 @@ unsigned int encoder_ticks = 0;
 //;**************************************************************
 void x_axis_configure(void)
 {
-	// Configure H-Bridge direction control port pins.
-	SET_BITS(X_AXIS_H_BRIDGE_DDR, (X_AXIS_H_BRIDGE_FORWARD_PIN | X_AXIS_H_BRIDGE_REVERSE_PIN));
-	X_AXIS_H_BRIDGE_BRAKE;
-
-	// Configure PWM channel for motor control.
-	X_AXIS_SET_PWM_PERIOD;
-	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
+	// Configure PWM channel
+	SET_BITS(PWMCLK, PWMCLK_PCLK0_MASK);	// Use clock SA
+	SET_BITS(PWMPOL, PWMPOL_PPOL0_MASK);	// Active high
+	SET_BITS(PWMCAE, PWMCAE_CAE0_MASK);		// Centre aligned
+	X_AXIS_SET_PWM_PERIOD(X_AXIS_PWM_PERIOD);	// Set for 20kHz switching frequency
+	X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_OFF);	// Start with motor off
 	X_AXIS_CLEAR_PWM_COUNT;
 	X_AXIS_ENABLE_PWM;
 
 	// Configure encoder port pins and input-capture interrupt.
 	CLEAR_BITS(X_AXIS_ENC_DDR, X_AXIS_ENC_B);	// B-Phase input is read during ISR for A-Phase
-	CLEAR_BITS(TIOS, X_AXIS_ENC_A_TIOS_MASK);	// Set A-Phase timer channel to input capture mode
-	TCTL4 = X_AXIS_TCTL4_INIT;					// Capture on rising edge
-	SET_BITS(TIE, X_AXIS_ENC_A_TIOS_MASK);		// Enable interrupts for A-Phase timer channel
-	TFLG1 = (X_AXIS_ENC_A_TFLG1_MASK);			// Clear the flag in case anything is pending
+	CLEAR_BITS(TIOS, TIOS_IOS0_MASK);	// Set A-Phase timer channel to input capture mode
+	SET_BITS(TCTL4, X_AXIS_TCTL4_INIT);			// Capture on rising edge of TC0
+	SET_BITS(TIE, TIOS_IOS0_MASK);		// Enable interrupts for A-Phase timer channel
+	TFLG1 = (TFLG1_C0F_MASK);			// Clear the flag in case anything is pending
 
-	// Configure limit switch port pins.
-	SET_BITS(X_AXIS_LIMIT_DDR, (X_AXIS_LIMIT_1_PIN | X_AXIS_LIMIT_2_PIN));
+	// Configure home switch port pins.
+	CLEAR_BITS(X_AXIS_HOME_DDR, X_AXIS_HOME_PIN);
 
 	// Default to position control
 	x_axis.ctrl_mode = dcm_ctrl_mode_position;
@@ -69,8 +66,8 @@ void x_axis_home(void)
 	// Wait for limit switch to be hit
 	// To Do: Should have some timeout here to handle broken switch
 	// For now broken switch handled by dcm overload check
-	while (X_AXIS_LIMIT_1 == dcm_limit_switch_unpressed) {};
-	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+	while (X_AXIS_HOME == dcm_home_switch_unpressed) {};
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 
 	// Set target to center of table
 	x_axis.position_cmd_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS / 2;
@@ -101,29 +98,23 @@ void x_axis_position_ctrl(void)
 		x_axis.position_cmd_enc_ticks = X_AXIS_BOUNDARY_ENC_TICKS;
 	}
 
-	// Read limit switch states
-	x_axis.limit_switch_1 = X_AXIS_LIMIT_1;
-	x_axis.limit_switch_2 = X_AXIS_LIMIT_2;
-	if (x_axis.limit_switch_1 == dcm_limit_switch_pressed) {
-		DisableInterrupts();	// Start critical region
-		x_axis.position_enc_ticks = X_AXIS_LIMIT_1_ENC_TICKS;
-		EnableInterrupts();	// End critical region
-	}
-	if (x_axis.limit_switch_2 == dcm_limit_switch_pressed) {
-		DisableInterrupts();	// Start critical region
-		x_axis.position_enc_ticks = X_AXIS_LIMIT_2_ENC_TICKS;
-		EnableInterrupts();	// End critical region
+	// Read home position switch
+	x_axis.home_switch = X_AXIS_HOME;
+	if (x_axis.home_switch == dcm_home_switch_pressed) {
+		DisableInterrupts;
+		x_axis.position_enc_ticks = X_AXIS_HOME_ENC_TICKS;
+		EnableInterrupts;
 	}
 
 	// Calculate position error
-	DisableInterrupts();	// Start critical region
+	DisableInterrupts;	// Start critical region
 	x_axis.position_error_ticks = x_axis.position_cmd_enc_ticks - x_axis.position_enc_ticks;
-	EnableInterrupts();	// End critical region
+	EnableInterrupts;	// End critical region
 	error_p = abs(x_axis.position_error_ticks) * X_AXIS_POS_GAIN_P;
 
 	// Stop if at desired position
 	if (x_axis.position_error_ticks == 0) {
-		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 		return;
 	}
 
@@ -131,27 +122,27 @@ void x_axis_position_ctrl(void)
 	if (x_axis.position_error_ticks > 0) {
 		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_reverse) {
 			// Stop before reversing direction
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 		} else {
-			if (error_p > X_AXIS_PWM_DUTY_MAX) {
-				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+			if (error_p > X_AXIS_SPEED_MAX) {
+				x_axis.set_speed = X_AXIS_SPEED_MAX;
 			} else {
-				x_axis.pwm_duty = LOW(error_p);
+				x_axis.set_speed = LOW(error_p);
 			}
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, x_axis.pwm_duty);
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, x_axis.set_speed);
 		}
 		return;
 	} else {
 		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_forward) {
 			// Stop before reversing direction
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_PWM_DUTY_MIN);
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 		} else {
-			if (error_p > X_AXIS_PWM_DUTY_MAX) {
-				x_axis.pwm_duty = X_AXIS_PWM_DUTY_MAX;
+			if (error_p > X_AXIS_SPEED_MAX) {
+				x_axis.set_speed = X_AXIS_SPEED_MAX;
 			} else {
-				x_axis.pwm_duty = LOW(error_p);
+				x_axis.set_speed = LOW(error_p);
 			}
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, x_axis.pwm_duty);
+			x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, x_axis.set_speed);
 		}
 		return;
 	}
@@ -175,9 +166,9 @@ void x_axis_send_status_can(void)
 
 	// Only send message at 100Hz
 	if ((count % 10) == 0) {
-		DisableInterrupts();	// Start critical region
+		DisableInterrupts;	// Start critical region
 		pos_x_calc = x_axis.position_enc_ticks * 10;
-		EnableInterrupts();	// End critical region
+		EnableInterrupts;	// End critical region
 		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
 		can_msg_pc_status.pos_x_mm = 0xFFFF & (((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10) + PUCK_RADIUS_MM + X_AXIS_LIMIT_1_MM);
 
@@ -275,34 +266,33 @@ void x_axis_calculate_speed(void)
 //;*                 x_axis_set_dcm_drive(void)
 //;*	Helper function to set DC motor direction and speed
 //;**************************************************************
-//static void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
-void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char pwm_duty)
+void x_axis_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned char speed)
 {
 	switch (direction)
 	{
-		case dcm_h_bridge_dir_brake:
-			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+		case dcm_h_bridge_dir_brake:			
+			x_axis.set_speed = X_AXIS_SPEED_MIN;
+			x_axis.pwm_duty = X_AXIS_PWM_DUTY_OFF;
+			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_OFF);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-			X_AXIS_H_BRIDGE_BRAKE;
 			break;
 		case dcm_h_bridge_dir_forward:
-			X_AXIS_SET_PWM_DUTY(pwm_duty);
-			x_axis.pwm_duty = pwm_duty;
+			x_axis.set_speed = speed;
+			x_axis.pwm_duty = X_AXIS_SPEED_TO_PWM_FWD(speed);
+			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_forward;
-			X_AXIS_H_BRIDGE_FORWARD;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			X_AXIS_SET_PWM_DUTY(pwm_duty);
-			x_axis.pwm_duty = pwm_duty;
+			x_axis.set_speed = speed;
+			x_axis.pwm_duty = X_AXIS_SPEED_TO_PWM_REV(speed);
+			X_AXIS_SET_PWM_DUTY(x_axis.pwm_duty);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_reverse;
-			X_AXIS_H_BRIDGE_REVERSE;
 			break;
 		default:
-			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_MIN);
-			x_axis.pwm_duty = X_AXIS_PWM_DUTY_MIN;
+			x_axis.set_speed = X_AXIS_SPEED_MIN;
+			x_axis.pwm_duty = X_AXIS_PWM_DUTY_OFF;
+			X_AXIS_SET_PWM_DUTY(X_AXIS_PWM_DUTY_OFF);
 			x_axis.h_bridge_direction = dcm_h_bridge_dir_brake;
-			X_AXIS_H_BRIDGE_BRAKE;
 	}
 }
 

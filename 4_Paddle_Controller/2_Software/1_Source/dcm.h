@@ -4,6 +4,9 @@
 //; Date: 2018-03-19
 //;******************************************************************************
 
+#ifndef DCM_H
+#define DCM_H
+
 // Enumerated data types
 typedef enum {
 	dcm_h_bridge_dir_brake = 0,
@@ -23,9 +26,9 @@ typedef enum {
 } dcm_quad_phase_e;
 
 typedef enum {
-	dcm_limit_switch_unpressed = 0,
-	dcm_limit_switch_pressed = 1
-} dcm_limit_switch_e;
+	dcm_home_switch_unpressed = 0,
+	dcm_home_switch_pressed = 1
+} dcm_home_switch_e;
 
 typedef enum {
 	dcm_ctrl_mode_disable = 0,
@@ -42,6 +45,7 @@ typedef struct dcm_t {
 	dcm_h_bridge_dir_e h_bridge_direction;		// H-Bridge direction
 	dcm_quad_dir_e quadrature_direction;		// Quadrature encoder measured direction
 	unsigned char pwm_duty;						// Current PWM duty cycle
+	unsigned char set_speed;						// Current set speed (no units, just 0-100 for debugging)
 
 	unsigned int enc_a_edge_1_tcnt_ticks;		// Encoder first rising edge TCNT timestamp
 	unsigned int enc_a_edge_2_tcnt_ticks;		// Encoder second rising edge TCNT timestamp
@@ -51,7 +55,8 @@ typedef struct dcm_t {
 
 	unsigned int speed_enc_ticks_per_s;			// Rotational speed in encoder ticks per second
 	unsigned int speed_mm_per_s;				// Linear speed in millimetres per second
-	dcm_limit_switch_e limit_switch_1;			// Limit switch 1 state
-	dcm_limit_switch_e limit_switch_2;			// Limit switch 2 state
+	dcm_home_switch_e home_switch;				// Home position switch state
 	dcm_ctrl_mode_e ctrl_mode;					// Motor control mode
 } dcm_t;
+
+#endif

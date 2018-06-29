@@ -12,7 +12,7 @@ void main(void) {
   PWMCAE |= PWMCAE_CAE0_MASK;   // Centre aligned
   
   PWMPER0 = 100;
-  PWMDTY0 = 50;  
+  PWMDTY0 = ;  
   PWMCNT0 = 0;
   PWME |= PWME_PWME0_MASK;
 

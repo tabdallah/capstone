@@ -11,7 +11,11 @@
 #include "x_axis.h"
 #include "can.h"
 
-static dcm_t x_axis = {X_AXIS_LIMIT_1_ENC_TICKS, X_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
+unsigned char X_AXIS_GAIN_P = 10;
+unsigned char X_AXIS_GAIN_I = 1;
+unsigned char X_AXIS_INTEGRAL_LIMIT = 10;
+
+static dcm_t x_axis;
 static x_axis_error_e x_axis_error = x_axis_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
@@ -61,7 +65,7 @@ void x_axis_home(void)
 	x_axis.ctrl_mode = dcm_ctrl_mode_manual;
 
 	// Drive motor backwards
-	x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, 75);
+	x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, 15);
 
 	// Wait for limit switch to be hit
 	// To Do: Should have some timeout here to handle broken switch
@@ -83,7 +87,8 @@ void x_axis_home(void)
 //;**************************************************************
 void x_axis_position_ctrl(void)
 {
-	unsigned int error_p;
+	static signed int error_i = 0;
+	signed int error_p, error_calc;
 
 	// Sanity check control mode
 	if (x_axis.ctrl_mode != dcm_ctrl_mode_position) {
@@ -110,40 +115,32 @@ void x_axis_position_ctrl(void)
 	DisableInterrupts;	// Start critical region
 	x_axis.position_error_ticks = x_axis.position_cmd_enc_ticks - x_axis.position_enc_ticks;
 	EnableInterrupts;	// End critical region
-	error_p = abs(x_axis.position_error_ticks) * X_AXIS_POS_GAIN_P;
 
 	// Stop if at desired position
 	if (x_axis.position_error_ticks == 0) {
+		error_i = 0;
 		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 		return;
 	}
 
+	error_i -= (x_axis.position_error_ticks / X_AXIS_GAIN_I);
+	if (error_i > X_AXIS_INTEGRAL_LIMIT) {
+		error_i = X_AXIS_INTEGRAL_LIMIT;
+	}
+	if (error_i < -X_AXIS_INTEGRAL_LIMIT) {
+		error_i = -X_AXIS_INTEGRAL_LIMIT;
+	}
+	error_p = x_axis.position_error_ticks / X_AXIS_GAIN_P;
+	error_calc = error_i + error_p;
+
 	// Drive motor to desired position
-	if (x_axis.position_error_ticks > 0) {
-		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_reverse) {
-			// Stop before reversing direction
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
-		} else {
-			if (error_p > X_AXIS_SPEED_MAX) {
-				x_axis.set_speed = X_AXIS_SPEED_MAX;
-			} else {
-				x_axis.set_speed = LOW(error_p);
-			}
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, x_axis.set_speed);
-		}
+	if (error_calc > 0) {
+		x_axis.set_speed = MIN(X_AXIS_SPEED_MAX, LOW(error_calc));
+		x_axis_set_dcm_drive(dcm_h_bridge_dir_forward, x_axis.set_speed);
 		return;
 	} else {
-		if (x_axis.h_bridge_direction == dcm_h_bridge_dir_forward) {
-			// Stop before reversing direction
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
-		} else {
-			if (error_p > X_AXIS_SPEED_MAX) {
-				x_axis.set_speed = X_AXIS_SPEED_MAX;
-			} else {
-				x_axis.set_speed = LOW(error_p);
-			}
-			x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, x_axis.set_speed);
-		}
+		x_axis.set_speed = MIN(X_AXIS_SPEED_MAX, LOW(abs(error_calc)));
+		x_axis_set_dcm_drive(dcm_h_bridge_dir_reverse, x_axis.set_speed);
 		return;
 	}
 }

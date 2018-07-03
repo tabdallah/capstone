@@ -11,6 +11,13 @@
 #include "y_axis.h"
 #include "can.h"
 
+unsigned char Y_AXIS_L_GAIN_P = 10;
+unsigned char Y_AXIS_L_GAIN_I = 1;
+unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
+unsigned char Y_AXIS_R_GAIN_P = 3;
+unsigned char Y_AXIS_R_GAIN_I = 1;
+unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
+
 static dcm_t y_axis_l = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
 static dcm_t y_axis_r = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
 static signed int y_axis_lr_position_error_enc_ticks = 0;
@@ -63,6 +70,7 @@ void y_axis_configure(void)
 
 	// Default to position control
 	y_axis_l.ctrl_mode = dcm_ctrl_mode_position;
+	y_axis_r.ctrl_mode = dcm_ctrl_mode_position;
 }
 
 //;**************************************************************
@@ -105,8 +113,136 @@ void y_axis_home(void)
 }
 
 //;**************************************************************
-//;*                 y_axis_position_ctrl(void)
+//;*                 y_axis_l_position_ctrl(void)
 //;**************************************************************
+void y_axis_l_position_ctrl(void)
+{
+	static signed int error_i = 0;
+	signed int error_p, error_calc;
+
+	// Sanity check control mode
+	if (y_axis_l.ctrl_mode != dcm_ctrl_mode_position) {
+		return;
+	}
+
+	// Limit position commands to stay inside the virtual limit
+	if (y_axis_l.position_cmd_enc_ticks > (Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS)) {
+		y_axis_l.position_cmd_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS;
+	}
+	if (y_axis_l.position_cmd_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
+		y_axis_l.position_cmd_enc_ticks = Y_AXIS_BOUNDARY_ENC_TICKS;
+	}
+
+	// Read home position switch
+	y_axis_l.home_switch = Y_AXIS_L_HOME;
+	if (y_axis_l.home_switch == dcm_home_switch_pressed) {
+		DisableInterrupts;
+		y_axis_l.position_enc_ticks = Y_AXIS_HOME_ENC_TICKS;
+		EnableInterrupts;
+	}
+
+	// Calculate position error
+	DisableInterrupts;	// Start critical region
+	y_axis_l.position_error_ticks = y_axis_l.position_cmd_enc_ticks - y_axis_l.position_enc_ticks;
+	EnableInterrupts;	// End critical region
+
+	// Stop if at desired position
+	if (y_axis_l.position_error_ticks == 0) {
+		error_i = 0;
+		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
+		return;
+	}
+
+	error_i -= (y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_I);
+	if (error_i > Y_AXIS_L_INTEGRAL_LIMIT) {
+		error_i = Y_AXIS_L_INTEGRAL_LIMIT;
+	}
+	if (error_i < -Y_AXIS_L_INTEGRAL_LIMIT) {
+		error_i = -Y_AXIS_L_INTEGRAL_LIMIT;
+	}
+	error_p = y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_P;
+	error_calc = error_i + error_p;
+
+	// Drive motor to desired position
+	if (error_calc > 0) {
+		y_axis_l.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(error_calc));
+		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_l.set_speed);
+		return;
+	} else {
+		y_axis_l.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(abs(error_calc)));
+		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_l.set_speed);
+		return;
+	}
+}
+
+//;**************************************************************
+//;*                 y_axis_r_position_ctrl(void)
+//;**************************************************************
+void y_axis_r_position_ctrl(void)
+{
+	static signed int error_i = 0;
+	signed int error_p, error_calc;
+
+	// Right motor is slave to left motor
+	y_axis_r.position_cmd_enc_ticks = y_axis_l.position_cmd_enc_ticks;
+
+	// Sanity check control mode
+	if (y_axis_r.ctrl_mode != dcm_ctrl_mode_position) {
+		return;
+	}
+
+	// Limit position commands to stay inside the virtual limit
+	if (y_axis_r.position_cmd_enc_ticks > (Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS)) {
+		y_axis_r.position_cmd_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS;
+	}
+	if (y_axis_r.position_cmd_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
+		y_axis_r.position_cmd_enc_ticks = Y_AXIS_BOUNDARY_ENC_TICKS;
+	}
+
+	// Read home position switch
+	y_axis_r.home_switch = Y_AXIS_R_HOME;
+	if (y_axis_r.home_switch == dcm_home_switch_pressed) {
+		DisableInterrupts;
+		y_axis_r.position_enc_ticks = Y_AXIS_HOME_ENC_TICKS;
+		EnableInterrupts;
+	}
+
+	// Calculate position error
+	DisableInterrupts;	// Start critical region
+	//y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
+	y_axis_r.position_error_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
+	EnableInterrupts;	// End critical region
+
+	// Stop if at desired position
+	if (y_axis_r.position_error_ticks == 0) {
+		error_i = 0;
+		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
+		return;
+	}
+
+	error_i -= (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_I);
+	if (error_i > Y_AXIS_R_INTEGRAL_LIMIT) {
+		error_i = Y_AXIS_R_INTEGRAL_LIMIT;
+	}
+	if (error_i < -Y_AXIS_R_INTEGRAL_LIMIT) {
+		error_i = -Y_AXIS_R_INTEGRAL_LIMIT;
+	}
+	error_p = y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_P;
+	error_calc = error_i + error_p;
+
+	// Drive motor to desired position
+	if (error_calc > 0) {
+		y_axis_r.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(error_calc));
+		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_r.set_speed);
+		return;
+	} else {
+		y_axis_r.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(abs(error_calc)));
+		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_r.set_speed);
+		return;
+	}
+}
+
+/*
 void y_axis_position_ctrl(void)
 {	
 	unsigned int error_l_p, error_r_p, speed_calc_l, speed_calc_r;
@@ -227,7 +363,7 @@ void y_axis_position_ctrl(void)
 		// Stop at desired position
 		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
 	}
-}
+}*/
 
 //;**************************************************************
 //;*                 y_axis_send_status_can(void)

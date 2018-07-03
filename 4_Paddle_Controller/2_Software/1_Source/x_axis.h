@@ -6,17 +6,9 @@
 #include "TA_Header_W2016.h"  /* my macros and constants */
 #include "dcm.h"
 
-//#define SLOW
-
 // Motor control PWM channel setup and control macros
-#ifdef SLOW
-	#define X_AXIS_PWM_DUTY_MAX 60
-	#define X_AXIS_PWM_DUTY_MIN 40
-#else
-	#define X_AXIS_PWM_DUTY_MAX 95
-	#define X_AXIS_PWM_DUTY_MIN 5
-#endif
-
+#define X_AXIS_PWM_DUTY_MAX 95
+#define X_AXIS_PWM_DUTY_MIN 5
 #define X_AXIS_PWM_DUTY_OFF 50
 #define X_AXIS_PWM_PERIOD 100
 #define X_AXIS_SET_PWM_PERIOD(period) PWMPER0 = period
@@ -28,14 +20,8 @@
 // Mapping speed to PWM duty
 #define X_AXIS_SPEED_MAX 100
 #define X_AXIS_SPEED_MIN 0
-
-#ifdef SLOW
-	#define X_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((10*(speed)) + 5000) / 100))
-	#define X_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-10*(speed)) + 5000) / 100))
-#else
-	#define X_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((45*(speed)) + 5000) / 100))
-	#define X_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
-#endif
+#define X_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((45*(speed)) + 5000) / 100))
+#define X_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
 
 // Encoder port setup and macros
 #define X_AXIS_ENC_PORT PTT
@@ -56,12 +42,16 @@
 #define X_AXIS_HOME_ENC_TICKS 0	
 #define X_AXIS_LIMIT_1_ENC_TICKS 0		// Lower position limit in encoder ticks
 #define X_AXIS_LIMIT_1_MM 85
-#define X_AXIS_LIMIT_2_ENC_TICKS 4800	// Upper position limit in encoder ticks
-#define X_AXIS_BOUNDARY_ENC_TICKS 25	// Virtual limit to the available travel
+#define X_AXIS_LIMIT_2_ENC_TICKS 4650	// Upper position limit in encoder ticks
+#define X_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
 #define PUCK_RADIUS_MM 40
-#define X_AXIS_POS_GAIN_P 1
+//#define X_AXIS_GAIN_P 10
+//#define X_AXIS_GAIN_I 1
+//#define X_AXIS_INTEGRAL_LIMIT 50
+
 #define X_AXIS_ENC_TICKS_PER_REV 256
 #define X_AXIS_MM_PER_REV 40
+
 #define X_AXIS_DCM_OVERLOAD_LIMIT_MM_PER_S 5		// If linaer speed is less than this for more than xx milliseconds, motor is blocked/overloaded
 #define X_AXIS_DCM_OVERLOAD_STRIKE_COUNT 250		// In milliseconds since error check happens at 1kHz
 

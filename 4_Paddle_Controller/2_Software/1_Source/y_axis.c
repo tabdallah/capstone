@@ -11,19 +11,7 @@
 #include "y_axis.h"
 #include "can.h"
 
-/*
-unsigned char Y_AXIS_L_GAIN_P = 5;
-unsigned char Y_AXIS_L_GAIN_I = 1;
-unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
-unsigned char Y_AXIS_R_GAIN_P = 5;
-unsigned char Y_AXIS_R_GAIN_P_DEFAULT = 5;
-unsigned char Y_AXIS_R_GAIN_P_LIMIT = 10;
-unsigned char Y_AXIS_R_GAIN_I = 1;
-unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
-unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
-unsigned char Y_AXIS_SPEED_MAX = 50;
-*/
-
+// 10% speed settings
 unsigned char Y_AXIS_L_GAIN_P = 5;
 unsigned char Y_AXIS_L_GAIN_I = 1;
 unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
@@ -35,6 +23,19 @@ unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
 unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
 unsigned char Y_AXIS_SPEED_MAX = 10;
 
+// 25% speed settings
+/*
+unsigned char Y_AXIS_L_GAIN_P = 5;
+unsigned char Y_AXIS_L_GAIN_I = 1;
+unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
+unsigned char Y_AXIS_R_GAIN_P = 5;
+unsigned char Y_AXIS_R_GAIN_P_DEFAULT = 5;
+unsigned char Y_AXIS_R_GAIN_P_LIMIT = 10;
+unsigned char Y_AXIS_R_GAIN_I = 1;
+unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
+unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
+unsigned char Y_AXIS_SPEED_MAX = 25;
+*/
 
 static dcm_t y_axis_l, y_axis_r;
 static signed int y_axis_lr_position_error_enc_ticks = 0;
@@ -134,15 +135,22 @@ void y_axis_home(void)
 //;**************************************************************
 void y_axis_position_ctrl(void)
 {
-	static unsigned char count = 0;
-
 	// No position ctrl if error is active
 	if (y_axis_error != y_axis_error_none) {
 		return;
 	}
-
 	y_axis_l_position_ctrl_calc();
+	y_axis_lr_position_ctrl_calc();
+	y_axis_r_position_ctrl_calc();
+	y_axis_l_set_dcm_drive(y_axis_l.h_bridge_direction, y_axis_l.set_speed);
+	y_axis_r_set_dcm_drive(y_axis_r.h_bridge_direction, y_axis_r.set_speed);
+}
 
+//;**************************************************************
+//;*                 y_axis_l_position_ctrl_calc(void)
+//;**************************************************************
+void y_axis_lr_position_ctrl_calc(void)
+{
 	// Calculate left-right position mismatch
 	DisableInterrupts;	// Start critical region
 	y_axis_lr_position_error_enc_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
@@ -162,7 +170,7 @@ void y_axis_position_ctrl(void)
 	if (abs(y_axis_lr_position_error_enc_ticks) < 5) {
 		// Don't change gain for small error (for steady state condition)
 		Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
-	} else {//if ((count % 10) == 0) {
+	} else {
 		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_forward) {
 			if (y_axis_lr_position_error_enc_ticks > 0) {
 				// Left motor leads right motor
@@ -191,11 +199,6 @@ void y_axis_position_ctrl(void)
 			Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
 		}
 	}
-
-	y_axis_r_position_ctrl_calc();
-	y_axis_l_set_dcm_drive(y_axis_l.h_bridge_direction, y_axis_l.set_speed);
-	y_axis_r_set_dcm_drive(y_axis_r.h_bridge_direction, y_axis_r.set_speed);
-	count++;
 }
 
 //;**************************************************************
@@ -455,13 +458,14 @@ void y_axis_calculate_speed(void)
 static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int speed)
 {
 	// Has effect of torque slew
-	/*
-	static unsigned char speed_old = 0;
-	if ((LOW(speed) - speed_old) > 5) {
-		speed = speed_old + 5;
+	static unsigned int speed_old = 0;
+	unsigned int set_speed = speed;
+	if (set_speed > speed_old) {
+		if ((set_speed - speed_old) > 5) {
+			set_speed = speed_old + 5;
+		}
+		speed_old = set_speed;	
 	}
-	speed_old = LOW(speed);
-	*/
 
 	switch (direction)
 	{
@@ -472,14 +476,14 @@ static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			break;
 		case dcm_h_bridge_dir_forward:
-			y_axis_l.set_speed = LOW(speed);
-			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(speed);
+			y_axis_l.set_speed = LOW(set_speed);
+			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(set_speed);
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_forward;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			y_axis_l.set_speed = LOW(speed);
-			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(speed);
+			y_axis_l.set_speed = LOW(set_speed);
+			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(set_speed);
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			break;
@@ -498,13 +502,14 @@ static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int speed)
 {
 	// Has effect of torque slew
-	/*
-	static unsigned char speed_old = 0;
-	if ((LOW(speed) - speed_old) > 5) {
-		speed = speed_old + 5;
+	static unsigned int speed_old = 0;
+	unsigned int set_speed = speed;
+	if (set_speed > speed_old) {
+		if ((set_speed - speed_old) > 5) {
+			set_speed = speed_old + 5;
+		}
+		speed_old = set_speed;	
 	}
-	speed_old = LOW(speed);
-	*/
 
 	switch (direction)
 	{
@@ -515,14 +520,14 @@ static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			break;
 		case dcm_h_bridge_dir_forward:
-			y_axis_r.set_speed = LOW(speed);
-			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(speed);
+			y_axis_r.set_speed = LOW(set_speed);
+			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(set_speed);
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_forward;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			y_axis_r.set_speed = LOW(speed);
-			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(speed);
+			y_axis_r.set_speed = LOW(set_speed);
+			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(set_speed);
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			break;

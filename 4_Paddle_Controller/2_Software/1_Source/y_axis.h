@@ -75,6 +75,7 @@ void y_axis_configure(void);
 void y_axis_home(void);
 void y_axis_position_ctrl(void);
 void y_axis_l_position_ctrl_calc(void);
+void y_axis_lr_position_ctrl_calc(void);
 void y_axis_r_position_ctrl_calc(void);
 void y_axis_send_status_can(void);
 void y_axis_dcm_overload_check(void);

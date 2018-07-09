@@ -13,14 +13,18 @@
 
 // 10% speed settings
 unsigned char Y_AXIS_L_GAIN_P = 5;
+unsigned char Y_AXIS_L_GAIN_P_DEFAULT = 5;
+unsigned char Y_AXIS_L_GAIN_P_LIMIT = 10;
 unsigned char Y_AXIS_L_GAIN_I = 1;
 unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
+
 unsigned char Y_AXIS_R_GAIN_P = 5;
 unsigned char Y_AXIS_R_GAIN_P_DEFAULT = 5;
 unsigned char Y_AXIS_R_GAIN_P_LIMIT = 10;
+unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
 unsigned char Y_AXIS_R_GAIN_I = 1;
 unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
-unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
+
 unsigned char Y_AXIS_SPEED_MAX = 10;
 
 // 25% speed settings
@@ -139,9 +143,9 @@ void y_axis_position_ctrl(void)
 	if (y_axis_error != y_axis_error_none) {
 		return;
 	}
-	y_axis_l_position_ctrl_calc();
-	y_axis_lr_position_ctrl_calc();
-	y_axis_r_position_ctrl_calc();
+	y_axis_lr_position_ctrl_calc();		// Sets gains based on left-right position error
+	y_axis_l_position_ctrl_calc();		// Calculates set-point for left motor
+	y_axis_r_position_ctrl_calc();		// Calculates set-point for right motor
 	y_axis_l_set_dcm_drive(y_axis_l.h_bridge_direction, y_axis_l.set_speed);
 	y_axis_r_set_dcm_drive(y_axis_r.h_bridge_direction, y_axis_r.set_speed);
 }
@@ -166,19 +170,34 @@ void y_axis_lr_position_ctrl_calc(void)
 		return;
 	}
 
+	// Reset gains if position error is small
+	if (abs(y_axis_r.position_error_ticks) < 10) {
+		Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
+	}
+	if (abs(y_axis_l.position_error_ticks) < 10) {
+		Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
+	}
+
 	// Calculate right motor gain based on left-right position mismatch
 	if (abs(y_axis_lr_position_error_enc_ticks) < 5) {
 		// Don't change gain for small error (for steady state condition)
+		Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
 		Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
 	} else {
 		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_forward) {
 			if (y_axis_lr_position_error_enc_ticks > 0) {
 				// Left motor leads right motor
+				if (Y_AXIS_L_GAIN_P > 0) {
+					Y_AXIS_L_GAIN_P--;
+				}
 				if (Y_AXIS_R_GAIN_P < Y_AXIS_R_GAIN_P_LIMIT) {
 					Y_AXIS_R_GAIN_P++;
 				}
 			} else if (y_axis_lr_position_error_enc_ticks < 0) {
 				// Right motor leads left motor
+				if (Y_AXIS_L_GAIN_P < Y_AXIS_L_GAIN_P_LIMIT) {
+					Y_AXIS_L_GAIN_P++;
+				}
 				if (Y_AXIS_R_GAIN_P > 0) {
 					Y_AXIS_R_GAIN_P--;
 				}
@@ -186,16 +205,23 @@ void y_axis_lr_position_ctrl_calc(void)
 		} else if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_reverse) {
 			if (y_axis_lr_position_error_enc_ticks < 0) {
 				// Left motor leads right motor
+				if (Y_AXIS_L_GAIN_P > 0) {
+					Y_AXIS_L_GAIN_P--;
+				}
 				if (Y_AXIS_R_GAIN_P < Y_AXIS_R_GAIN_P_LIMIT) {
 					Y_AXIS_R_GAIN_P++;
 				}
 			} else if (y_axis_lr_position_error_enc_ticks > 0) {
 				// Right motor leads left motor
+				if (Y_AXIS_L_GAIN_P < Y_AXIS_L_GAIN_P_LIMIT) {
+					Y_AXIS_L_GAIN_P++;
+				}
 				if (Y_AXIS_R_GAIN_P > 0) {
 					Y_AXIS_R_GAIN_P--;
 				}
 			}
 		} else {
+			Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
 			Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
 		}
 	}
@@ -243,7 +269,7 @@ void y_axis_l_position_ctrl_calc(void)
 		return;
 	}
 
-	error_i -= (y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_I);
+	error_i += (y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_I);
 	if (error_i > Y_AXIS_L_INTEGRAL_LIMIT) {
 		error_i = Y_AXIS_L_INTEGRAL_LIMIT;
 	}
@@ -309,7 +335,7 @@ void y_axis_r_position_ctrl_calc(void)
 		return;
 	}
 
-	error_i -= (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_I);
+	error_i += (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_I);
 	if (error_i > Y_AXIS_R_INTEGRAL_LIMIT) {
 		error_i = Y_AXIS_R_INTEGRAL_LIMIT;
 	}

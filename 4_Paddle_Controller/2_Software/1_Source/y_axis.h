@@ -61,9 +61,6 @@
 #define Y_AXIS_LIMIT_1_ENC_TICKS 0		// Limit switch 1 position in encoder ticks
 #define Y_AXIS_LIMIT_2_ENC_TICKS 4300	// Limit switch 2 position in encoder ticks
 #define Y_AXIS_BOUNDARY_ENC_TICKS 50	// Virtual limit to the available travel
-#define Y_AXIS_L_POS_GAIN_P 1
-#define Y_AXIS_R_POS_GAIN_P 1
-#define Y_AXIS_LR_POS_GAIN_P 1
 #define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 200		// Shut down system if left vs right motor position differs by more than this
 #define Y_AXIS_ENC_TICKS_PER_REV 256
 #define Y_AXIS_MM_PER_REV 40

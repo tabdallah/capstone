@@ -23,27 +23,16 @@
 #define Y_AXIS_R_DISABLE_PWM CLEAR_BITS(PWME, PWME_PWME5_MASK)
 
 // Shared PWM constants
-#ifdef SLOW
-	#define Y_AXIS_PWM_DUTY_MAX 60
-	#define Y_AXIS_PWM_DUTY_MIN 40
-#else
-	#define Y_AXIS_PWM_DUTY_MAX 95
-	#define Y_AXIS_PWM_DUTY_MIN 5
-#endif
+#define Y_AXIS_PWM_DUTY_MAX 95
+#define Y_AXIS_PWM_DUTY_MIN 5
 #define Y_AXIS_PWM_DUTY_OFF 50
 #define Y_AXIS_PWM_PERIOD 100
 
 // Mapping speed to PWM duty
-#define Y_AXIS_SPEED_MAX 100
+//#define Y_AXIS_SPEED_MAX 10
 #define Y_AXIS_SPEED_MIN 0
-
-#ifdef SLOW
-	#define Y_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((10*(speed)) + 5000) / 100))
-	#define Y_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-10*(speed)) + 5000) / 100))
-#else
-	#define Y_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((45*(speed)) + 5000) / 100))
-	#define Y_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
-#endif
+#define Y_AXIS_SPEED_TO_PWM_FWD(speed) LOW((((45*(speed)) + 5000) / 100))
+#define Y_AXIS_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
 
 // Encoder port setup and macros
 #define Y_AXIS_ENC_PORT PTT
@@ -84,8 +73,9 @@
 // Function prototypes
 void y_axis_configure(void);
 void y_axis_home(void);
-void y_axis_l_position_ctrl(void);
-void y_axis_r_position_ctrl(void);
+void y_axis_position_ctrl(void);
+void y_axis_l_position_ctrl_calc(void);
+void y_axis_r_position_ctrl_calc(void);
 void y_axis_send_status_can(void);
 void y_axis_dcm_overload_check(void);
 void y_axis_calculate_speed(void);

@@ -117,13 +117,13 @@ void x_axis_position_ctrl(void)
 	EnableInterrupts;	// End critical region
 
 	// Stop if at desired position
-	if (x_axis.position_error_ticks == 0) {
+	if (abs(x_axis.position_error_ticks) <= 5) {
 		error_i = 0;
 		x_axis_set_dcm_drive(dcm_h_bridge_dir_brake, X_AXIS_SPEED_MIN);
 		return;
 	}
 
-	error_i -= (x_axis.position_error_ticks / X_AXIS_GAIN_I);
+	error_i += (x_axis.position_error_ticks / X_AXIS_GAIN_I);
 	if (error_i > X_AXIS_INTEGRAL_LIMIT) {
 		error_i = X_AXIS_INTEGRAL_LIMIT;
 	}

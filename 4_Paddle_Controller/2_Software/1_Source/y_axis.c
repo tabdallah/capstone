@@ -11,15 +11,37 @@
 #include "y_axis.h"
 #include "can.h"
 
-unsigned char Y_AXIS_L_GAIN_P = 10;
+// 10% speed settings
+unsigned char Y_AXIS_L_GAIN_P = 5;
+unsigned char Y_AXIS_L_GAIN_P_DEFAULT = 5;
+unsigned char Y_AXIS_L_GAIN_P_LIMIT = 10;
 unsigned char Y_AXIS_L_GAIN_I = 1;
 unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
-unsigned char Y_AXIS_R_GAIN_P = 3;
+
+unsigned char Y_AXIS_R_GAIN_P = 5;
+unsigned char Y_AXIS_R_GAIN_P_DEFAULT = 5;
+unsigned char Y_AXIS_R_GAIN_P_LIMIT = 10;
+unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
 unsigned char Y_AXIS_R_GAIN_I = 1;
 unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
 
-static dcm_t y_axis_l = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
-static dcm_t y_axis_r = {Y_AXIS_LIMIT_1_ENC_TICKS, Y_AXIS_LIMIT_1_ENC_TICKS, 0,0,0,0,0,0,0,0,0,0,0,0, dcm_home_switch_pressed, dcm_ctrl_mode_disable};
+unsigned char Y_AXIS_SPEED_MAX = 10;
+
+// 25% speed settings
+/*
+unsigned char Y_AXIS_L_GAIN_P = 5;
+unsigned char Y_AXIS_L_GAIN_I = 1;
+unsigned char Y_AXIS_L_INTEGRAL_LIMIT = 0;
+unsigned char Y_AXIS_R_GAIN_P = 5;
+unsigned char Y_AXIS_R_GAIN_P_DEFAULT = 5;
+unsigned char Y_AXIS_R_GAIN_P_LIMIT = 10;
+unsigned char Y_AXIS_R_GAIN_I = 1;
+unsigned char Y_AXIS_R_INTEGRAL_LIMIT = 0;
+unsigned char Y_AXIS_GAIN_P_FACTOR = 10;
+unsigned char Y_AXIS_SPEED_MAX = 25;
+*/
+
+static dcm_t y_axis_l, y_axis_r;
 static signed int y_axis_lr_position_error_enc_ticks = 0;
 static y_axis_error_e y_axis_error = y_axis_error_none;
 static can_msg_raw_t can_msg_raw;
@@ -113,9 +135,102 @@ void y_axis_home(void)
 }
 
 //;**************************************************************
-//;*                 y_axis_l_position_ctrl(void)
+//;*                 y_axis_position_ctrl(void)
 //;**************************************************************
-void y_axis_l_position_ctrl(void)
+void y_axis_position_ctrl(void)
+{
+	// No position ctrl if error is active
+	if (y_axis_error != y_axis_error_none) {
+		return;
+	}
+	y_axis_lr_position_ctrl_calc();		// Sets gains based on left-right position error
+	y_axis_l_position_ctrl_calc();		// Calculates set-point for left motor
+	y_axis_r_position_ctrl_calc();		// Calculates set-point for right motor
+	y_axis_l_set_dcm_drive(y_axis_l.h_bridge_direction, y_axis_l.set_speed);
+	y_axis_r_set_dcm_drive(y_axis_r.h_bridge_direction, y_axis_r.set_speed);
+}
+
+//;**************************************************************
+//;*                 y_axis_l_position_ctrl_calc(void)
+//;**************************************************************
+void y_axis_lr_position_ctrl_calc(void)
+{
+	// Calculate left-right position mismatch
+	DisableInterrupts;	// Start critical region
+	y_axis_lr_position_error_enc_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
+	EnableInterrupts;	// End critical region
+
+	// Throw error if mismatch too large
+	if (y_axis_lr_position_error_enc_ticks >= Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS) {
+		y_axis_error = y_axis_error_lr_pos_mism;
+		y_axis_l.ctrl_mode = dcm_ctrl_mode_disable;
+		y_axis_r.ctrl_mode = dcm_ctrl_mode_disable;
+		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_OFF);
+		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_PWM_DUTY_OFF);
+		return;
+	}
+
+	// Reset gains if position error is small
+	if (abs(y_axis_r.position_error_ticks) < 10) {
+		Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
+	}
+	if (abs(y_axis_l.position_error_ticks) < 10) {
+		Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
+	}
+
+	// Calculate right motor gain based on left-right position mismatch
+	if (abs(y_axis_lr_position_error_enc_ticks) < 5) {
+		// Don't change gain for small error (for steady state condition)
+		Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
+		Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
+	} else {
+		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_forward) {
+			if (y_axis_lr_position_error_enc_ticks > 0) {
+				// Left motor leads right motor
+				if (Y_AXIS_L_GAIN_P > 0) {
+					Y_AXIS_L_GAIN_P--;
+				}
+				if (Y_AXIS_R_GAIN_P < Y_AXIS_R_GAIN_P_LIMIT) {
+					Y_AXIS_R_GAIN_P++;
+				}
+			} else if (y_axis_lr_position_error_enc_ticks < 0) {
+				// Right motor leads left motor
+				if (Y_AXIS_L_GAIN_P < Y_AXIS_L_GAIN_P_LIMIT) {
+					Y_AXIS_L_GAIN_P++;
+				}
+				if (Y_AXIS_R_GAIN_P > 0) {
+					Y_AXIS_R_GAIN_P--;
+				}
+			}
+		} else if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_reverse) {
+			if (y_axis_lr_position_error_enc_ticks < 0) {
+				// Left motor leads right motor
+				if (Y_AXIS_L_GAIN_P > 0) {
+					Y_AXIS_L_GAIN_P--;
+				}
+				if (Y_AXIS_R_GAIN_P < Y_AXIS_R_GAIN_P_LIMIT) {
+					Y_AXIS_R_GAIN_P++;
+				}
+			} else if (y_axis_lr_position_error_enc_ticks > 0) {
+				// Right motor leads left motor
+				if (Y_AXIS_L_GAIN_P < Y_AXIS_L_GAIN_P_LIMIT) {
+					Y_AXIS_L_GAIN_P++;
+				}
+				if (Y_AXIS_R_GAIN_P > 0) {
+					Y_AXIS_R_GAIN_P--;
+				}
+			}
+		} else {
+			Y_AXIS_L_GAIN_P = Y_AXIS_L_GAIN_P_DEFAULT;
+			Y_AXIS_R_GAIN_P = Y_AXIS_R_GAIN_P_DEFAULT;
+		}
+	}
+}
+
+//;**************************************************************
+//;*                 y_axis_l_position_ctrl_calc(void)
+//;**************************************************************
+void y_axis_l_position_ctrl_calc(void)
 {
 	static signed int error_i = 0;
 	signed int error_p, error_calc;
@@ -149,36 +264,35 @@ void y_axis_l_position_ctrl(void)
 	// Stop if at desired position
 	if (y_axis_l.position_error_ticks == 0) {
 		error_i = 0;
-		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
+		y_axis_l.set_speed = Y_AXIS_SPEED_MIN;
+		y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 		return;
 	}
 
-	error_i -= (y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_I);
+	error_i += (y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_I);
 	if (error_i > Y_AXIS_L_INTEGRAL_LIMIT) {
 		error_i = Y_AXIS_L_INTEGRAL_LIMIT;
 	}
 	if (error_i < -Y_AXIS_L_INTEGRAL_LIMIT) {
 		error_i = -Y_AXIS_L_INTEGRAL_LIMIT;
 	}
-	error_p = y_axis_l.position_error_ticks / Y_AXIS_L_GAIN_P;
+	error_p = (y_axis_l.position_error_ticks * Y_AXIS_L_GAIN_P) / Y_AXIS_GAIN_P_FACTOR;
 	error_calc = error_i + error_p;
 
 	// Drive motor to desired position
 	if (error_calc > 0) {
 		y_axis_l.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(error_calc));
-		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_l.set_speed);
-		return;
+		y_axis_l.h_bridge_direction = dcm_h_bridge_dir_forward;
 	} else {
 		y_axis_l.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(abs(error_calc)));
-		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_l.set_speed);
-		return;
+		y_axis_l.h_bridge_direction = dcm_h_bridge_dir_reverse;
 	}
 }
 
 //;**************************************************************
 //;*                 y_axis_r_position_ctrl(void)
 //;**************************************************************
-void y_axis_r_position_ctrl(void)
+void y_axis_r_position_ctrl_calc(void)
 {
 	static signed int error_i = 0;
 	signed int error_p, error_calc;
@@ -209,161 +323,37 @@ void y_axis_r_position_ctrl(void)
 
 	// Calculate position error
 	DisableInterrupts;	// Start critical region
-	//y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
-	y_axis_r.position_error_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
+	y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
+	//y_axis_r.position_error_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
 	EnableInterrupts;	// End critical region
 
 	// Stop if at desired position
 	if (y_axis_r.position_error_ticks == 0) {
 		error_i = 0;
-		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
+		y_axis_r.set_speed = Y_AXIS_SPEED_MIN;
+		y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 		return;
 	}
 
-	error_i -= (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_I);
+	error_i += (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_I);
 	if (error_i > Y_AXIS_R_INTEGRAL_LIMIT) {
 		error_i = Y_AXIS_R_INTEGRAL_LIMIT;
 	}
 	if (error_i < -Y_AXIS_R_INTEGRAL_LIMIT) {
 		error_i = -Y_AXIS_R_INTEGRAL_LIMIT;
 	}
-	error_p = y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_P;
+	error_p = (y_axis_r.position_error_ticks * Y_AXIS_R_GAIN_P) / Y_AXIS_GAIN_P_FACTOR;
 	error_calc = error_i + error_p;
 
 	// Drive motor to desired position
 	if (error_calc > 0) {
 		y_axis_r.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(error_calc));
-		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_forward, y_axis_r.set_speed);
-		return;
+		y_axis_r.h_bridge_direction = dcm_h_bridge_dir_forward;
 	} else {
 		y_axis_r.set_speed = MIN(Y_AXIS_SPEED_MAX, LOW(abs(error_calc)));
-		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, y_axis_r.set_speed);
-		return;
+		y_axis_r.h_bridge_direction = dcm_h_bridge_dir_reverse;
 	}
 }
-
-/*
-void y_axis_position_ctrl(void)
-{	
-	unsigned int error_l_p, error_r_p, speed_calc_l, speed_calc_r;
-
-	// Sanity check control mode
-	if (y_axis_l.ctrl_mode != dcm_ctrl_mode_position) {
-    	return;
-	}
-
-	// Limit position commands to sane values
-	if (y_axis_l.position_cmd_enc_ticks > (Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS)) {
-		y_axis_l.position_cmd_enc_ticks = Y_AXIS_LIMIT_2_ENC_TICKS - Y_AXIS_BOUNDARY_ENC_TICKS;
-	}
-	if (y_axis_l.position_cmd_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
-		y_axis_l.position_cmd_enc_ticks = Y_AXIS_BOUNDARY_ENC_TICKS;
-	}
-
-	// Read home position switches
-	y_axis_l.home_switch = Y_AXIS_L_HOME;
-	y_axis_r.home_switch = Y_AXIS_R_HOME;
-	if (y_axis_l.home_switch == dcm_home_switch_pressed) {
-		DisableInterrupts;	// Start critical region
-		y_axis_l.position_enc_ticks = Y_AXIS_HOME_ENC_TICKS;
-		EnableInterrupts;	// End critical region
-	}
-	if (y_axis_r.home_switch == dcm_home_switch_pressed) {
-		DisableInterrupts;	// Start critical region
-		y_axis_r.position_enc_ticks = Y_AXIS_HOME_ENC_TICKS;
-		EnableInterrupts;	// End critical region
-	}
-
-	// Always force right (slave) position command to match left (master) position command
-	y_axis_r.position_cmd_enc_ticks = y_axis_l.position_cmd_enc_ticks;
-
-	// Throw error and stop if left and right motor positions diverge
-	DisableInterrupts;	// Start critical region
-	y_axis_lr_position_error_enc_ticks = y_axis_l.position_enc_ticks - y_axis_r.position_enc_ticks;
-	EnableInterrupts;	// End critical region
-	if ((y_axis_lr_position_error_enc_ticks >= Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS) ||
-		(y_axis_lr_position_error_enc_ticks <= -Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS)) {
-		if (y_axis_error == y_axis_error_none) {
-			y_axis_error = y_axis_error_lr_pos_mism;
-		}
-		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		return;
-	}
-
-	// Calculate error for left motor (master)
-	DisableInterrupts;	// Start critical region
-	y_axis_l.position_error_ticks = y_axis_l.position_cmd_enc_ticks - y_axis_l.position_enc_ticks;
-	EnableInterrupts;	// End critical region
-	error_l_p = abs(y_axis_l.position_error_ticks) * Y_AXIS_L_POS_GAIN_P;
-	
-	// Drive left motor to desired position
-	if (y_axis_l.position_error_ticks > 0) {
-		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_reverse) {
-			// Stop before reversing direction
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		} else {
-			if (error_l_p > Y_AXIS_SPEED_MAX) {
-				speed_calc_l = Y_AXIS_SPEED_MAX;
-			} else {
-				speed_calc_l = LOW(error_l_p);
-			}
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_forward, speed_calc_l);
-		}
-	} else if (y_axis_l.position_error_ticks < 0) {
-		if (y_axis_l.h_bridge_direction == dcm_h_bridge_dir_forward) {
-			// Stop before reversing direction
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		} else {
-			if (error_l_p > Y_AXIS_SPEED_MAX) {
-				speed_calc_l = Y_AXIS_SPEED_MAX;
-			} else {
-				speed_calc_l = LOW(error_l_p);
-			}
-			y_axis_l_set_dcm_drive(dcm_h_bridge_dir_reverse, speed_calc_l);
-		}
-	} else {
-		// Stop at desired position
-		y_axis_l_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-	}
-
-	// Calculate position error for right motor (slave)
-	DisableInterrupts;	// Start critical region
-	y_axis_r.position_error_ticks = y_axis_r.position_cmd_enc_ticks - y_axis_r.position_enc_ticks;
-	EnableInterrupts;	// End critical region
-	error_r_p = abs(y_axis_r.position_error_ticks) * Y_AXIS_R_POS_GAIN_P;
-	speed_calc_r = MIN(Y_AXIS_SPEED_MAX, error_r_p);
-
-	// Drive right motor to desired position
-	if (y_axis_r.position_error_ticks > 0) {
-		if (y_axis_r.h_bridge_direction == dcm_h_bridge_dir_reverse) {
-			// Stop before reversing direction
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		} else {
-			if (y_axis_r.position_error_ticks > Y_AXIS_BOUNDARY_ENC_TICKS) {
-				speed_calc_r += (y_axis_lr_position_error_enc_ticks * Y_AXIS_LR_POS_GAIN_P);	
-			}
-			speed_calc_r = MIN(Y_AXIS_SPEED_MAX, speed_calc_r);
-			speed_calc_r = LOW(speed_calc_r);
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_forward, speed_calc_r);
-		}
-	} else if (y_axis_r.position_error_ticks < 0) {
-		if (y_axis_r.h_bridge_direction == dcm_h_bridge_dir_forward) {
-			// Stop before reversing direction
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-		} else {
-			if (y_axis_r.position_error_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
-				speed_calc_r -= (y_axis_lr_position_error_enc_ticks * Y_AXIS_LR_POS_GAIN_P);
-			}
-			speed_calc_r = MIN(Y_AXIS_SPEED_MAX, speed_calc_r);
-			speed_calc_r = LOW(speed_calc_r);
-			y_axis_r_set_dcm_drive(dcm_h_bridge_dir_reverse, speed_calc_r);
-		}
-	} else {
-		// Stop at desired position
-		y_axis_r_set_dcm_drive(dcm_h_bridge_dir_brake, Y_AXIS_SPEED_MIN);
-	}
-}*/
 
 //;**************************************************************
 //;*                 y_axis_send_status_can(void)
@@ -493,6 +483,16 @@ void y_axis_calculate_speed(void)
 //;**************************************************************
 static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int speed)
 {
+	// Has effect of torque slew
+	static unsigned int speed_old = 0;
+	unsigned int set_speed = speed;
+	if (set_speed > speed_old) {
+		if ((set_speed - speed_old) > 5) {
+			set_speed = speed_old + 5;
+		}
+		speed_old = set_speed;	
+	}
+
 	switch (direction)
 	{
 		case dcm_h_bridge_dir_brake:
@@ -502,14 +502,14 @@ static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_brake;
 			break;
 		case dcm_h_bridge_dir_forward:
-			y_axis_l.set_speed = LOW(speed);
-			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(speed);
+			y_axis_l.set_speed = LOW(set_speed);
+			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(set_speed);
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_forward;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			y_axis_l.set_speed = LOW(speed);
-			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(speed);
+			y_axis_l.set_speed = LOW(set_speed);
+			y_axis_l.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(set_speed);
 			Y_AXIS_L_SET_PWM_DUTY(y_axis_l.pwm_duty);
 			y_axis_l.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			break;
@@ -527,6 +527,16 @@ static void y_axis_l_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 //;**************************************************************
 static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int speed)
 {
+	// Has effect of torque slew
+	static unsigned int speed_old = 0;
+	unsigned int set_speed = speed;
+	if (set_speed > speed_old) {
+		if ((set_speed - speed_old) > 5) {
+			set_speed = speed_old + 5;
+		}
+		speed_old = set_speed;	
+	}
+
 	switch (direction)
 	{
 		case dcm_h_bridge_dir_brake:
@@ -536,14 +546,14 @@ static void y_axis_r_set_dcm_drive(dcm_h_bridge_dir_e direction, unsigned int sp
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_brake;
 			break;
 		case dcm_h_bridge_dir_forward:
-			y_axis_r.set_speed = LOW(speed);
-			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(speed);
+			y_axis_r.set_speed = LOW(set_speed);
+			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_FWD(set_speed);
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_forward;
 			break;
 		case dcm_h_bridge_dir_reverse:
-			y_axis_r.set_speed = LOW(speed);
-			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(speed);
+			y_axis_r.set_speed = LOW(set_speed);
+			y_axis_r.pwm_duty = Y_AXIS_SPEED_TO_PWM_REV(set_speed);
 			Y_AXIS_R_SET_PWM_DUTY(y_axis_r.pwm_duty);
 			y_axis_r.h_bridge_direction = dcm_h_bridge_dir_reverse;
 			break;

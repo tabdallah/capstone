@@ -26,4 +26,5 @@
 void timer_configure(void);					// Configure the timer module at startup
 void timer_delay_ms(unsigned char time);	// Delay by time ms using OC polling
 void timer_delay_us(unsigned char time);	// Delay by time us using OC polling
+void timer_delay_100us(unsigned char time);	// Delay by time 100us using OC polling
 unsigned char timer_get_overflow(void);		// Returns current value of the TCNT overflow counter

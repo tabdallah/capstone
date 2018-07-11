@@ -3,9 +3,24 @@
 //; Name: Thomas Abdallah
 //; Date: 2018-03-19
 //;******************************************************************************
+#include "TA_Header_W2016.h"  /* my macros and constants */
 
 #ifndef DCM_H
 #define DCM_H
+
+// Motor control macros
+#define DCM_PWM_DUTY_MAX 95
+#define DCM_PWM_DUTY_MIN 5
+#define DCM_PWM_DUTY_OFF 50
+#define DCM_PWM_PERIOD 100
+#define DCM_SPEED_TO_PWM_FWD(speed) LOW((((45*(speed)) + 5000) / 100))
+#define DCM_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
+
+#define DCM_MM_PER_REV 40
+#define DCM_ENC_TICKS_PER_REV 256
+
+#define DCM_OVERLOAD_STRIKE_COUNT_LIMIT 25
+#define DCM_OVERLOAD_SPEED_MM_PER_S	5
 
 // Enumerated data types
 typedef enum {
@@ -32,31 +47,48 @@ typedef enum {
 
 typedef enum {
 	dcm_ctrl_mode_disable = 0,
-	dcm_ctrl_mode_manual = 1,
-	dcm_ctrl_mode_position = 2,
-	dcm_ctrl_mode_velocity = 3
+	dcm_ctrl_mode_enable = 1
 } dcm_ctrl_mode_e;
+
+typedef enum {
+	dcm_error_none = 0,
+	dcm_error_overload = 1,
+	dcm_error_can = 2
+} dcm_error_e;
 
 // Structure definitions
 typedef struct dcm_t {
-	unsigned int position_cmd_enc_ticks;		// Commanded linear position
-	unsigned int position_enc_ticks;			// Current linear position
-	signed int position_error_ticks;			// Difference between current and commanded linear position
-	dcm_h_bridge_dir_e h_bridge_direction;		// H-Bridge direction
-	dcm_quad_dir_e quadrature_direction;		// Quadrature encoder measured direction
-	unsigned char pwm_duty;						// Current PWM duty cycle
-	unsigned char set_speed;						// Current set speed (no units, just 0-100 for debugging)
-
-	unsigned int enc_a_edge_1_tcnt_ticks;		// Encoder first rising edge TCNT timestamp
-	unsigned int enc_a_edge_2_tcnt_ticks;		// Encoder second rising edge TCNT timestamp
-	unsigned char enc_a_edge_1_tcnt_overflow;	// Value of TCNT overflow counter at first rising edge
-	unsigned char enc_a_edge_2_tcnt_overflow;	// Value of TCNT overflow counter at second rising edge
-	unsigned char enc_a_edge_tracker;			// 0 = first rising edge, 1 = second rising edge
-
-	unsigned int speed_enc_ticks_per_s;			// Rotational speed in encoder ticks per second
-	unsigned int speed_mm_per_s;				// Linear speed in millimetres per second
-	dcm_home_switch_e home_switch;				// Home position switch state
-	dcm_ctrl_mode_e ctrl_mode;					// Motor control mode
+	unsigned int position_cmd_enc_ticks;
+	unsigned int position_enc_ticks;
+	unsigned int position_enc_ticks_old;
+	signed int position_error_ticks;
+	unsigned int axis_length_enc_ticks;
+	unsigned int axis_boundary_enc_ticks;
+	unsigned int home_position_enc_ticks;
+	unsigned int speed_enc_ticks_per_s;
+	unsigned int speed_mm_per_s;
+	unsigned int calc_speed;
+	unsigned char pwm_duty;
+	unsigned char set_speed;
+	unsigned char max_speed;
+	unsigned char gain_p;
+	unsigned char gain_p_factor;
+	unsigned char gain_i;
+	unsigned char integral_limit;
+	unsigned char slew_rate;
+	unsigned char overload_strike_counter;
+	dcm_h_bridge_dir_e h_bridge_direction;
+	dcm_h_bridge_dir_e h_bridge_direction_old;
+	dcm_quad_dir_e quadrature_direction;
+	dcm_home_switch_e home_switch;
+	dcm_ctrl_mode_e ctrl_mode;
+	dcm_error_e error;
 } dcm_t;
+
+// Function prototypes
+void dcm_position_ctrl(dcm_t *dcm);
+void dcm_set_error(dcm_t *dcm, dcm_error_e error);
+void dcm_speed_calc(dcm_t *dcm);
+void dcm_overload_check(dcm_t *dcm);
 
 #endif

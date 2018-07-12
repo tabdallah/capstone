@@ -52,8 +52,8 @@ void x_axis_configure(void)
 	// Configure home switch port pins.
 	CLEAR_BITS(X_AXIS_HOME_DDR, X_AXIS_HOME_PIN);
 
-	// Default to position control
-	x_axis.ctrl_mode = dcm_ctrl_mode_enable;
+	// Default to off
+	x_axis.ctrl_mode = dcm_ctrl_mode_disable;
 }
 
 //;**************************************************************
@@ -62,9 +62,6 @@ void x_axis_configure(void)
 //;**************************************************************
 void x_axis_home(void)
 {
-	// Save current control mode to be restored before returning
-	dcm_ctrl_mode_e ctrl_mode = x_axis.ctrl_mode;
-
 	// Drive motor backwards
 	X_AXIS_SET_PWM_DUTY(45);
 
@@ -76,10 +73,6 @@ void x_axis_home(void)
 
 	// Set target to center of table
 	x_axis.position_cmd_enc_ticks = x_axis.axis_length_enc_ticks / 2;
-
-	// Return control to position/velocity controllers
-	x_axis.ctrl_mode = ctrl_mode;
-	return;
 }
 
 //;**************************************************************

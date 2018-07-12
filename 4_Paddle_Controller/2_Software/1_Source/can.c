@@ -13,7 +13,7 @@
 
 // Code from AN3034 app note (but not really because that code was hot garbage)
 
-// Global data structures for debugging
+static can_error_e error = can_error_none;
 static can_msg_raw_t can_msg_raw;
 static can_msg_mc_cmd_pc_t can_msg_mc_cmd_pc;
 static can_msg_pc_status_t can_msg_pc_status;
@@ -83,12 +83,13 @@ unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txda
 	CANTFLG = txbuffer; 	// Start transmission
 
 	// Wait for transmit to complete
+	/*
 	while ( (CANTFLG & txbuffer) != txbuffer) {
 		tx_count ++;
 		if (tx_count >= CAN_TX_LIMIT) {
 			return CAN_ERR_TX;
 		}
-	}
+	} */
 
 	return CAN_ERR_NONE;
 }
@@ -101,8 +102,7 @@ interrupt 38 void can_rx_handler(void) {
   	unsigned char i;	      // Loop counter
 	unsigned int ID0, ID1;   // To read CAN ID registers and manipulate 11-bit ID's into a single number
 	unsigned long pos_cmd_calculation;
-	dcm_t *x_axis;
-	dcm_t *y_axis;
+	dcm_t *x_axis, *y_axis;
 
 	// Store 11-bit CAN ID as a single number
 	ID0 = (CANRXIDR0 << 3);
@@ -157,159 +157,75 @@ interrupt 38 void can_rx_handler(void) {
 	y_axis = y_axis_get_data();
 	y_axis->position_cmd_enc_ticks = 0xFFFF & pos_cmd_calculation;
 
-	// Clear Rx flag
-	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);
-}
-
-/*
-//;**************************************************************
-//;*                 x_axis_send_status_can(void)
-//;*	Send PC_Status_X message
-//;**************************************************************
-void x_axis_send_status_can(void)
-{
-	static unsigned char count = 1;
-	static unsigned char error = 0;	// Set to non-zero to stop trying to send CAN messages
-	unsigned char data[2];
-	unsigned long pos_x_calc;
-
-	// Return immediately if previous CAN error
-	if (error != 0) {
-		return;
-	}
-
-	// Only send message at 100Hz
-	if ((count % 10) == 0) {
-		DisableInterrupts;	// Start critical region
-		pos_x_calc = x_axis.position_enc_ticks * 10;
-		EnableInterrupts;	// End critical region
-		pos_x_calc = pos_x_calc * X_AXIS_MM_PER_REV;
-		can_msg_pc_status.pos_x_mm = 0xFFFF & (((pos_x_calc / X_AXIS_ENC_TICKS_PER_REV) / 10) + PUCK_RADIUS_MM + X_AXIS_HOME_MM);
-
-		// This seems sloppy, fix this later.
-		data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
-		data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
-
-		// Send message and handle errors
-		switch (can_tx(CAN_ST_ID_PC_STATUS_X, CAN_DLC_PC_STATUS_X, &data[0]))
-		{
-			case CAN_ERR_NONE:
-				break;
-			case CAN_ERR_BUFFER_FULL:
-				x_axis_error = x_axis_error_can_buffer_full;
-				error = 1;
-				break;
-			case CAN_ERR_TX:
-				x_axis_error = x_axis_error_can_tx;
-				error = 1;
-				break;
-		}
-	}
-
-	// Limit counter to max value of 10
-	if (count == 10) {
-		count = 1;
-	} else {
-		count ++;
-	}
-}
-*/
-
-
-//;**************************************************************
-//;*                 can_rx_handler()
-//;*  Interrupt handler for CAN Rx
-//;**************************************************************
-/*
-
-interrupt 38 void can_rx_handler(void) {
-  	unsigned char i;		// Loop counter
-	unsigned int ID0, ID1;	// To read CAN ID registers and manipulate 11-bit ID's into a single number
-	unsigned long pos_cmd_calculation;
-
-	// Store 11-bit CAN ID as a single number
-	ID0 = (CANRXIDR0 << 3);
-	ID1 = (CANRXIDR1 >> 5);
-	can_msg_raw.id = (0x0FFF) & (ID0 | ID1);
-	
-	// Store DLC
-	can_msg_raw.dlc = LO_NYBBLE(CANRXDLR);
-
-	// Read data one byte at a time
-	for (i=0; i < can_msg_raw.dlc; i++) {
-		can_msg_raw.data[i] = *(&CANRXDSR0 + i);
-	}
-
-	// Process commands from Master Controller
-	if (can_msg_raw.id == CAN_ID_MC_CMD_PC) {
-		// Bytes 2-3 Y-Axis position command
-		can_msg_mc_cmd_pc.pos_cmd_y_mm = (can_msg_raw.data[2] | (can_msg_raw.data[3] << 8));
-	}
-
-	// Set motor position command in encoder ticks
-	pos_cmd_calculation = (can_msg_mc_cmd_pc.pos_cmd_y_mm * 10) / Y_AXIS_MM_PER_REV;
-	pos_cmd_calculation = (pos_cmd_calculation * Y_AXIS_ENC_TICKS_PER_REV) / 10;
-	y_axis.position_cmd_enc_ticks = (0xFFFF) & (pos_cmd_calculation + Y_AXIS_LIMIT_1_ENC_TICKS);
+	// Set state machine command
+	sm_set_state_cmd(can_msg_mc_cmd_pc.state_cmd);
 
 	// Clear Rx flag
 	SET_BITS(CANRFLG, CAN_RX_INTERRUPT);
 }
 
 //;**************************************************************
-//;*                 y_axis_send_status_can(void)
-//;*	Send PC_Status_Y message
+//;*                 can_send_status
+//;*	Send PC_Status message
 //;**************************************************************
-void y_axis_send_status_can(void)
+void can_send_status(void)
 {
-	static unsigned char count = 1;
-	static unsigned char error = 0;	// Set to non-zero to stop trying to send CAN messages
-	unsigned char data[2];
-	unsigned long pos_y_calc;
+	static unsigned char count = 0;
+	unsigned char data[8];
+	unsigned long pos_x_calc, pos_y_calc;
+	dcm_t *x_axis, *y_axis;
 
 	// Return immediately if previous CAN error
-	if (error != 0) {
+	if (error != can_error_none) {
 		return;
 	}
 
-	// Only send message at 100Hz
-	if ((count % 10) == 0) {
-		DisableInterrupts;	// Start critical region
-		if (y_axis.position_enc_ticks < Y_AXIS_BOUNDARY_ENC_TICKS) {
-			pos_y_calc = 0;
-		} else {
-			pos_y_calc = (y_axis.position_enc_ticks - Y_AXIS_LIMIT_1_ENC_TICKS) * 10;
-		}
-		EnableInterrupts;	// End critical region
-		pos_y_calc = pos_y_calc * Y_AXIS_MM_PER_REV;
-		can_msg_pc_status.pos_y_mm = 0xFFFF & ((pos_y_calc / Y_AXIS_ENC_TICKS_PER_REV) / 10);
+	// Calculate X and Y axis positions in mm
+	x_axis = x_axis_get_data();
+	y_axis = y_axis_get_data();
+	DisableInterrupts;	// Start critical region
+	pos_x_calc = x_axis->position_enc_ticks * 10;
+	pos_y_calc = y_axis->position_enc_ticks * 10;
+	EnableInterrupts;	// End critical region
+	pos_x_calc = pos_x_calc * DCM_MM_PER_REV;
+	pos_y_calc = pos_y_calc * DCM_MM_PER_REV;
+	can_msg_pc_status.pos_x_mm = 0xFFFF & (((pos_x_calc / DCM_ENC_TICKS_PER_REV) / 10) + PADDLE_RADIUS_MM + X_AXIS_HOME_MM);
+	can_msg_pc_status.pos_y_mm = 0xFFFF & (((pos_y_calc / DCM_ENC_TICKS_PER_REV) / 10) + PADDLE_RADIUS_MM + Y_AXIS_HOME_MM);
 
-		// This seems sloppy, fix this later.
-		data[0] = can_msg_pc_status.pos_y_mm & 0x00FF;
-		data[1] = (can_msg_pc_status.pos_y_mm & 0xFF00) >> 8;
+	// Get state and error
+	can_msg_pc_status.state = sm_get_state();
+	can_msg_pc_status.error = sm_get_error();
 
-		// Send message and handle errors
-		switch (can_tx(CAN_ST_ID_PC_STATUS_Y, CAN_DLC_PC_STATUS_Y, &data[0]))
-		{
-			case CAN_ERR_NONE:
-				break;
-			case CAN_ERR_BUFFER_FULL:
-				y_axis_error = y_axis_error_can_buffer_full;
-				error = 1;
-				break;
-			case CAN_ERR_TX:
-				y_axis_error = y_axis_error_can_tx;
-				error = 1;
-				break;
-		}
-	}
+	// Pack data into 8 byte array
+	// This seems sloppy, fix this later.
+	data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
+	data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
+	data[2] = can_msg_pc_status.pos_y_mm & 0x00FF;
+	data[3] = (can_msg_pc_status.pos_y_mm & 0xFF00) >> 8;
+	data[4] = 0;	// Motor speed and goals scored placeholder
+	data[5] = can_msg_pc_status.state;
+	data[6] = can_msg_pc_status.error;
+	data[7] = 0;	// Debug
 
-	// Limit counter to max value of 10
-	if (count == 10) {
-		count = 1;
-	} else {
-		count ++;
+	// Send message and handle errors
+	switch (can_tx(CAN_ST_ID_PC_STATUS, CAN_DLC_PC_STATUS, &data[0]))
+	{
+		case CAN_ERR_NONE:
+			break;
+		case CAN_ERR_BUFFER_FULL:
+			error = can_error_buffer_full;
+			break;
+		case CAN_ERR_TX:
+			error = can_error_tx;
+			break;
 	}
 }
 
-
-*/
+//;**************************************************************
+//;*                 can_get_error
+//;*	Returns value of CAN error
+//;**************************************************************
+can_error_e *can_get_error(void)
+{
+	return &error;
+}

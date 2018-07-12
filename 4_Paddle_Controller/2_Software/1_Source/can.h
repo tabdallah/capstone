@@ -4,6 +4,7 @@
 //; Date: 2018-03-29
 //;******************************************************************************
 #include "TA_Header_W2016.h"  /* my macros and constants */
+#include "state_machine.h"
 
 #define CAN_INIT 0x01
 #define CAN_START 0x00
@@ -32,23 +33,22 @@
 
 // Max number of Tx attempts
 #define CAN_TX_LIMIT 1000
-
 // ID definition
 #define CAN_ID_MC_CMD_PC 0x100
 #define CAN_ST_ID_MC_CMD_PC 0x20000000
-#define CAN_ID_PC_STATUS_X 0x101
-#define CAN_ST_ID_PC_STATUS_X 0x20200000
-#define CAN_ID_PC_STATUS_Y 0x102
-#define CAN_ST_ID_PC_STATUS_Y 0x20400000
-#define CAN_DLC_PC_STATUS_X 2
-#define CAN_DLC_PC_STATUS_Y 2
+#define CAN_ID_PC_STATUS 0x101
+#define CAN_ST_ID_PC_STATUS 0x20200000
+#define CAN_DLC_PC_STATUS 8
 
 // Radius of the paddle in mm
 #define PADDLE_RADIUS_MM 48
 
-// Function prototypes
-void can_configure(void);
-unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txdata);
+// Enumerated data types
+typedef enum {
+	can_error_none = 0,
+	can_error_buffer_full = 1,
+	can_error_tx = 2
+} can_error_e;
 
 // CAN message structure definitions
 typedef struct {
@@ -62,10 +62,18 @@ typedef struct {
 	unsigned int pos_cmd_y_mm;
 	unsigned char speed_cmd_x;
 	unsigned char speed_cmd_y;
-	unsigned char state_cmd;
+	sm_state_cmd_e state_cmd;
 } can_msg_mc_cmd_pc_t;
 
 typedef struct {
 	unsigned int pos_x_mm;
 	unsigned int pos_y_mm;
+	sm_state_e state;
+	sm_error_e error;
 } can_msg_pc_status_t;
+
+// Function prototypes
+void can_configure(void);
+unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txdata);
+void can_send_status(void);
+can_error_e *can_get_error(void);

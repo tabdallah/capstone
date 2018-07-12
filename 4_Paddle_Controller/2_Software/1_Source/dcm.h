@@ -53,7 +53,6 @@ typedef enum {
 typedef enum {
 	dcm_error_none = 0,
 	dcm_error_overload = 1,
-	dcm_error_can = 2
 } dcm_error_e;
 
 // Structure definitions

@@ -62,8 +62,8 @@ void y_axis_configure(void)
 	CLEAR_BITS(Y_AXIS_HOME_DDR, Y_AXIS_L_HOME_PIN);
 	CLEAR_BITS(Y_AXIS_HOME_DDR, Y_AXIS_R_HOME_PIN);
 
-	// Default to position control
-	y_axis.ctrl_mode = dcm_ctrl_mode_enable;
+	// Default to off
+	y_axis.ctrl_mode = dcm_ctrl_mode_disable;
 }
 
 //;**************************************************************
@@ -72,9 +72,6 @@ void y_axis_configure(void)
 //;**************************************************************
 void y_axis_home(void)
 {
-	// Save current control mode to be restored before returning
-	dcm_ctrl_mode_e ctrl_mode = y_axis.ctrl_mode;
-
 	// Drive motors backwards
 	Y_AXIS_L_SET_PWM_DUTY(45);
 	Y_AXIS_R_SET_PWM_DUTY(45);
@@ -88,10 +85,6 @@ void y_axis_home(void)
 
 	// Set target to boundary
 	y_axis.position_cmd_enc_ticks = y_axis.axis_boundary_enc_ticks;
-
-	// Return control to position/velocity controllers
-	y_axis.ctrl_mode = ctrl_mode;
-	return;
 }
 
 //;**************************************************************
@@ -122,7 +115,6 @@ void y_axis_position_ctrl(void)
 //;**************************************************************
 static void y_axis_set_dcm_drive(void)
 {
-	// Has effect of torque slew
 	static unsigned int speed_old = 0;
 	unsigned int set_speed = y_axis.calc_speed;
 	if (set_speed > speed_old) {

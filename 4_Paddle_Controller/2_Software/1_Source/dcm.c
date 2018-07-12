@@ -62,10 +62,10 @@ void dcm_position_ctrl(dcm_t *dcm)
 
 	// Drive motor to desired position
 	if (error_calc > 0) {
-		dcm->calc_speed = MIN(dcm->max_speed, LOW(error_calc));
+		dcm->calc_speed = MIN(dcm->max_speed, error_calc);
 		dcm->h_bridge_direction = dcm_h_bridge_dir_forward;
 	} else {
-		dcm->calc_speed = MIN(dcm->max_speed, LOW(abs(error_calc)));
+		dcm->calc_speed = MIN(dcm->max_speed, abs(error_calc));
 		dcm->h_bridge_direction = dcm_h_bridge_dir_reverse;
 	}
 }

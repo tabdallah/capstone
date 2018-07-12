@@ -1,32 +1,32 @@
-2018-06-28 15:14:51,409: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-06-28_87.txt
-2018-06-28 15:14:51,409: INFO *** Kivy: v1.10.0
-2018-06-28 15:14:51,410: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
+2018-07-09 12:17:44,316: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-07-09_4.txt
+2018-07-09 12:17:44,316: INFO *** Kivy: v1.10.0
+2018-07-09 12:17:44,316: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
 [GCC 5.4.0 20160609]
-2018-06-28 15:14:51,422: INFO *** Factory: 194 symbols loaded
-2018-06-28 15:14:51,500: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
-2018-06-28 15:14:51,507: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
-2018-06-28 15:14:51,509: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
-2018-06-28 15:14:51,511: INFO *** Text: Provider: sdl2
-2018-06-28 15:14:51,970: INFO *** PCAN USB Initialized
-2018-06-28 15:14:51,977: INFO *** MC: Entering main loop
-2018-06-28 15:14:52,039: INFO *** OSC: using <multiprocessing> for socket
-2018-06-28 15:14:52,043: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
-2018-06-28 15:14:52,337: INFO *** GL: Using the "OpenGL" graphics system
-2018-06-28 15:14:52,337: INFO *** GL: Backend used <gl>
-2018-06-28 15:14:52,337: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
-2018-06-28 15:14:52,337: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
-2018-06-28 15:14:52,338: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
-2018-06-28 15:14:52,338: INFO *** GL: OpenGL parsed version: 4, 5
-2018-06-28 15:14:52,338: INFO *** GL: Shading version <4.50 NVIDIA>
-2018-06-28 15:14:52,338: INFO *** GL: Texture max size <16384>
-2018-06-28 15:14:52,338: INFO *** GL: Texture max units <32>
-2018-06-28 15:14:52,352: INFO *** Window: auto add sdl2 input provider
-2018-06-28 15:14:52,353: INFO *** Window: virtual keyboard not allowed, single mode, not docked
-2018-06-28 15:14:52,382: INFO *** GL: NPOT texture support is available
-2018-06-28 15:14:52,654: INFO *** Base: Start application main loop
-2018-06-28 15:15:05,661: INFO *** Base: Leaving application in progress...
-2018-06-28 15:15:05,665: INFO *** MC: UI and PT are in quit state, PC is in OFF, ready to be terminated
-2018-06-28 15:15:05,686: INFO *** UI and PT processes are terminated
-2018-06-28 15:15:05,737: INFO *** PCAN USB Uninitialized
-2018-06-28 15:15:05,737: INFO *** Closing visualization pipes
-2018-06-28 15:15:05,738: INFO *** Ready to quit MC
+2018-07-09 12:17:44,324: INFO *** Factory: 194 symbols loaded
+2018-07-09 12:17:44,401: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
+2018-07-09 12:17:44,408: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
+2018-07-09 12:17:44,409: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
+2018-07-09 12:17:44,411: INFO *** Text: Provider: sdl2
+2018-07-09 12:17:44,866: INFO *** PCAN USB Initialized
+2018-07-09 12:17:44,874: INFO *** MC: Entering main loop
+2018-07-09 12:17:44,926: INFO *** OSC: using <multiprocessing> for socket
+2018-07-09 12:17:44,929: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
+2018-07-09 12:17:45,108: INFO *** GL: Using the "OpenGL" graphics system
+2018-07-09 12:17:45,108: INFO *** GL: Backend used <gl>
+2018-07-09 12:17:45,108: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
+2018-07-09 12:17:45,109: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
+2018-07-09 12:17:45,109: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
+2018-07-09 12:17:45,109: INFO *** GL: OpenGL parsed version: 4, 5
+2018-07-09 12:17:45,109: INFO *** GL: Shading version <4.50 NVIDIA>
+2018-07-09 12:17:45,109: INFO *** GL: Texture max size <16384>
+2018-07-09 12:17:45,109: INFO *** GL: Texture max units <32>
+2018-07-09 12:17:45,122: INFO *** Window: auto add sdl2 input provider
+2018-07-09 12:17:45,122: INFO *** Window: virtual keyboard not allowed, single mode, not docked
+2018-07-09 12:17:45,151: INFO *** GL: NPOT texture support is available
+2018-07-09 12:17:45,446: INFO *** Base: Start application main loop
+2018-07-09 12:32:47,476: INFO *** Base: Leaving application in progress...
+2018-07-09 12:32:47,478: INFO *** MC: UI and PT are in quit state, PC is in OFF, ready to be terminated
+2018-07-09 12:32:47,496: INFO *** UI and PT processes are terminated
+2018-07-09 12:32:47,548: INFO *** PCAN USB Uninitialized
+2018-07-09 12:32:47,548: INFO *** Closing visualization pipes
+2018-07-09 12:32:47,548: INFO *** Ready to quit MC

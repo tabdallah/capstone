@@ -116,9 +116,9 @@
             ]
         }, 
         "game_mode": 1, 
-        "game_speed_y": 0, 
-        "game_speed_x": 1, 
-        "game_length": 120
+        "game_speed_y": 1, 
+        "game_speed_x": 0, 
+        "game_length": 300
     }, 
     "master_controller": {
         "enumerations": {
@@ -230,7 +230,7 @@
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.7320163087958438, 
+            "mm_per_pixel_x": 2.732016308795844, 
             "mm_per_pixel_y": 1.7503621752413514
         }
     }

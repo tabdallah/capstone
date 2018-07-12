@@ -15,7 +15,7 @@
             rgba: (1,1,1,0.7)
         Rectangle:
             source: (app.app_images_filepath + 'menu_background.jpg')
-            pos: root.pos 
+            pos: root.pos
             size: root.size
     ScreenLabel:
         text: "Main Menu"
@@ -56,6 +56,8 @@
 
 <VisualScreen>:
     orientation: 'horizontal'
+    padding: 5
+    spacing: 5
     canvas.before:
         Color:
             rgba: (1,1,1,0.4)
@@ -235,7 +237,7 @@
                 text: "X-Axis Speed:"
             SettingsButton:
                 id: slow_button_x
-                text: "Easy"
+                text: "Slow"
                 group: "game_speed_x"
                 on_release: root.change_game_setting()
             SettingsButton:
@@ -256,7 +258,7 @@
                 text: "Y-Axis Speed:"
             SettingsButton:
                 id: slow_button_y
-                text: "Easy"
+                text: "Slow"
                 group: "game_speed_y"
                 on_release: root.change_game_setting()
             SettingsButton:
@@ -476,7 +478,6 @@
 <GameControl>:
     orientation: 'vertical'
     spacing: 5
-    padding: 5
     Label:
         text: root.game_clock_label
         outline_width: 1.3

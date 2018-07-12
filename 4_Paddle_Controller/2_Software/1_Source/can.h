@@ -43,6 +43,9 @@
 #define CAN_DLC_PC_STATUS_X 2
 #define CAN_DLC_PC_STATUS_Y 2
 
+// Radius of the paddle in mm
+#define PADDLE_RADIUS_MM 48
+
 // Function prototypes
 void can_configure(void);
 unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txdata);
@@ -57,6 +60,9 @@ typedef struct {
 typedef struct {
 	unsigned int pos_cmd_x_mm;
 	unsigned int pos_cmd_y_mm;
+	unsigned char speed_cmd_x;
+	unsigned char speed_cmd_y;
+	unsigned char state_cmd;
 } can_msg_mc_cmd_pc_t;
 
 typedef struct {

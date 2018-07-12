@@ -17,7 +17,7 @@
 #define X_AXIS_DISABLE_PWM CLEAR_BITS(PWME, PWME_PWME0_MASK)
 
 // Mapping speed to PWM duty
-#define X_AXIS_SPEED_MAX 100
+#define X_AXIS_SPEED_MAX 50
 
 // Encoder port setup and macros
 #define X_AXIS_ENC_PORT PTT
@@ -36,10 +36,9 @@
 
 // Position control constants
 #define X_AXIS_HOME_ENC_TICKS 0	
-#define X_AXIS_HOME_MM 85
+#define X_AXIS_HOME_MM 25
 #define X_AXIS_LENGTH_ENC_TICKS 4650
-#define X_AXIS_BOUNDARY_ENC_TICKS 100
-#define PUCK_RADIUS_MM 40
+#define X_AXIS_BOUNDARY_ENC_TICKS 500
 #define X_AXIS_GAIN_P 1
 #define X_AXIS_GAIN_P_FACTOR 10
 #define X_AXIS_GAIN_I 1

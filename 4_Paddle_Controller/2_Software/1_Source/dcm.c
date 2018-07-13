@@ -23,41 +23,43 @@ void dcm_position_ctrl(dcm_t *dcm)
 	}
 
 	// Limit position commands to stay inside the virtual limit
-	if (dcm->position_cmd_enc_ticks > (dcm->axis_length_enc_ticks - dcm->axis_boundary_enc_ticks)) {
-		dcm->position_cmd_enc_ticks = dcm->axis_length_enc_ticks - dcm->axis_boundary_enc_ticks;
+	if (dcm->position_cmd_mm > (dcm->axis_length_mm - dcm->axis_boundary_mm)) {
+		dcm->position_cmd_mm = dcm->axis_length_mm - dcm->axis_boundary_mm;
 	}
-	if (dcm->position_cmd_enc_ticks < dcm->axis_boundary_enc_ticks) {
-		dcm->position_cmd_enc_ticks = dcm->axis_boundary_enc_ticks;
+	if (dcm->position_cmd_mm < dcm->axis_boundary_mm) {
+		dcm->position_cmd_mm = dcm->axis_boundary_mm;
 	}
 
 	// Read home position switches
 	if (dcm->home_switch == dcm_home_switch_pressed) {
 		DisableInterrupts;
-		dcm->position_enc_ticks = dcm->home_position_enc_ticks;
+		dcm->position_mm = dcm->home_position_mm;
+		dcm->position_enc_ticks = (dcm->position_mm * DCM_ENC_TICKS_PER_REV) / DCM_MM_PER_REV;
 		EnableInterrupts;
 	}
 
 	// Calculate position error
 	DisableInterrupts;	// Start critical region
-	dcm->position_error_ticks = dcm->position_cmd_enc_ticks - dcm->position_enc_ticks;
+	dcm->position_mm = (dcm->position_enc_ticks * DCM_MM_PER_REV) / DCM_ENC_TICKS_PER_REV;
+	dcm->position_error_mm = dcm->position_cmd_mm - dcm->position_mm;
 	EnableInterrupts;	// End critical region
 
 	// Stop if at desired position
-	if (abs(dcm->position_error_ticks) < 5) {
+	if (abs(dcm->position_error_mm) <= 2) {
 		error_i = 0;
 		dcm->calc_speed = 0;
 		dcm->h_bridge_direction = dcm_h_bridge_dir_brake;
 		return;
 	}
 
-	error_i += (dcm->position_error_ticks / dcm->gain_i);
+	error_i += (dcm->position_error_mm / dcm->gain_i);
 	if (error_i > dcm->integral_limit) {
 		error_i = dcm->integral_limit;
 	}
 	if (error_i < -(dcm->integral_limit)) {
 		error_i = -(dcm->integral_limit);
 	}
-	error_p = (dcm->position_error_ticks * dcm->gain_p) / dcm->gain_p_factor;
+	error_p = (dcm->position_error_mm * dcm->gain_p) / dcm->gain_p_factor;
 	error_calc = error_i + error_p;
 
 	// Drive motor to desired position
@@ -89,10 +91,10 @@ void dcm_speed_calc(dcm_t *dcm)
 {
 	unsigned long speed_calc_mm_per_s;
 
-	dcm->speed_enc_ticks_per_s = 100 * abs(dcm->position_enc_ticks - dcm->position_enc_ticks_old);
-	speed_calc_mm_per_s = (dcm->speed_enc_ticks_per_s * DCM_MM_PER_REV) / DCM_ENC_TICKS_PER_REV;
+	speed_calc_mm_per_s = 100 * abs(dcm->position_mm - dcm->position_mm_old);
+	speed_calc_mm_per_s = (speed_calc_mm_per_s * DCM_MM_PER_REV) / DCM_ENC_TICKS_PER_REV;
 	dcm->speed_mm_per_s = 0xFFFF & speed_calc_mm_per_s;
-	dcm->position_enc_ticks_old = dcm->position_enc_ticks;
+	dcm->position_mm_old = dcm->position_mm;
 }
 
 //;**************************************************************

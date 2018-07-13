@@ -17,7 +17,7 @@
 #define DCM_SPEED_TO_PWM_REV(speed) LOW((((-45*(speed)) + 5000) / 100))
 
 #define DCM_MM_PER_REV 40
-#define DCM_ENC_TICKS_PER_REV 256
+#define DCM_ENC_TICKS_PER_REV 48
 
 #define DCM_OVERLOAD_STRIKE_COUNT_LIMIT 25
 #define DCM_OVERLOAD_SPEED_MM_PER_S	5
@@ -57,14 +57,14 @@ typedef enum {
 
 // Structure definitions
 typedef struct dcm_t {
-	unsigned int position_cmd_enc_ticks;
+	unsigned int position_cmd_mm;
+	unsigned int position_mm;
+	unsigned int position_mm_old;
 	unsigned int position_enc_ticks;
-	unsigned int position_enc_ticks_old;
-	signed int position_error_ticks;
-	unsigned int axis_length_enc_ticks;
-	unsigned int axis_boundary_enc_ticks;
-	unsigned int home_position_enc_ticks;
-	unsigned int speed_enc_ticks_per_s;
+	signed int position_error_mm;
+	unsigned int axis_length_mm;
+	unsigned int axis_boundary_mm;
+	unsigned int home_position_mm;
 	unsigned int speed_mm_per_s;
 	unsigned int calc_speed;
 	unsigned char pwm_duty;

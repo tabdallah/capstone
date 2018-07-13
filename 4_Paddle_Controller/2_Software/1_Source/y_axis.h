@@ -49,11 +49,9 @@
 #define Y_AXIS_R_HOME ((Y_AXIS_HOME_PORT & Y_AXIS_R_HOME_PIN) >> Y_AXIS_R_HOME_SHIFT)
 
 // Position control constants
-#define Y_AXIS_HOME_ENC_TICKS 0
-#define Y_AXIS_HOME_MM 146
-#define Y_AXIS_LENGTH_ENC_TICKS 3500
-#define Y_AXIS_BOUNDARY_ENC_TICKS 500
-#define Y_AXIS_LR_POS_ERROR_LIMIT_ENC_TICKS 200		// Shut down system if left vs right motor position differs by more than this
+#define Y_AXIS_HOME_MM 133		// Position of centre of paddle when home position switch is pressed
+#define Y_AXIS_LENGTH_MM 750
+#define Y_AXIS_BOUNDARY_MM 150
 #define Y_AXIS_GAIN_P 5
 #define Y_AXIS_GAIN_P_FACTOR 10
 #define Y_AXIS_GAIN_I 1

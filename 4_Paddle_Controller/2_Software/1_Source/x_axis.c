@@ -23,9 +23,9 @@ static dcm_t x_axis;
 void x_axis_configure(void)
 {
 	// Set motor control parameters
-	x_axis.axis_length_enc_ticks = X_AXIS_LENGTH_ENC_TICKS;
-	x_axis.axis_boundary_enc_ticks = X_AXIS_BOUNDARY_ENC_TICKS;
-	x_axis.home_position_enc_ticks = X_AXIS_HOME_ENC_TICKS;
+	x_axis.axis_length_mm = X_AXIS_LENGTH_MM;
+	x_axis.axis_boundary_mm = X_AXIS_BOUNDARY_MM;
+	x_axis.home_position_mm = X_AXIS_HOME_MM;
 	x_axis.max_speed = X_AXIS_SPEED_MAX;
 	x_axis.gain_p = X_AXIS_GAIN_P;
 	x_axis.gain_p_factor = X_AXIS_GAIN_P_FACTOR;
@@ -70,9 +70,11 @@ void x_axis_home(void)
 	// For now broken switch handled by dcm overload check
 	while (X_AXIS_HOME == dcm_home_switch_unpressed) {};
 	X_AXIS_SET_PWM_DUTY(DCM_PWM_DUTY_OFF);
+	x_axis.position_mm = x_axis.home_position_mm;
+	x_axis.position_enc_ticks = (x_axis.position_mm * DCM_ENC_TICKS_PER_REV) / DCM_MM_PER_REV;
 
 	// Set target to center of table
-	x_axis.position_cmd_enc_ticks = x_axis.axis_length_enc_ticks / 2;
+	x_axis.position_cmd_mm = (x_axis.axis_length_mm / 2);
 }
 
 //;**************************************************************

@@ -101,7 +101,6 @@ unsigned char can_tx(unsigned long id, unsigned char length, unsigned char *txda
 interrupt 38 void can_rx_handler(void) {
   	unsigned char i;	      // Loop counter
 	unsigned int ID0, ID1;   // To read CAN ID registers and manipulate 11-bit ID's into a single number
-	unsigned long pos_cmd_calculation;
 	dcm_t *x_axis, *y_axis;
 
 	// Store 11-bit CAN ID as a single number
@@ -136,26 +135,12 @@ interrupt 38 void can_rx_handler(void) {
 	}
 
 	// Set X-Axis position command
-	if (can_msg_mc_cmd_pc.pos_cmd_x_mm > (X_AXIS_HOME_MM + PADDLE_RADIUS_MM)) {
-		pos_cmd_calculation = can_msg_mc_cmd_pc.pos_cmd_x_mm - X_AXIS_HOME_MM - PADDLE_RADIUS_MM;
-	} else {
-		pos_cmd_calculation = 0;
-	}
-	pos_cmd_calculation = pos_cmd_calculation * DCM_ENC_TICKS_PER_REV;
-	pos_cmd_calculation = pos_cmd_calculation / DCM_MM_PER_REV;
 	x_axis = x_axis_get_data();
-	x_axis->position_cmd_enc_ticks = 0xFFFF & pos_cmd_calculation;
+	x_axis->position_cmd_mm = can_msg_mc_cmd_pc.pos_cmd_x_mm;
 
 	// Set Y-Axis position command
-	if (can_msg_mc_cmd_pc.pos_cmd_y_mm > (Y_AXIS_HOME_MM + PADDLE_RADIUS_MM)) {
-		pos_cmd_calculation = can_msg_mc_cmd_pc.pos_cmd_y_mm - Y_AXIS_HOME_MM - PADDLE_RADIUS_MM;
-	} else {
-		pos_cmd_calculation = 0;
-	}
-	pos_cmd_calculation = pos_cmd_calculation * DCM_ENC_TICKS_PER_REV;
-	pos_cmd_calculation = pos_cmd_calculation / DCM_MM_PER_REV;
 	y_axis = y_axis_get_data();
-	y_axis->position_cmd_enc_ticks = 0xFFFF & pos_cmd_calculation;
+	y_axis->position_cmd_mm = can_msg_mc_cmd_pc.pos_cmd_y_mm;
 
 	// Set state machine command
 	sm_set_state_cmd(can_msg_mc_cmd_pc.state_cmd);

@@ -23,9 +23,9 @@ static dcm_t y_axis;
 void y_axis_configure(void)
 {
 	// Set motor control parameters
-	y_axis.axis_length_enc_ticks = Y_AXIS_LENGTH_ENC_TICKS;
-	y_axis.axis_boundary_enc_ticks = Y_AXIS_BOUNDARY_ENC_TICKS;
-	y_axis.home_position_enc_ticks = Y_AXIS_HOME_ENC_TICKS;
+	y_axis.axis_length_mm = Y_AXIS_LENGTH_MM;
+	y_axis.axis_boundary_mm = Y_AXIS_BOUNDARY_MM;
+	y_axis.home_position_mm = Y_AXIS_HOME_MM;
 	y_axis.max_speed = Y_AXIS_SPEED_MAX;
 	y_axis.gain_p = Y_AXIS_GAIN_P;
 	y_axis.gain_p_factor = Y_AXIS_GAIN_P_FACTOR;
@@ -73,8 +73,8 @@ void y_axis_configure(void)
 void y_axis_home(void)
 {
 	// Drive motors backwards
-	Y_AXIS_L_SET_PWM_DUTY(45);
-	Y_AXIS_R_SET_PWM_DUTY(45);
+	Y_AXIS_L_SET_PWM_DUTY(43);
+	Y_AXIS_R_SET_PWM_DUTY(43);
 
 	// Wait for limit switches to be hit
 	// To Do: Should have some timeout here to handle broken switch
@@ -82,9 +82,11 @@ void y_axis_home(void)
 	while (Y_AXIS_L_HOME == dcm_home_switch_unpressed) {};
 	Y_AXIS_L_SET_PWM_DUTY(DCM_PWM_DUTY_OFF);
 	Y_AXIS_R_SET_PWM_DUTY(DCM_PWM_DUTY_OFF);
+	y_axis.position_mm = y_axis.home_position_mm;
+	y_axis.position_enc_ticks = (y_axis.position_mm * DCM_ENC_TICKS_PER_REV) / DCM_MM_PER_REV;
 
 	// Set target to boundary
-	y_axis.position_cmd_enc_ticks = y_axis.axis_boundary_enc_ticks;
+	y_axis.position_cmd_mm = y_axis.axis_boundary_mm;
 }
 
 //;**************************************************************

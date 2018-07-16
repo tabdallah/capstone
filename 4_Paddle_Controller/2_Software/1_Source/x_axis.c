@@ -113,8 +113,8 @@ void x_axis_set_dcm_drive(void)
 		if ((set_speed - speed_old) > x_axis.slew_rate) {
 			set_speed = speed_old + x_axis.slew_rate;
 		}
-		speed_old = set_speed;	
 	}
+	speed_old = set_speed;
 
 	switch (x_axis.h_bridge_direction)
 	{

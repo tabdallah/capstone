@@ -161,9 +161,10 @@ void can_send_status(void)
 	dcm_t *x_axis, *y_axis;
 
 	// Return immediately if previous CAN error
+	/*
 	if (error != can_error_none) {
 		return;
-	}
+	}*/
 
 	// Calculate X and Y axis positions in mm
 	x_axis = x_axis_get_data();

@@ -31,6 +31,7 @@ void y_axis_configure(void)
 	y_axis.gain_p_factor = Y_AXIS_GAIN_P_FACTOR;
 	y_axis.gain_i = Y_AXIS_GAIN_I;
 	y_axis.integral_limit = Y_AXIS_INTEGRAL_LIMIT;
+	y_axis.slow_down_threshold_mm = Y_AXIS_SLOWDOWN_THRESHOLD_MM;
 	y_axis.slew_rate = Y_AXIS_SLEW_RATE;
 
 	// Configure PWM channel for left motor
@@ -107,7 +108,7 @@ void y_axis_position_ctrl(void)
 
 	// Perform position control at 1 kHz
 	y_axis.home_switch = Y_AXIS_L_HOME;
-	dcm_position_ctrl(&y_axis);
+	dcm_control(&y_axis);
 	y_axis_set_dcm_drive();
 }
 

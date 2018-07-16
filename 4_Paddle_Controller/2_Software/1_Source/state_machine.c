@@ -48,6 +48,9 @@ void sm_set_state_cmd(sm_state_cmd_e new_command)
 //;**************************************************************
 void sm_step(void)
 {
+	dcm_t *x_axis = x_axis_get_data();
+	dcm_t *y_axis = y_axis_get_data();
+
 	// Check for error first
 	if ((error != sm_error_none) && (state != sm_state_error)) {
 		sm_enter_state(sm_state_error);
@@ -81,6 +84,8 @@ void sm_step(void)
 			break;
 		case sm_state_error:
 			if ((error == sm_error_none) && (state_cmd == sm_state_cmd_clear_error)) {
+				x_axis->error = dcm_error_none;
+				y_axis->error = dcm_error_none;
 				sm_enter_state(sm_state_off);
 			}
 			break;

@@ -9,9 +9,9 @@
 #include "dcm.h"
 
 //;**************************************************************
-//;*                 dcm_position_ctrl
+//;*                 dcm_control
 //;**************************************************************
-void dcm_position_ctrl(dcm_t *dcm)
+void dcm_control(dcm_t *dcm)
 {
 	static signed int error_i = 0;
 	signed int error_p, error_calc;
@@ -52,6 +52,7 @@ void dcm_position_ctrl(dcm_t *dcm)
 		return;
 	}
 
+	// Accumulate integral error to eliminate steady-state position error
 	error_i += (dcm->position_error_mm / dcm->gain_i);
 	if (error_i > dcm->integral_limit) {
 		error_i = dcm->integral_limit;
@@ -59,8 +60,27 @@ void dcm_position_ctrl(dcm_t *dcm)
 	if (error_i < -(dcm->integral_limit)) {
 		error_i = -(dcm->integral_limit);
 	}
+
+	// Calculate proportional error contribution
 	error_p = (dcm->position_error_mm * dcm->gain_p) / dcm->gain_p_factor;
+
+	// Calculate total effective error
 	error_calc = error_i + error_p;
+
+	// Limit speed when close to limit switches
+	if ((abs(dcm->position_mm - dcm->axis_boundary_mm) < dcm->slow_down_threshold_mm) && 
+		(dcm->h_bridge_direction == dcm_h_bridge_dir_reverse)) {
+		// Close to lower limit switch
+		if ((dcm->position_mm > dcm->axis_boundary_mm) && (dcm->speed_mm_per_s > 50)) {
+			error_calc = (50 - dcm->speed_mm_per_s) / 10;
+		}
+	} else if ((abs((dcm->axis_length_mm - dcm->axis_boundary_mm) - dcm->position_mm) < dcm->slow_down_threshold_mm) &&
+		(dcm->h_bridge_direction == dcm_h_bridge_dir_forward)) {
+		// Close to upper limit switch
+		if ((dcm->position_mm < (dcm->axis_length_mm - dcm->axis_boundary_mm)) && (dcm->speed_mm_per_s > 50)) {
+			error_calc = (dcm->speed_mm_per_s - 50) / 10;
+		}
+	}
 
 	// Drive motor to desired position
 	if (error_calc > 0) {

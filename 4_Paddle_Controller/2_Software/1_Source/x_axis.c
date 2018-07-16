@@ -31,6 +31,7 @@ void x_axis_configure(void)
 	x_axis.gain_p_factor = X_AXIS_GAIN_P_FACTOR;
 	x_axis.gain_i = X_AXIS_GAIN_I;
 	x_axis.integral_limit = X_AXIS_INTEGRAL_LIMIT;
+	x_axis.slow_down_threshold_mm = X_AXIS_SLOWDOWN_THRESHOLD_MM;
 	x_axis.slew_rate = X_AXIS_SLEW_RATE;
 
 	// Configure PWM channel
@@ -96,7 +97,7 @@ void x_axis_position_ctrl(void)
 
 	// Perform position control at 1 kHz
 	x_axis.home_switch = X_AXIS_HOME;
-	dcm_position_ctrl(&x_axis);
+	dcm_control(&x_axis);
 	x_axis_set_dcm_drive();
 }
 

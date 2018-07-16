@@ -38,10 +38,11 @@
 #define X_AXIS_HOME_MM 54		// Position of centre of paddle when home position switch is pressed
 #define X_AXIS_LENGTH_MM 775
 #define X_AXIS_BOUNDARY_MM 85
+#define X_AXIS_SLOWDOWN_THRESHOLD_MM 100
 #define X_AXIS_GAIN_P 5
 #define X_AXIS_GAIN_P_FACTOR 10
 #define X_AXIS_GAIN_I 1
-#define X_AXIS_INTEGRAL_LIMIT 10
+#define X_AXIS_INTEGRAL_LIMIT 5
 #define X_AXIS_SLEW_RATE 1
 
 // Function prototypes

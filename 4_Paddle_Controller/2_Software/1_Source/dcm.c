@@ -71,14 +71,14 @@ void dcm_control(dcm_t *dcm)
 	if ((abs(dcm->position_mm - dcm->axis_boundary_mm) < dcm->slow_down_threshold_mm) && 
 		(dcm->h_bridge_direction == dcm_h_bridge_dir_reverse)) {
 		// Close to lower limit switch
-		if ((dcm->position_mm > dcm->axis_boundary_mm) && (dcm->speed_mm_per_s > 50)) {
-			error_calc = (50 - dcm->speed_mm_per_s) / 10;
+		if ((dcm->position_mm > dcm->axis_boundary_mm) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
+			error_calc = (dcm->slow_down_speed_mm_per_s - dcm->speed_mm_per_s) / 10;
 		}
 	} else if ((abs((dcm->axis_length_mm - dcm->axis_boundary_mm) - dcm->position_mm) < dcm->slow_down_threshold_mm) &&
 		(dcm->h_bridge_direction == dcm_h_bridge_dir_forward)) {
 		// Close to upper limit switch
-		if ((dcm->position_mm < (dcm->axis_length_mm - dcm->axis_boundary_mm)) && (dcm->speed_mm_per_s > 50)) {
-			error_calc = (dcm->speed_mm_per_s - 50) / 10;
+		if ((dcm->position_mm < (dcm->axis_length_mm - dcm->axis_boundary_mm)) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
+			error_calc = (dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / 10;
 		}
 	}
 

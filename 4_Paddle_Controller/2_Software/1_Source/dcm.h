@@ -66,6 +66,7 @@ typedef struct dcm_t {
 	unsigned int axis_boundary_mm;
 	unsigned int home_position_mm;
 	unsigned int slow_down_threshold_mm;
+	unsigned int slow_down_speed_mm_per_s;
 	unsigned int speed_mm_per_s;
 	unsigned int calc_speed;
 	unsigned char pwm_duty;

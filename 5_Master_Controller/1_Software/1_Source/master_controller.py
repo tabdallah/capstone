@@ -152,11 +152,11 @@ last_puck_position_mm_x = 0
 last_puck_position_mm_y = 0
 last_puck_velocity_mmps_y = 0
 last_puck_prediction_averaged_mm_x = goal_center_mm_x
-min_puck_velocity_mmps_y = -250
+min_puck_velocity_mmps_y = -400
 puck_prediction_averaged_window_size = 4
 puck_prediction_averaged_array = np.zeros(puck_prediction_averaged_window_size)
 puck_prediction_averaged_index = 0
-paddle_offense_position_mm_y = 300
+paddle_offense_position_mm_y = 500
 paddle_defense_position_mm_y = 0
 
 ##############################################################################################
@@ -390,6 +390,8 @@ def Tx_PC_Cmd(device):
 	if pc_state != pc_state_enum.on:
 		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
 		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
+
+	print mc_pos_cmd_x_mm, mc_pos_cmd_y_mm
 
 	message = TPCANMsg()
 
@@ -651,7 +653,7 @@ def Rx_IPC():
 	global ui_diagnostic_request
 	global ui_game_state
 	global ui_screen
-	global pc_state_cmd
+	#global pc_state_cmd
 	global pc_motor_speed_cmd_x
 	global pc_motor_speed_cmd_y
 
@@ -669,7 +671,7 @@ def Rx_IPC():
 	ui_diagnostic_request = int(ui_tx[ui_tx_enum.diagnostic_request])
 	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
 	ui_screen = int(ui_tx[ui_tx_enum.screen])
-	pc_state_cmd = int(ui_tx[ui_tx_enum.pc_state_cmd])
+	#pc_state_cmd = int(ui_tx[ui_tx_enum.pc_state_cmd])
 	mc_motor_speed_cmd_x = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_x])
 	mc_motor_speed_cmd_y = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_y])
 
@@ -735,7 +737,13 @@ def get_paddle_position():
 		frame = visualization_data_rx.get(True)
 		frame_received = True
 
-	if puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
+	if int(puck_position_mm_x) == 0 and int(puck_position_mm_y) == 0: 
+		paddle_position_mm_x = goal_center_mm_x
+		paddle_position_mm_y = 0
+		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
+		mc_pos_cmd_y_mm = int(paddle_position_mm_y)
+
+	elif puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
 		# set the target paddle position based on game mode
 		if game_mode == ui_game_mode_enum.offense:
 			paddle_target_position_mm_y = paddle_offense_position_mm_y
@@ -874,6 +882,7 @@ def get_paddle_position():
 ##
 def make_decisions():
 	global last_ui_screen
+	global pc_state_cmd
 
 	# pass state data to the UI
 	send_UI_states()
@@ -913,6 +922,13 @@ def make_decisions():
 
 	elif ui_screen == ui_screen_enum.diagnostic:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
+
+		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_paddle_controller:
+			ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+			pc_state_cmd = pc_state_cmd_enum.calibration
+			Tx_PC_Cmd(PCAN)
+			pc_state_cmd = pc_state_cmd_enum.off
+
 
 ## end of function
 
@@ -1042,6 +1058,7 @@ def handle_quits():
 ## Take care of visual game decisions (robot vs human)
 ##
 def handle_visual_game():
+	global pc_state_cmd
 	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.track
 
 	if pt_state != pt_state_enum.tracking:
@@ -1052,10 +1069,14 @@ def handle_visual_game():
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		pc_state_cmd = pc_state_cmd_enum.on
 		Tx_PC_Cmd(PCAN)
 
 	elif ui_game_state == ui_game_state_enum.stopped:
+		pc_state_cmd = pc_state_cmd_enum.off
 		Tx_PC_Cmd(PCAN)
+
+	print "pc_state_cmd:", pc_state_cmd
 ## end of function
 
 ##  
@@ -1065,6 +1086,7 @@ def handle_visual_game():
 def handle_manual_game():
 	global mc_pos_cmd_x_mm
 	global mc_pos_cmd_y_mm
+	global pc_state_cmd
 
 	if (pt_state != pt_state_enum.tracking)	and (pt_state != pt_state_enum.idle):
 		logging.debug("MC: Camera isn't in tracking or idle state, can't start manual game")
@@ -1072,10 +1094,15 @@ def handle_manual_game():
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		pc_state_cmd = pc_state_cmd_enum.on
 		mc_pos_cmd_x_mm = int(ui_tx[ui_tx_enum.paddle_position_x])
 		mc_pos_cmd_y_mm = int(ui_tx[ui_tx_enum.paddle_position_y])
 		logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
-		filter_Tx_PC_Cmd()
+		#filter_Tx_PC_Cmd()
+		Tx_PC_Cmd(PCAN)
+
+	elif ui_game_state == ui_game_state_enum.stopped:
+		pc_state_cmd = pc_state_cmd_enum.off
 		Tx_PC_Cmd(PCAN)
 ## end of function
 

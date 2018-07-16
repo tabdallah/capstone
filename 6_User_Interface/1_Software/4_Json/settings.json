@@ -6,15 +6,15 @@
                 "medium", 
                 "fast"
             ], 
-            "pc_error": [
-                "none", 
-                "calibration"
-            ], 
             "pc_state_cmd": [
                 "off", 
                 "calibration", 
                 "on", 
                 "clear_error"
+            ], 
+            "pc_error": [
+                "none", 
+                "calibration"
             ], 
             "pc_state": [
                 "off", 
@@ -59,10 +59,6 @@
                 "run", 
                 "quit"
             ], 
-            "ui_diagnostic_request": [
-                "idle", 
-                "calibrate_fiducials"
-            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -95,6 +91,10 @@
                 "pc_motor_speed_cmd_y", 
                 "pc_state_cmd"
             ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
+            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -110,12 +110,13 @@
                 "medium", 
                 "fast"
             ], 
-            "ui_error": [
+            "ui_diagnostic_request": [
                 "idle", 
-                "crashed"
+                "calibrate_fiducials", 
+                "calibrate_paddle_controller"
             ]
         }, 
-        "game_mode": 1, 
+        "game_mode": 0, 
         "game_speed_y": 1, 
         "game_speed_x": 0, 
         "game_length": 300
@@ -230,7 +231,7 @@
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.732016308795844, 
+            "mm_per_pixel_x": 2.7320163087958438, 
             "mm_per_pixel_y": 1.7503621752413514
         }
     }

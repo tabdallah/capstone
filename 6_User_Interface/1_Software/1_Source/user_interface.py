@@ -113,6 +113,9 @@ class DiagnosticsScreen(BoxLayout, Screen):
         self.manager.ui_rx[ui_rx_enum.pt_error] = pt_error_enum.idle
         self.manager.ui_rx[ui_rx_enum.pc_error] = pc_error_enum.none
         self.manager.ui_rx[ui_rx_enum.mc_error] = mc_error_enum.idle
+
+    def calibrate_paddle_controller(self, *args):
+        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_paddle_controller
         
 class SettingsScreen(BoxLayout, Screen):
     def __init__(self, **kwargs):
@@ -330,8 +333,8 @@ class ScreenManagement(ScreenManager):
         self.get_screen('diagnostics').ids['pt_error_label'].text = pt_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pt_error]]
         self.get_screen('diagnostics').ids['mc_state_label'].text = mc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_state]]
         self.get_screen('diagnostics').ids['mc_error_label'].text = mc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.mc_error]]
-        self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
-        self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
+        #self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
+        #self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
         
         # transmit hsv data when we're calibrating fiducials or puck
         if self.current == 'fiducial_calibration' or self.current == 'puck_calibration':
@@ -362,9 +365,12 @@ class ScreenManagement(ScreenManager):
         last_error_set = error_set
 
         # keep track of score
-        if int(self.ui_rx[ui_rx_enum.goal_scored]) != ui_goal_enum.none:
-            self.get_screen('visual').add_goal(self.ui_rx[ui_rx_enum.goal_scored])
-            self.ui_rx[ui_rx_enum.goal_scored] = ui_goal_enum.none
+        if int(self.ui_rx[ui_rx_enum.goal_scored]) != ui_goal_scored_enum.none:
+            if self.current == 'visual':
+                self.get_screen('visual').ids['game_control'].add_goal(self.ui_rx[ui_rx_enum.goal_scored])
+            elif self.current == 'manual':
+                self.get_screen('manual').ids['game_control'].add_goal(self.ui_rx[ui_rx_enum.goal_scored])
+            self.ui_rx[ui_rx_enum.goal_scored] = ui_goal_scored_enum.none
 
         # only quit this app once everything else has shut down properly
         if int(self.ui_rx[ui_rx_enum.state_cmd]) == ui_state_cmd_enum.quit:
@@ -380,24 +386,21 @@ class GameControl(BoxLayout):
     robot_score_label = StringProperty(str(robot_score))
     human_score_label = StringProperty(str(human_score))
     game_clock_label = StringProperty("00:00")
-    game_running = True
     game_length = 60
 
-    def get_settings(self, *args):
+    def on_enter(self):
         self.game_length = game_length
-        
-        # update 
         mins, secs = divmod(self.game_length, 60)
-        self.game_clock_label = '{:02d}:{:02d}'.format(mins,secs)
+        self.game_clock_label = '{:02d}:{:02d}'.format(mins, secs)
         self.game_clock = self.game_length
 
     def decrement_clock(self, *args):
         self.game_clock -= 1
         mins, secs = divmod(self.game_clock, 60)
-        timeformat = '{:02d}:{:02d}'.format(mins,secs)
-        self.game_clock_label = timeformat
+        self.game_clock_label = '{:02d}:{:02d}'.format(mins, secs)
 
         if self.game_clock == 0:
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.ids['pause_resume_game_button'].disabled = True
 
@@ -409,14 +412,9 @@ class GameControl(BoxLayout):
             self.ids['start_reset_game_button'].text = "Reset Game"
 
         elif self.ids['start_reset_game_button'].text == "Reset Game":
-            mins, secs = divmod(self.game_length, 60)
-            self.game_clock_label = '{:02d}:{:02d}'.format(mins,secs)
-            self.game_clock = self.game_length
-            self.ids['pause_resume_game_button'].text = "Pause Game"
-            self.ids['pause_resume_game_button'].disabled = True
             self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
-            self.ids['start_reset_game_button'].text = "Start Game"
+            self.reset_game_control()
 
     def pause_resume_game(self, *args):
         if self.ids['pause_resume_game_button'].text == "Pause Game":
@@ -429,27 +427,36 @@ class GameControl(BoxLayout):
             Clock.schedule_interval(self.decrement_clock, 1)
             self.ids['pause_resume_game_button'].text = "Pause Game"
 
-    def on_enter(self):
-        self.get_settings()
-
-    def go_menu(self, *args):
-        if self.ids['pause_resume_game_button'].text == "Pause Game" and self.ids['pause_resume_game_button'].disabled == False:
-            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
-            Clock.unschedule(self.decrement_clock)
-            self.ids['pause_resume_game_button'].text = "Resume Game"
-        self.parent.manager.current = 'menu'
-
     def add_goal(self, goal_scorer):
-        if game_running:
-            if goal_scorer == ui_goal_enum.human:
+        if self.parent.manager.ui_tx[ui_tx_enum.game_state] == ui_game_state_enum.playing:
+            if goal_scorer == ui_goal_scored_enum.human:
                 self.human_score += 1
                 self.human_score_label = str(self.human_score)
-            elif goal_scorer == ui_goal_enum.robot:
+            elif goal_scorer == ui_goal_scored_enum.robot:
                 self.robot_score += 1
                 self.robot_score_label = str(self.robot_score)
-            self.sound = SoundLoader.load(audio_filepath + 'goal_horn.mp3')
-            if self.sound:
-                self.sound.play()
+            goal_horn = SoundLoader.load(audio_filepath + 'goal_horn.mp3')
+            if goal_horn:
+                goal_horn.play()
+
+    def reset_game_control(self,*args):
+        mins, secs = divmod(self.game_length, 60)
+        self.game_clock_label = '{:02d}:{:02d}'.format(mins, secs)
+        self.game_clock = self.game_length
+        self.ids['pause_resume_game_button'].text = "Pause Game"
+        self.ids['pause_resume_game_button'].disabled = True
+        self.ids['start_reset_game_button'].text = "Start Game"
+        self.human_score = 0
+        self.human_score_label = str(self.human_score)
+        self.robot_score = 0
+        self.robot_score_label = str(self.robot_score)
+
+    def go_menu(self, *args):
+        if self.parent.manager.ui_tx[ui_tx_enum.game_state] == ui_game_state_enum.playing:
+            self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
+            Clock.unschedule(self.decrement_clock)
+        self.reset_game_control()
+        self.parent.manager.current = 'menu'
 
 class CameraData(Image):
     def on_enter(self):
@@ -537,7 +544,7 @@ def get_enums():
     global ui_game_speed_enum
     global ui_game_mode_enum
     global ui_game_state_enum
-    global ui_goal_enum
+    global ui_goal_scored_enum
     global ui_paddle_pos_enum
     global ui_rx_enum
     global ui_screen_enum
@@ -565,7 +572,7 @@ def get_enums():
     ui_game_speed_enum = enum(settings['user_interface']['enumerations']['ui_game_speed'])
     ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
     ui_game_state_enum = enum(settings['user_interface']['enumerations']['ui_game_state'])
-    ui_goal_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
+    ui_goal_scored_enum = enum(settings['user_interface']['enumerations']['ui_goal_scored'])
     ui_rx_enum = enum(settings['user_interface']['enumerations']['ui_rx'])
     ui_screen_enum = enum(settings['user_interface']['enumerations']['ui_screen'])
     ui_state_cmd_enum = enum(settings['user_interface']['enumerations']['ui_state_cmd'])
@@ -653,22 +660,6 @@ def update_game_settings():
     with open((settings_filepath + "settings.json"), 'w+') as fp:
         json.dump(settings, fp, indent=4)
         fp.close()
-
-'''
-def update_paddle_position():
-    
-    with open((settings_path + "settings.json"), 'r') as fp:
-        settings = json.load(fp)
-        fp.close()
-    
-    #debugging
-    ui_tx[ui_tx_enum.paddle_position_x] = 120
-    ui_tx[ui_tx_enum.paddle_position_y] = 20
-    
-    with open((settings_path + "settings.json"), 'w+') as fp:
-        json.dump(settings, fp, indent=4)
-        fp.close()
-'''
 
 ##############################################################################################
 # Main Process

@@ -102,6 +102,9 @@ def get_puck_position(frame):
                 cv2.circle(frame, (int(puck_center_coords[0]), int(puck_center_coords[1])), int(radius + 2), (0, 255, 255), 2)
                 puck_position_mm_x = puck_center_coords[0]*mm_per_pixel_x
                 puck_position_mm_y = puck_center_coords[1]*mm_per_pixel_y
+        else:
+            puck_position_mm_x = 0
+            puck_position_mm_y = 0
 
     return frame
 

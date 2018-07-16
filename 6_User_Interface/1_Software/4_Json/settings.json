@@ -6,15 +6,18 @@
                 "medium", 
                 "fast"
             ], 
+            "pc_error": [
+                "none", 
+                "y_axis_overload", 
+                "x_axis_overload", 
+                "can_buffer_full", 
+                "can_tx"
+            ], 
             "pc_state_cmd": [
                 "off", 
                 "calibration", 
                 "on", 
                 "clear_error"
-            ], 
-            "pc_error": [
-                "none", 
-                "calibration"
             ], 
             "pc_state": [
                 "off", 
@@ -59,6 +62,11 @@
                 "run", 
                 "quit"
             ], 
+            "ui_diagnostic_request": [
+                "idle", 
+                "calibrate_fiducials", 
+                "calibrate_paddle_controller"
+            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -91,10 +99,6 @@
                 "pc_motor_speed_cmd_y", 
                 "pc_state_cmd"
             ], 
-            "ui_error": [
-                "idle", 
-                "crashed"
-            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -110,10 +114,9 @@
                 "medium", 
                 "fast"
             ], 
-            "ui_diagnostic_request": [
+            "ui_error": [
                 "idle", 
-                "calibrate_fiducials", 
-                "calibrate_paddle_controller"
+                "crashed"
             ]
         }, 
         "game_mode": 0, 
@@ -123,6 +126,12 @@
     }, 
     "master_controller": {
         "enumerations": {
+            "mc_control_state_machine": [
+                "home", 
+                "attack", 
+                "defend", 
+                "return_puck"
+            ], 
             "mc_state": [
                 "idle", 
                 "running", 

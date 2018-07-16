@@ -225,6 +225,7 @@ def get_enums():
 
 	global mc_state_enum
 	global mc_error_enum
+	global mc_control_state_machine_enum
 
 	global settings
 
@@ -251,6 +252,7 @@ def get_enums():
 	ui_game_speed_enum = enum(settings['user_interface']['enumerations']['ui_game_speed'])
 	ui_game_mode_enum = enum(settings['user_interface']['enumerations']['ui_game_mode'])
 
+	mc_control_state_machine_enum = enum(settings['master_controller']['enumerations']['mc_control_state_machine'])
 	mc_state_enum = enum(settings['master_controller']['enumerations']['mc_state'])
 	mc_error_enum = enum(settings['master_controller']['enumerations']['mc_error'])	
 
@@ -360,7 +362,7 @@ def Rx_CAN(device):
 			pc_state = int(message[1].DATA[5])
 			logging.debug("Incoming message from PC: State: %s", pc_state)
 			
-			pc_error = message[1].DATA[6]
+			pc_error = int(message[1].DATA[6])
 			logging.debug("Incoming message from PC: Error: %s", pc_error)
 
 			# empty byte for debugging
@@ -646,6 +648,8 @@ def Rx_IPC():
 	global puck_position_mm_y
 	global puck_velocity_mmps_x 
 	global puck_velocity_mmps_y
+	global last_puck_position_mm_x
+	global last_puck_position_mm_y
 	global pt_state
 	global pt_error
 	global ui_state
@@ -656,6 +660,10 @@ def Rx_IPC():
 	#global pc_state_cmd
 	global pc_motor_speed_cmd_x
 	global pc_motor_speed_cmd_y
+
+	# store last received data values
+	last_puck_position_mm_x = puck_position_mm_x
+	last_puck_position_mm_y = puck_position_mm_y
 
 	# get data from puck tracker
 	pt_state = int(pt_tx[pt_tx_enum.state])
@@ -714,6 +722,79 @@ def filter_Tx_PC_Cmd():
 		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
 
 ## end of method
+offense_sm_state = 0
+
+def paddle_control_offense_state_machine():
+	get_paddle_position_mm_x(200)
+
+	if offense_sm_state == mc_control_state_machine_enum.home:
+
+		# do home things
+		print puck_velocity_mmps_y
+		print puck_position_mm_y
+		# if the puck is coming towards us from the opponents end - attack
+		if puck_velocity_mmps_y < min_puck_velocity_mmps_y and puck_position_mm_y > (table_length_mm/2):
+			print "hello world"
+		
+		# if puck in our end and somewhat stationary - return
+		# if puck past attack line and coming towards us - defend
+	elif offense_sm_state == mc_control_state_machine_enum.attack:
+		pass
+		# do attack things
+
+		# if puck moving away from us - home
+		# if puck moved past us - defend
+	elif offense_sm_state == mc_control_state_machine_enum.defend:
+		pass
+		# do defense things
+
+		# if puck stationary - return
+
+	elif offense_sm_state == mc_control_state_machine_enum.return_puck:
+		pass
+		# do return things
+
+		# if puck out of our end - home
+	else:
+		pass
+		# errors?
+
+def get_paddle_position_mm_x(puck_intercept_position_mm_y):
+	# using the equation of a line y = mx + b, find paddle position necessary to intercept the puck
+	vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
+	vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
+			
+	if vector_mm_x == 0:
+		# avoid divide by zero
+		slope = 999999
+	else:
+		slope = vector_mm_y/vector_mm_x
+	
+	# b = y - mx
+	intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
+	
+	# x = (y - b)/m
+	if slope == 0:
+		paddle_position_mm_x = 0 #TODO - is this logic right?
+	else:
+		paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+
+	# predict bounces and get a real x prediction
+	while True:
+		if (table_width_mm - puck_radius_mm) >= paddle_position_mm_x >= puck_radius_mm:
+			break
+		elif paddle_position_mm_x < puck_radius_mm:
+			bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
+			bounce_mm_x = puck_radius_mm
+			slope = -slope
+			intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
+			paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+		elif paddle_position_mm_x > (table_width_mm - puck_radius_mm):
+			bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
+			bounce_mm_x = (table_width_mm - puck_radius_mm)
+			slope = -slope
+			intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
+			paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
 
 ## 
 ## get_paddle_position()
@@ -721,8 +802,6 @@ def filter_Tx_PC_Cmd():
 ## Outputs XY position for the paddle
 ##
 def get_paddle_position():
-	global last_puck_position_mm_x
-	global last_puck_position_mm_y
 	global last_puck_velocity_mmps_y
 	global last_puck_prediction_averaged_mm_x
 	global puck_prediction_averaged_array
@@ -857,8 +936,6 @@ def get_paddle_position():
 			paddle_position_mm_y = 0
 
 		last_puck_velocity_mmps_y = puck_velocity_mmps_y
-		last_puck_position_mm_x = puck_position_mm_x
-		last_puck_position_mm_y = puck_position_mm_y
 		last_puck_prediction_averaged_mm_x = paddle_position_mm_x
 
 		logging.debug("Paddle defense position is: %i,0", paddle_position_mm_x)
@@ -1066,6 +1143,7 @@ def handle_visual_game():
 		return
 	
 	get_paddle_position()
+	paddle_control_offense_state_machine()
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
@@ -1076,7 +1154,6 @@ def handle_visual_game():
 		pc_state_cmd = pc_state_cmd_enum.off
 		Tx_PC_Cmd(PCAN)
 
-	print "pc_state_cmd:", pc_state_cmd
 ## end of function
 
 ##  

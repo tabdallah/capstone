@@ -1,159 +1,32 @@
-2018-07-16 16:51:50,766: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-07-16_17.txt
-2018-07-16 16:51:50,765: INFO *** Kivy: v1.10.0
-2018-07-16 16:51:50,766: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
+2018-07-18 13:33:17,829: INFO *** Logger: Record log in /home/thomas/.kivy/logs/kivy_18-07-18_42.txt
+2018-07-18 13:33:17,828: INFO *** Kivy: v1.10.0
+2018-07-18 13:33:17,829: INFO *** Python: v2.7.12 (default, Dec  4 2017, 14:50:18) 
 [GCC 5.4.0 20160609]
-2018-07-16 16:51:50,774: INFO *** Factory: 194 symbols loaded
-2018-07-16 16:51:50,852: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
-2018-07-16 16:51:50,859: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
-2018-07-16 16:51:50,861: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
-2018-07-16 16:51:50,862: INFO *** Text: Provider: sdl2
-2018-07-16 16:51:50,867: ERROR *** Error Initializing PCAN USB
-2018-07-16 16:51:50,867: ERROR *** (0, 'The driver is not loaded')
-2018-07-16 16:51:50,874: INFO *** MC: Entering main loop
-2018-07-16 16:51:50,880: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,886: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,891: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,896: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,901: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,906: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,912: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,917: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,920: INFO *** OSC: using <multiprocessing> for socket
-2018-07-16 16:51:50,922: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,923: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
-2018-07-16 16:51:50,927: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,932: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,938: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,943: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,948: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,953: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,958: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,963: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,969: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,974: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,979: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,984: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,990: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:50,995: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,000: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,005: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,011: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,016: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,021: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,026: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,031: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,037: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,042: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,047: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,052: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,058: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,063: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,068: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,073: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,078: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,083: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,089: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,094: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,099: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,104: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,109: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,114: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,120: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,125: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,130: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,135: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,140: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,145: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,151: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,156: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,161: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,166: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,171: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,177: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,182: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,187: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,192: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,197: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,198: INFO *** GL: Using the "OpenGL" graphics system
-2018-07-16 16:51:51,198: INFO *** GL: Backend used <gl>
-2018-07-16 16:51:51,199: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
-2018-07-16 16:51:51,199: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
-2018-07-16 16:51:51,199: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
-2018-07-16 16:51:51,199: INFO *** GL: OpenGL parsed version: 4, 5
-2018-07-16 16:51:51,199: INFO *** GL: Shading version <4.50 NVIDIA>
-2018-07-16 16:51:51,199: INFO *** GL: Texture max size <16384>
-2018-07-16 16:51:51,199: INFO *** GL: Texture max units <32>
-2018-07-16 16:51:51,203: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,208: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,213: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,215: INFO *** Window: auto add sdl2 input provider
-2018-07-16 16:51:51,215: INFO *** Window: virtual keyboard not allowed, single mode, not docked
-2018-07-16 16:51:51,219: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,224: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,229: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,234: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,240: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,245: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,245: INFO *** GL: NPOT texture support is available
-2018-07-16 16:51:51,250: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,255: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,261: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,266: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,271: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,277: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,282: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,287: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,292: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,298: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,303: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,308: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,313: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,319: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,324: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,329: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,334: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,340: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,345: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,350: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,355: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,361: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,366: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,371: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,377: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,382: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,387: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,392: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,398: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,403: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,408: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,414: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,419: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,424: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,430: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,435: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,440: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,446: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,451: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,456: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,461: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,467: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,472: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,477: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,483: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,488: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,493: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,498: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,503: INFO *** Base: Start application main loop
-2018-07-16 16:51:51,504: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,509: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,514: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,519: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,525: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,530: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,532: INFO *** Base: Leaving application in progress...
-2018-07-16 16:51:51,535: ERROR *** MC: PT Error: 0, Starting a process to shut off PC, PT, UI, MC
-2018-07-16 16:51:51,564: INFO *** UI and PT processes are terminated
-2018-07-16 16:51:51,564: ERROR *** Error Uninitializing PCAN USB
-2018-07-16 16:51:51,564: ERROR *** (0, 'A PCAN Channel has not been initialized yet or the initialization process has failed')
-2018-07-16 16:51:51,564: INFO *** Closing visualization pipes
-2018-07-16 16:51:51,564: INFO *** Ready to quit MC
+2018-07-18 13:33:17,839: INFO *** Factory: 194 symbols loaded
+2018-07-18 13:33:17,920: INFO *** Image: Providers: img_tex, img_dds, img_sdl2, img_pil, img_gif (img_ffpyplayer ignored)
+2018-07-18 13:33:17,929: INFO *** AudioGstplayer: Using Gstreamer 1.8.3.0
+2018-07-18 13:33:17,932: INFO *** Audio: Providers: audio_gstplayer, audio_sdl2 (audio_ffpyplayer ignored)
+2018-07-18 13:33:17,934: INFO *** Text: Provider: sdl2
+2018-07-18 13:33:18,390: INFO *** PCAN USB Initialized
+2018-07-18 13:33:18,399: INFO *** MC: Entering main loop
+2018-07-18 13:33:18,428: INFO *** OSC: using <multiprocessing> for socket
+2018-07-18 13:33:18,430: INFO *** Window: Provider: sdl2(['window_egl_rpi'] ignored)
+2018-07-18 13:33:18,596: INFO *** GL: Using the "OpenGL" graphics system
+2018-07-18 13:33:18,596: INFO *** GL: Backend used <gl>
+2018-07-18 13:33:18,596: INFO *** GL: OpenGL version <4.5.0 NVIDIA 384.130>
+2018-07-18 13:33:18,596: INFO *** GL: OpenGL vendor <NVIDIA Corporation>
+2018-07-18 13:33:18,596: INFO *** GL: OpenGL renderer <GeForce GTX 660/PCIe/SSE2>
+2018-07-18 13:33:18,596: INFO *** GL: OpenGL parsed version: 4, 5
+2018-07-18 13:33:18,596: INFO *** GL: Shading version <4.50 NVIDIA>
+2018-07-18 13:33:18,596: INFO *** GL: Texture max size <16384>
+2018-07-18 13:33:18,596: INFO *** GL: Texture max units <32>
+2018-07-18 13:33:18,609: INFO *** Window: auto add sdl2 input provider
+2018-07-18 13:33:18,610: INFO *** Window: virtual keyboard not allowed, single mode, not docked
+2018-07-18 13:33:18,638: INFO *** GL: NPOT texture support is available
+2018-07-18 13:33:18,896: INFO *** Base: Start application main loop
+2018-07-18 13:48:17,463: INFO *** Base: Leaving application in progress...
+2018-07-18 13:48:17,463: INFO *** MC: UI and PT are in quit state, PC is in OFF, ready to be terminated
+2018-07-18 13:48:17,500: INFO *** UI and PT processes are terminated
+2018-07-18 13:48:17,561: INFO *** PCAN USB Uninitialized
+2018-07-18 13:48:17,562: INFO *** Closing visualization pipes
+2018-07-18 13:48:17,562: INFO *** Ready to quit MC

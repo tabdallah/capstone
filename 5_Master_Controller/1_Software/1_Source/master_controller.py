@@ -9,7 +9,6 @@ import sys
 import math
 import select
 import os
-
 import h5py
 import numpy as np
 import datetime
@@ -52,79 +51,45 @@ PCAN = PCANBasic()
 
 ##############################################################################################
 ## Global data storage
-## Maybe improve this later
 ##############################################################################################
-timeout = 0.005 			# Timeout for keyboard input in seconds
 
-operation_mode = 0		# Indicates whether MC decisions(0) or UI (1) control the Paddle 
+# master controller loop delay
+timeout = 0.005
 
 # object dimensions & distances
-table_width_mm = 774.7
-table_length_mm = 1692.3
+table_width_mm_x = 774.7
+table_length_mm_y = 1692.3
 puck_radius_mm = 31.75
-paddle_radius_mm = 40
+paddle_radius_mm = 48
 goal_center_mm_x = 387.35
 goal_left_post_mm_x = 257.35
 goal_right_post_mm_x = 517.35
 
-# enums
-pt_state_cmd_enum = 0
-pt_state_enum = 0
-pt_error_enum = 0
-pt_rx_enum = 0
-pt_tx_enum = 0
-ui_state_cmd_enum = 0
-ui_state_enum = 0
-ui_error_enum = 0
-ui_rx_enum = 0
-ui_tx_enum = 0
-ui_diagnostic_request_enum = 0
-ui_game_state = 0
-ui_screen = 0
-ui_goal_scored_enum = 0
-mc_state_enum = 0
-mc_error_enum = 0
-pc_motor_speed_x_enum = 0
-pc_motor_speed_y_enum = 0
-pc_state_enum = 0
-pc_error_enum = 0
-pc_state_cmd_enum = 0
-
-settings = 0
-
 # CAN Communication (MC-PC and PC-MC) 
 # PC positions
-mc_pos_cmd_x_mm = int(goal_center_mm_x)
-mc_pos_cmd_y_mm = 0
-mc_pos_cmd_sent_x_mm = int(goal_center_mm_x)
-mc_pos_cmd_sent_y_mm = 0
-pc_pos_status_x_mm = 0
-pc_pos_status_y_mm = 0
+mc_pos_cmd_mm_x = goal_center_mm_x
+mc_pos_cmd_mm_y = 0
+mc_pos_cmd_sent_mm_x = goal_center_mm_x
+mc_pos_cmd_sent_mm_y = 0
+pc_pos_status_mm_x = 0
+pc_pos_status_mm_y = 0
 filter_pos_value_mm = 5		# Threshold filter value for the UI position control
+
 # Motor Speed
 mc_motor_speed_cmd_x = 2
 mc_motor_speed_cmd_y = 2
 pc_motor_speed_x = 2	
 pc_motor_speed_y = 2
+
 # State	
 pc_state_cmd = 0 # command pc to go to such state
 pc_state = 0
 pc_error = 0
+
 # Other
 pc_goal_scored = 0
 mc_cmd_pc_debug = 0		# for debug purposes in mc_cmd_pc msg 
 pc_status_debug = 0		# for debug purposes in pc_status msg 
-
-
-# IPC 
-ui_rx = 0
-ui_tx = 0
-pt_rx = 0
-pt_tx = 0
-ui_process = 0
-pt_process = 0
-visualization_data_rx = 0
-visualization_data_tx = 0
 
 # hdf5
 hdf5_fileName = "PC_positions.hdf5"		# File name for hdf5 with PC positions
@@ -150,14 +115,22 @@ puck_velocity_mmps_x = 0
 puck_velocity_mmps_y = 0
 last_puck_position_mm_x = 0
 last_puck_position_mm_y = 0
-last_puck_velocity_mmps_y = 0
-last_puck_prediction_averaged_mm_x = goal_center_mm_x
-
-puck_prediction_averaged_window_size = 3
-puck_prediction_averaged_array = np.zeros(puck_prediction_averaged_window_size)
-puck_prediction_averaged_index = 0
+paddle_position_averaged_window_size = 3
+paddle_position_averaged_array = np.zeros(paddle_position_averaged_window_size)
+paddle_position_averaged_index = 0
 paddle_offense_position_mm_y = 500
 paddle_defense_position_mm_y = 0
+paddle_position_mm_x = 0
+attack_line_mm_y = 400
+defense_line_mm_y = 0
+min_puck_velocity_mmps_y = -400
+puck_velocity_stopped_low_mmps_y = -400
+puck_velocity_stopped_high_mmps_y = 400
+offense_sm_state = 0
+last_offense_sm_state = 0
+defense_sm_state = 0
+last_defense_sm_state = 0
+
 
 ##############################################################################################
 ## CAN protocol definition
@@ -169,10 +142,10 @@ ID_mc_cmd_pc =		0x100		# CAN message ID for Master Controller Command to PC on X
 ID_pc_status = 		0x101 		# CAN message ID for Paddle Controller Status
 
 # CAN signal masks for Tx
-mask_pos_cmd_x_mm_b0 		=	0x00FF		# Hex mask for pos_cmd_x_mm signal (msg byte0)
-mask_pos_cmd_x_mm_b1 		=	0xFF00		# Hex mask for pos_cmd_x_mm signal (msg byte1)
-mask_pos_cmd_y_mm_b2 		=	0x00FF		# Hex mask for pos_cmd_y_mm signal (msg byte2)
-mask_pos_cmd_y_mm_b3		=	0xFF00		# Hex mask for pos_cmd_y_mm signal (msg byte3)
+mask_pos_cmd_mm_x_b0 		=	0x00FF		# Hex mask for pos_cmd_mm_x signal (msg byte0)
+mask_pos_cmd_mm_x_b1 		=	0xFF00		# Hex mask for pos_cmd_mm_x signal (msg byte1)
+mask_pos_cmd_mm_y_b2 		=	0x00FF		# Hex mask for pos_cmd_mm_y signal (msg byte2)
+mask_pos_cmd_mm_y_b3		=	0xFF00		# Hex mask for pos_cmd_mm_y signal (msg byte3)
 mask_motor_speed_cmd_x_b4 	=	0x0003		# Hex mask for motor_speed_cmd_x signal (msg byte4) 	
 mask_motor_speed_cmd_y_b4 	=	0x000C		# Hex mask for motor_speed_cmd_y signal (msg byte4)
 
@@ -231,7 +204,7 @@ def get_enums():
 
 	global settings
 
-	# get settings from file
+	# get settings from file 	TODO - error check
 	with open((settings_path + 'settings.json'), 'r') as fp:
 		settings = json.load(fp)
 		fp.close()
@@ -277,7 +250,7 @@ def get_settings():
 	global mm_per_pixel_y
 	global settings
 
-	# get settings from file
+	# get settings from file 	TODO - error check
 	with open((settings_path + 'settings.json'), 'r') as fp:
 		settings = json.load(fp)
 		fp.close()
@@ -290,21 +263,26 @@ def get_settings():
 ##############################################################################################
 
 ##
-## Init_PCAN()
+## init_PCAN()
 ## Initialize the PCAN USB Dongle & Check for Errors
 ## Resets Tx & Rx queues
 ##
-def Init_PCAN(device):
+def init_PCAN(device):
+	global mc_state
+	global mc_error
+	
 	status = PCANBasic.Initialize(device, PCAN_USBBUS1, PCAN_BAUD_125K)
-	PCANBasic.Reset(device, PCAN_USBBUS1)
+	PCANBasic.Reset(device, PCAN_USBBUS1) #TODO - why is this necessary?
+	
 	if status > 0:
 		logging.error("Error Initializing PCAN USB")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
+		mc_state = mc_state_enum.error
+		mc_error = mc_error_enum.pcan
 	else:
 		logging.info("PCAN USB Initialized")
 
-## end of method
-
+## end of function
 
 ###
 ## Uninit_PCAN()
@@ -318,16 +296,15 @@ def Uninit_PCAN(device):
 	else:
 		logging.info("PCAN USB Uninitialized")
 
-## end of method
-
+## end of function
 
 ##
-## Rx_CAN(device)
+## rx_CAN(device)
 ## Receive any pending CAN messages and populate global variables as necessary
 ##
-def Rx_CAN(device):
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
+def rx_CAN(device):
+	global pc_pos_status_mm_x
+	global pc_pos_status_mm_y
 	global pc_state
 	global pc_error
 	global pc_goal_scored
@@ -336,20 +313,21 @@ def Rx_CAN(device):
 	global pc_status_debug
 
 	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
+	#print "thing", message
 
 	# Keep reading messages until there aren't any more
 	while message[1].ID > 1:
 		# Process PC Status X message
 		if message[1].ID == ID_pc_status:
-			pc_pos_status_x_mm_b0 = message[1].DATA[0]
-			pc_pos_status_x_mm_b1 = message[1].DATA[1]
-			pc_pos_status_x_mm = pc_pos_status_x_mm_b0 | (pc_pos_status_x_mm_b1 << 8)
-			logging.debug("Incoming message from PC: Paddle Pos X: %s", pc_pos_status_x_mm)
+			pc_pos_status_mm_x_b0 = message[1].DATA[0]
+			pc_pos_status_mm_x_b1 = message[1].DATA[1]
+			pc_pos_status_mm_x = pc_pos_status_mm_x_b0 | (pc_pos_status_mm_x_b1 << 8)
+			logging.debug("Incoming message from PC: Paddle Pos X: %s", pc_pos_status_mm_x)
 
-			pc_pos_status_y_mm_b2 = message[1].DATA[2]
-			pc_pos_status_y_mm_b3 = message[1].DATA[3]
-			pc_pos_status_y_mm = pc_pos_status_y_mm_b2 | (pc_pos_status_y_mm_b3 << 8)
-			logging.debug("Incoming message from PC: Paddle Pos Y: %s", pc_pos_status_y_mm)
+			pc_pos_status_mm_y_b2 = message[1].DATA[2]
+			pc_pos_status_mm_y_b3 = message[1].DATA[3]
+			pc_pos_status_mm_y = pc_pos_status_mm_y_b2 | (pc_pos_status_mm_y_b3 << 8)
+			logging.debug("Incoming message from PC: Paddle Pos Y: %s", pc_pos_status_mm_y)
 
 			pc_status_motor_goal_b4 = message[1].DATA[4]
 			pc_motor_speed_x = pc_status_motor_goal_b4 & mask_motor_speed_x_b4
@@ -374,17 +352,17 @@ def Rx_CAN(device):
 		# Read next message
 		message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
 
-## end of method
+## end of function
 
 ## 
 ## Tx_PC_Cmd(device)
 ## Transmit the command message to the Paddle Controller
 ##
 def Tx_PC_Cmd(device):
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global mc_pos_cmd_sent_x_mm
-	global mc_pos_cmd_sent_y_mm
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
+	global mc_pos_cmd_sent_mm_x
+	global mc_pos_cmd_sent_mm_y
 	global mc_motor_speed_cmd_x
 	global mc_motor_speed_cmd_y
 	global pc_state_cmd
@@ -392,26 +370,26 @@ def Tx_PC_Cmd(device):
 	
 	# Don't send new position if PC is not in ON state
 	if pc_state != pc_state_enum.on:
-		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
-		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
+		mc_pos_cmd_mm_x = mc_pos_cmd_sent_mm_x
+		mc_pos_cmd_mm_y = mc_pos_cmd_sent_mm_y
 
 	message = TPCANMsg()
 
 	message.ID = ID_mc_cmd_pc
 	message.MSGTYPE = PCAN_MESSAGE_STANDARD
 	message.LEN = 8
-	message.DATA[0] = (mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b0)
-	message.DATA[1] = ((mc_pos_cmd_x_mm & mask_pos_cmd_x_mm_b1) >> 8)
-	message.DATA[2] = (mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b2)
-	message.DATA[3] = ((mc_pos_cmd_y_mm & mask_pos_cmd_y_mm_b3) >> 8)
+	message.DATA[0] = (int(mc_pos_cmd_mm_x) & mask_pos_cmd_mm_x_b0)
+	message.DATA[1] = ((int(mc_pos_cmd_mm_x) & mask_pos_cmd_mm_x_b1) >> 8)
+	message.DATA[2] = (int(mc_pos_cmd_mm_y) & mask_pos_cmd_mm_y_b2)
+	message.DATA[3] = ((int(mc_pos_cmd_mm_y) & mask_pos_cmd_mm_y_b3) >> 8)
 	message.DATA[4] = (mc_motor_speed_cmd_x & (mc_motor_speed_cmd_y << 2))
 	message.DATA[5] = pc_state_cmd 
 	#message.DATA[6] = 0 				# not defined yet
 	#message.DATA[7] = mc_cmd_pc_debug  # for debugging
 
 	# Save last sent position command
-	mc_pos_cmd_sent_x_mm = mc_pos_cmd_x_mm
-	mc_pos_cmd_sent_y_mm = mc_pos_cmd_y_mm
+	mc_pos_cmd_sent_mm_x = mc_pos_cmd_mm_x
+	mc_pos_cmd_sent_mm_y = mc_pos_cmd_mm_y
 
 	logging.debug("Transmitting message to PC: %s", message)
 
@@ -421,20 +399,19 @@ def Tx_PC_Cmd(device):
 		logging.error("Error transmitting CAN message")
 		logging.error(PCANBasic.GetErrorText(device, status, 0))
 
-## end of method
+## end of function
 
 
 ##############################################################################################
 ## HDF5 functions
 ##############################################################################################
 
-
 ##
-## Create_HDF5()
+## create_HDF5()
 ## Create/truncate logger HDF5 file (for MATLAB) using h5py library
 ## Example code used - http://download.nexusformat.org/sphinx/examples/h5py/index.html
 ##
-def Create_HDF5():
+def create_HDF5():
 	global hdf5_fileName
 	global hdf5_dset_size
 	global hdf5_file_handle
@@ -480,7 +457,7 @@ def Create_HDF5():
 	h_time_rcvd.attrs["units"] = "time"
 	logging.debug("Created hdf5 datasets for PC sent and received X-Y times")
 
-## end of method
+## end of function
 
 ##
 ## Close_HDF5()
@@ -492,7 +469,7 @@ def Close_HDF5():
 	hdf5_file_handle.close()
 	logging.debug("Closed hdf5 file")
 
-## end of method
+## end of function
 
 ##
 ## add_pos_sent_HDF5()
@@ -502,18 +479,18 @@ def Close_HDF5():
 def add_pos_sent_HDF5(time_rcvd):
 	global hdf5_file_handle
 	global hdf5_dset_count
-	global mc_pos_cmd_sent_x_mm
-	global mc_pos_cmd_sent_x_mm
+	global mc_pos_cmd_sent_mm_x
+	global mc_pos_cmd_sent_mm_x
 
 	i = hdf5_dset_count
 
 	# store received positions with a puck_position_mm_xtimestamp
-	hdf5_file_handle['/PC_data/pos_sent_x'][i] = mc_pos_cmd_sent_x_mm
-	hdf5_file_handle['/PC_data/pos_sent_y'][i] = mc_pos_cmd_sent_y_mm
+	hdf5_file_handle['/PC_data/pos_sent_x'][i] = mc_pos_cmd_sent_mm_x
+	hdf5_file_handle['/PC_data/pos_sent_y'][i] = mc_pos_cmd_sent_mm_y
 	hdf5_file_handle['/PC_data/time_sent'][i] = time_rcvd
 	logging.debug("Stored sent XY position no. %i", i)
 
-## end of method
+## end of function
 
 ##
 ## add_pos_rcvd_HDF5()
@@ -523,18 +500,18 @@ def add_pos_sent_HDF5(time_rcvd):
 def add_pos_rcvd_HDF5(time_rcvd):
 	global hdf5_file_handle
 	global hdf5_dset_count
-	global pc_pos_status_x_mm
-	global pc_pos_status_y_mm
+	global pc_pos_status_mm_x
+	global pc_pos_status_mm_y
 
 	i = hdf5_dset_count
 
 	# store received positions with a timestamp
-	hdf5_file_handle['/PC_data/pos_rcvd_x'][i] = pc_pos_status_x_mm
-	hdf5_file_handle['/PC_data/pos_rcvd_y'][i] = pc_pos_status_y_mm
+	hdf5_file_handle['/PC_data/pos_rcvd_x'][i] = pc_pos_status_mm_x
+	hdf5_file_handle['/PC_data/pos_rcvd_y'][i] = pc_pos_status_mm_y
 	hdf5_file_handle['/PC_data/time_rcvd'][i] = time_rcvd
 	logging.debug("Stored received XY position no. %i", i)
 
-## end of method
+## end of function
 
 ##
 ## update_dset_HDF5()
@@ -568,7 +545,7 @@ def update_dset_HDF5():
 			hdf5_dset_count = 0
 			hdf5_dset_stop_resize = True
 
-## end of method
+## end of function
 
 
 ##############################################################################################
@@ -576,12 +553,12 @@ def update_dset_HDF5():
 ##############################################################################################
 
 ##
-## Init_IPC() - Need to add error detection
+## init_IPC() 	TODO - error check
 ## Initialize multiprocessing between UI, Puck Tracker and MC
 ## Create arrays between those processes for IPC
-## start child processes
+## Start child processes
 ##
-def Init_IPC():
+def init_IPC():
 	global ui_rx
 	global ui_tx
 	global ui_rx_enum
@@ -621,29 +598,13 @@ def Init_IPC():
 	ui_rx[ui_rx_enum.state_cmd] = ui_state_cmd_enum.run
 	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
-## end of method
+## end of function
 
 ##
-## Uninit_IPC() - Need to add error detection
-## Uninitialize multiprocessing between UI, Puck Tracker and MC
-##
-def Uninit_IPC():
-	global ui_process
-	global pt_process
-
-	# terminate seperate processes User Interface and Puck Tracker 
-	ui_process.terminate()
-	logging.debug("Terminated User Interface process")
-	pt_process.terminate()
-	logging.debug("Terminated Puck Tracker process")
-
-## end of method
-
-##
-## Rx_IPC() -  Need to add error detection
+## rx_IPC()		TODO - error check
 ## Receive any pending IPC Queue messages and populate global variables as necessary
 ##
-def Rx_IPC():
+def rx_IPC():
 	global puck_position_mm_x
 	global puck_position_mm_y
 	global puck_velocity_mmps_x 
@@ -657,7 +618,6 @@ def Rx_IPC():
 	global ui_diagnostic_request
 	global ui_game_state
 	global ui_screen
-	#global pc_state_cmd
 	global pc_motor_speed_cmd_x
 	global pc_motor_speed_cmd_y
 
@@ -679,7 +639,6 @@ def Rx_IPC():
 	ui_diagnostic_request = int(ui_tx[ui_tx_enum.diagnostic_request])
 	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
 	ui_screen = int(ui_tx[ui_tx_enum.screen])
-	#pc_state_cmd = int(ui_tx[ui_tx_enum.pc_state_cmd])
 	mc_motor_speed_cmd_x = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_x])
 	mc_motor_speed_cmd_y = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_y])
 
@@ -691,76 +650,71 @@ def Rx_IPC():
 	pt_rx[pt_rx_enum.upper_sat] = ui_tx[ui_tx_enum.upper_sat]
 	pt_rx[pt_rx_enum.upper_val] = ui_tx[ui_tx_enum.upper_val]	
 
-	# clear one time messages
-	#ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
-
-## end of method
+## end of function
 
 ##############################################################################################
 ## Decision Making/Logic functions
 ##############################################################################################
 
 ##
-## filter_Tx_PC_Cmd()
+## filter_tx_PC_cmd()
 ## filter new pos value if the distance from last sent pos
 ## is below set threshold
 ##	
-def filter_Tx_PC_Cmd():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
-	global mc_pos_cmd_sent_x_mm
-	global mc_pos_cmd_sent_y_mm
+def filter_tx_PC_cmd():
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
+	global mc_pos_cmd_sent_mm_x
+	global mc_pos_cmd_sent_mm_y
 
-	pos_diff_x_mm = mc_pos_cmd_x_mm - mc_pos_cmd_sent_x_mm
-	pos_diff_y_mm = mc_pos_cmd_y_mm - mc_pos_cmd_sent_y_mm
-	pos_diff_mm = math.sqrt(pos_diff_x_mm**2 + pos_diff_y_mm**2)
+	pos_diff_mm_x = mc_pos_cmd_mm_x - mc_pos_cmd_sent_mm_x
+	pos_diff_mm_y = mc_pos_cmd_mm_y - mc_pos_cmd_sent_mm_y
+	pos_diff_mm = math.sqrt(pos_diff_mm_x**2 + pos_diff_mm_y**2)
 	
 	if pos_diff_mm < filter_pos_value_mm:
-		logging.debug("New pos(%i,%i) is filtered coz it's %imm(within %imm) away from last sent PC pos(%i,%i)", mc_pos_cmd_x_mm,
-						mc_pos_cmd_y_mm, pos_diff_mm, filter_pos_value_mm, mc_pos_cmd_sent_x_mm, mc_pos_cmd_sent_y_mm)
-		mc_pos_cmd_x_mm = mc_pos_cmd_sent_x_mm
-		mc_pos_cmd_y_mm = mc_pos_cmd_sent_y_mm
+		logging.debug("New pos(%i,%i) is filtered coz it's %imm(within %imm) away from last sent PC pos(%i,%i)", mc_pos_cmd_mm_x,
+						mc_pos_cmd_mm_y, pos_diff_mm, filter_pos_value_mm, mc_pos_cmd_sent_mm_x, mc_pos_cmd_sent_mm_y)
+		mc_pos_cmd_mm_x = mc_pos_cmd_sent_mm_x
+		mc_pos_cmd_mm_y = mc_pos_cmd_sent_mm_y
 
-## end of method
-paddle_position_mm_x = 0
-offense_sm_state = 0
-attack_line_mm_y = 400
-defense_line_mm_y = 0
-min_puck_velocity_mmps_y = -400
-puck_velocity_stopped_low_mmps_y = -400
-puck_velocity_stopped_high_mmps_y = 400
-last_offense_sm_state = 0
+## end of function
 
 def paddle_control_offense_state_machine():
-	global last_offense_sm_state
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
 	global offense_sm_state
-	global puck_prediction_averaged_array
-	global puck_prediction_averaged_index
+	global last_offense_sm_state
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
+	global paddle_position_averaged_array
+	global paddle_position_averaged_index
 
 	# get frame for visualization
 	if visualization_data_rx.empty():
-		frame = 0
+		frame = [0]
 		frame_received = False
 	else:
 		frame = visualization_data_rx.get(True)
 		frame_received = True
+
+	# when we change states, clear the averaging array
+	if offense_sm_state != last_offense_sm_state:
+		paddle_position_averaged_array.fill(0)
+		paddle_position_averaged_index = 0
+
 	
 	# STATE MACHINE
 	if offense_sm_state == mc_control_state_machine_enum.home:
 		# go home
-		mc_pos_cmd_x_mm = int(goal_center_mm_x)
-		mc_pos_cmd_y_mm = 0
+		mc_pos_cmd_mm_x = goal_center_mm_x
+		mc_pos_cmd_mm_y = 0
 
 		# if the puck is coming towards us from the opponents end - attack
 		if ((puck_velocity_mmps_y < min_puck_velocity_mmps_y) and 
-			(puck_position_mm_y > (table_length_mm/2))):
+			(puck_position_mm_y > (table_length_mm_y/2))):
 			offense_sm_state = mc_control_state_machine_enum.attack
 		
 		# if puck in our end and somewhat stationary - return
 		if ((puck_velocity_stopped_low_mmps_y < puck_velocity_mmps_y < puck_velocity_stopped_high_mmps_y) and
-			(puck_position_mm_y < (table_length_mm/2))):
+			(puck_position_mm_y < (table_length_mm_y/2))):
 			offense_sm_state = mc_control_state_machine_enum.return_puck
 			   
 		# if puck past attack line and coming towards us - defend
@@ -771,8 +725,13 @@ def paddle_control_offense_state_machine():
 	elif offense_sm_state == mc_control_state_machine_enum.attack:
 		# do attack things
 		frame = get_paddle_position_mm_x(attack_line_mm_y, frame, frame_received)
-		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
-		mc_pos_cmd_y_mm = int(attack_line_mm_y)
+		mc_pos_cmd_mm_x = paddle_position_mm_x
+		mc_pos_cmd_mm_y = attack_line_mm_y
+
+		# if puck not in our end and somewhat stationary/moving away - home
+		if ((puck_velocity_mmps_y > min_puck_velocity_mmps_y) and
+			(puck_position_mm_y > (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.home
 
 		# if puck moving away from us - home
 		if (puck_velocity_mmps_y > 0):
@@ -785,47 +744,43 @@ def paddle_control_offense_state_machine():
 
 		#if puck in our end and somewhat stationary - return
 		if ((puck_velocity_stopped_low_mmps_y < puck_velocity_mmps_y < puck_velocity_stopped_high_mmps_y) and
-			(puck_position_mm_y < (table_length_mm/2))):
+			(puck_position_mm_y < (table_length_mm_y/2))):
 			offense_sm_state = mc_control_state_machine_enum.return_puck
 
 	elif offense_sm_state == mc_control_state_machine_enum.defend:
 		# do defense things
 		frame = get_paddle_position_mm_x(defense_line_mm_y, frame, frame_received)
-		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
-		mc_pos_cmd_y_mm = int(defense_line_mm_y)
+		mc_pos_cmd_mm_x = paddle_position_mm_x
+		mc_pos_cmd_mm_y = defense_line_mm_y
+
+		# if puck not in our end and somewhat stationary/moving away - home
+		if ((puck_velocity_mmps_y > min_puck_velocity_mmps_y) and
+			(puck_position_mm_y > (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.home
 
 		#if puck in our end and somewhat stationary - return
 		if ((puck_velocity_stopped_low_mmps_y < puck_velocity_mmps_y < puck_velocity_stopped_high_mmps_y) and
-			(puck_position_mm_y < (table_length_mm/2))):
+			(puck_position_mm_y < (table_length_mm_y/2))):
 			offense_sm_state = mc_control_state_machine_enum.return_puck
-
-		# if puck not seen - home
-		if ((puck_position_mm_x == 0) and 
-			(puck_position_mm_y == 0)):
-			offense_sm_state = mc_control_state_machine_enum.home
 
 	elif offense_sm_state == mc_control_state_machine_enum.return_puck:
 		# do return things
-		mc_pos_cmd_x_mm = int(puck_position_mm_x)
-		mc_pos_cmd_y_mm = int(puck_position_mm_y)
+		mc_pos_cmd_mm_x = puck_position_mm_x
+		mc_pos_cmd_mm_y = puck_position_mm_y
 
 		# if puck out of our end - home
-		if (puck_position_mm_y > (table_length_mm/2)):
+		if (puck_position_mm_y > (table_length_mm_y/2)):
 			offense_sm_state = mc_control_state_machine_enum.home
 
 	else:
-		pass
-		# errors?
+		pass # TODO - Errors?
 
 	# if puck not seen - home
 	if ((puck_position_mm_x == 0) and 
 		(puck_position_mm_y == 0)):
 		offense_sm_state = mc_control_state_machine_enum.home
 
-	if offense_sm_state != last_offense_sm_state:
-		puck_prediction_averaged_array.fill(0)
-		puck_prediction_averaged_index = 0
-
+	# send the puck tracker image on to the user interface
 	if frame_received:
 		frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
 		try:
@@ -834,20 +789,102 @@ def paddle_control_offense_state_machine():
 			pass
 
 	last_offense_sm_state = offense_sm_state
-	#print mc_control_state_machine_enum.reverse_mapping[offense_sm_state]
-	print "paddle position cmd: ", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm
+
+def paddle_control_defense_state_machine():
+	global defense_sm_state
+	global last_defense_sm_state
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
+	global paddle_position_averaged_array
+	global paddle_position_averaged_index
+
+	# get frame for visualization
+	if visualization_data_rx.empty():
+		frame = [0]
+		frame_received = False
+	else:
+		frame = visualization_data_rx.get(True)
+		frame_received = True
+
+	# when we change states, clear the averaging array
+	if defense_sm_state != last_defense_sm_state:
+		paddle_position_averaged_array.fill(0)
+		paddle_position_averaged_index = 0
+	
+	# STATE MACHINE
+	if defense_sm_state == mc_control_state_machine_enum.home:
+		# go home
+		mc_pos_cmd_mm_x = goal_center_mm_x
+		mc_pos_cmd_mm_y = 0
+
+		# if puck in our end and somewhat stationary - return
+		if ((puck_velocity_stopped_low_mmps_y < puck_velocity_mmps_y < puck_velocity_stopped_high_mmps_y) and
+			(puck_position_mm_y < (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.return_puck
+			   
+		# if puck coming towards us - defend
+		if (puck_velocity_mmps_y < min_puck_velocity_mmps_y):
+			defense_sm_state = mc_control_state_machine_enum.defend
+
+	elif defense_sm_state == mc_control_state_machine_enum.defend:
+		# do defense things
+		frame = get_paddle_position_mm_x(defense_line_mm_y, frame, frame_received)
+		mc_pos_cmd_mm_x = paddle_position_mm_x
+		mc_pos_cmd_mm_y = defense_line_mm_y
+
+		# if puck not in our end and somewhat stationary/moving away - home
+		if ((puck_velocity_mmps_y > min_puck_velocity_mmps_y) and
+			(puck_position_mm_y > (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.home
+		
+		# if puck in our end moving away - home
+		if ((puck_velocity_mmps_y > puck_velocity_stopped_high_mmps_y) and
+			(puck_position_mm_y < (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.home
+			
+		# if puck in our end and somewhat stationary - return
+		if ((puck_velocity_stopped_low_mmps_y < puck_velocity_mmps_y < puck_velocity_stopped_high_mmps_y) and
+			(puck_position_mm_y < (table_length_mm_y/2))):
+			defense_sm_state = mc_control_state_machine_enum.return_puck
+
+	elif defense_sm_state == mc_control_state_machine_enum.return_puck:
+		# do return things
+		mc_pos_cmd_mm_x = puck_position_mm_x
+		mc_pos_cmd_mm_y = puck_position_mm_y
+
+		# if puck out of our end - home
+		if (puck_position_mm_y > (table_length_mm_y/2)):
+			defense_sm_state = mc_control_state_machine_enum.home
+
+	else:
+		pass # TODO - Errors?
+
+	# if puck not seen - home
+	if ((puck_position_mm_x == 0) and 
+		(puck_position_mm_y == 0)):
+		defense_sm_state = mc_control_state_machine_enum.home
+
+	# send the puck tracker image on to the user interface
+	if frame_received:
+		frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
+		try:
+			visualization_data_tx.put_nowait(frame)
+		except:
+			pass
+
+	last_defense_sm_state = defense_sm_state
 
 def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received):
 	global paddle_position_mm_x
-	global puck_prediction_averaged_mm_x
-	global puck_prediction_averaged_array
-	global puck_prediction_averaged_index
+	global paddle_position_averaged_mm_x
+	global paddle_position_averaged_array
+	global paddle_position_averaged_index
 
 	# using the equation of a line y = mx + b, find paddle position necessary to intercept the puck
 	vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
 	vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
 			
-	if vector_mm_x == 0:
+	if (vector_mm_x == 0) or (vector_mm_y == 0):
 		# avoid divide by zero TODO - logic?
 		return frame
 	else:
@@ -857,17 +894,12 @@ def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received
 	intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
 	
 	# x = (y - b)/m
-	if slope == 0:
-		return frame #TODO - is this logic right?
-	else:
-		paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
+	paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
 
-	#print puck_velocity_mmps_y
-
-	# predict bounces and get a real x prediction
+	# predict bounces and get a raw paddle x position prediction
 	bounce_count = 0
 	while True:
-		if (table_width_mm - puck_radius_mm) >= paddle_position_mm_x >= puck_radius_mm:
+		if (table_width_mm_x - puck_radius_mm) >= paddle_position_mm_x >= puck_radius_mm:
 			if frame_received:
 				if bounce_count == 0:
 					cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int((puck_intercept_position_mm_y)/mm_per_pixel_y), int(paddle_position_mm_x/mm_per_pixel_x)), (255,0,0), 3)
@@ -887,11 +919,11 @@ def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received
 				else:
 					cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
 
-		elif paddle_position_mm_x > (table_width_mm - puck_radius_mm):
-			bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
-			bounce_mm_x = (table_width_mm - puck_radius_mm)
+		elif paddle_position_mm_x > (table_width_mm_x - puck_radius_mm):
+			bounce_mm_y = (slope * (table_width_mm_x - puck_radius_mm)) + intercept_mm_y
+			bounce_mm_x = (table_width_mm_x - puck_radius_mm)
 			slope = -slope
-			intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
+			intercept_mm_y = bounce_mm_y - (slope * (table_width_mm_x - puck_radius_mm))
 			paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
 			if frame_received:
 				if bounce_count == 0:
@@ -903,47 +935,33 @@ def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received
 		last_bounce_mm_x = bounce_mm_x
 		bounce_count += 1
 
+	logging.debug("Paddle position mm x: %i", paddle_position_mm_x)
+
 	# draw a circle around the raw desired paddle position
 	if frame_received:
 		cv2.circle(frame, (int((puck_intercept_position_mm_y)/mm_per_pixel_y), int(paddle_position_mm_x/mm_per_pixel_x)), 10, (0, 0, 255), 2)
 	
 	# now that we have a predicted x position, take an average to improve accuracy  
-	puck_prediction_averaged_array[puck_prediction_averaged_index] = paddle_position_mm_x
-	number_non_zero_values = np.count_nonzero(puck_prediction_averaged_array)
+	paddle_position_averaged_array[paddle_position_averaged_index] = paddle_position_mm_x
+	number_non_zero_values = np.count_nonzero(paddle_position_averaged_array)
 	if number_non_zero_values != 0:
-		puck_prediction_averaged_mm_x = (np.sum(puck_prediction_averaged_array)) / number_non_zero_values
+		paddle_position_averaged_mm_x = (np.sum(paddle_position_averaged_array)) / number_non_zero_values
 	else:
-		puck_prediction_averaged_mm_x = 0
+		paddle_position_averaged_mm_x = 0
 	
 	# manage index for array
-	puck_prediction_averaged_index += 1
-	if puck_prediction_averaged_index >= puck_prediction_averaged_window_size:
-		puck_prediction_averaged_index = 0
+	paddle_position_averaged_index += 1
+	if paddle_position_averaged_index >= paddle_position_averaged_window_size:
+		paddle_position_averaged_index = 0
 
-	#print puck_prediction_averaged_array
 	# draw a circle around the averaged desired paddle position
 	if frame_received:
-		cv2.circle(frame, (int(puck_intercept_position_mm_y/mm_per_pixel_y), int(puck_prediction_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
+		cv2.circle(frame, (int(puck_intercept_position_mm_y/mm_per_pixel_y), int(paddle_position_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
 
+	logging.debug("Paddle position mm x averaged: %i", paddle_position_averaged_mm_x)
+
+	# after our paddle postion prediction is drawn onto the frame, return the frame
 	return frame
-
-"""	# predict bounces and get a real x prediction
-	while True:
-		if (table_width_mm - puck_radius_mm) >= paddle_position_mm_x >= puck_radius_mm:
-			break
-		elif paddle_position_mm_x < puck_radius_mm:
-			bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
-			bounce_mm_x = puck_radius_mm
-			slope = -slope
-			intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
-			paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-		elif paddle_position_mm_x > (table_width_mm - puck_radius_mm):
-			bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
-			bounce_mm_x = (table_width_mm - puck_radius_mm)
-			slope = -slope
-			intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
-			paddle_position_mm_x = ((puck_intercept_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-"""
 
 ## 
 ## get_paddle_position()
@@ -952,11 +970,11 @@ def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received
 ##
 def get_paddle_position():
 	global last_puck_velocity_mmps_y
-	global last_puck_prediction_averaged_mm_x
-	global puck_prediction_averaged_array
-	global puck_prediction_averaged_index
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
+	global last_paddle_position_averaged_mm_x
+	global paddle_position_averaged_array
+	global paddle_position_averaged_index
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
 	
 	# get frame for visualization
 	if visualization_data_rx.empty():
@@ -968,8 +986,8 @@ def get_paddle_position():
 	if int(puck_position_mm_x) == 0 and int(puck_position_mm_y) == 0: 
 		paddle_position_mm_x = goal_center_mm_x
 		paddle_position_mm_y = 0
-		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
-		mc_pos_cmd_y_mm = int(paddle_position_mm_y)
+		mc_pos_cmd_mm_x = int(paddle_position_mm_x)
+		mc_pos_cmd_mm_y = int(paddle_position_mm_y)
 
 	elif puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
 		# set the target paddle position based on game mode
@@ -979,7 +997,7 @@ def get_paddle_position():
 			paddle_target_position_mm_y = paddle_defense_position_mm_y
 
 		# default paddle position
-		paddle_position_mm_x = last_puck_prediction_averaged_mm_x
+		paddle_position_mm_x = last_paddle_position_averaged_mm_x
 		paddle_position_mm_y = 0
 
 		# predicting the x axis position of the puck	
@@ -1009,7 +1027,7 @@ def get_paddle_position():
 			# predict bounces and get a real x prediction
 			bounce_count = 0
 			while True:
-				if (table_width_mm - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
+				if (table_width_mm_x - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
 					if frame_received:
 						if bounce_count == 0:
 							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
@@ -1029,11 +1047,11 @@ def get_paddle_position():
 						else:
 							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
 
-				elif puck_prediction_mm_x > (table_width_mm - puck_radius_mm):
-					bounce_mm_y = (slope * (table_width_mm - puck_radius_mm)) + intercept_mm_y
-					bounce_mm_x = (table_width_mm - puck_radius_mm)
+				elif puck_prediction_mm_x > (table_width_mm_x - puck_radius_mm):
+					bounce_mm_y = (slope * (table_width_mm_x - puck_radius_mm)) + intercept_mm_y
+					bounce_mm_x = (table_width_mm_x - puck_radius_mm)
 					slope = -slope
-					intercept_mm_y = bounce_mm_y - (slope * (table_width_mm - puck_radius_mm))
+					intercept_mm_y = bounce_mm_y - (slope * (table_width_mm_x - puck_radius_mm))
 					puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
 					if frame_received:
 						if bounce_count == 0:
@@ -1050,47 +1068,47 @@ def get_paddle_position():
 				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), 10, (0, 0, 255), 2)
 
 			# now that we have a predicted x position, take an average to improve accuracy  
-			puck_prediction_averaged_array[puck_prediction_averaged_index] = puck_prediction_mm_x
-			number_non_zero_values = np.count_nonzero(puck_prediction_averaged_array)
+			paddle_position_averaged_array[paddle_position_averaged_index] = puck_prediction_mm_x
+			number_non_zero_values = np.count_nonzero(paddle_position_averaged_array)
 			if number_non_zero_values != 0:
-				puck_prediction_averaged_mm_x = (np.sum(puck_prediction_averaged_array)) / number_non_zero_values
+				paddle_position_averaged_mm_x = (np.sum(paddle_position_averaged_array)) / number_non_zero_values
 			else:
-				puck_prediction_averaged_mm_x = 0
+				paddle_position_averaged_mm_x = 0
 			
 			# manage index for array
-			puck_prediction_averaged_index += 1
-			if puck_prediction_averaged_index >= puck_prediction_averaged_window_size:
-				puck_prediction_averaged_index = 0
+			paddle_position_averaged_index += 1
+			if paddle_position_averaged_index >= paddle_position_averaged_window_size:
+				paddle_position_averaged_index = 0
 
 			# draw a circle around the averaged desired paddle position
 			if frame_received:
-				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
+				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(paddle_position_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
 
 			if game_mode == ui_game_mode_enum.defense: # only goal post correct if defense
 				# Goal post correction
-				if puck_prediction_averaged_mm_x < goal_left_post_mm_x:
-					puck_prediction_averaged_mm_x = goal_left_post_mm_x
+				if paddle_position_averaged_mm_x < goal_left_post_mm_x:
+					paddle_position_averaged_mm_x = goal_left_post_mm_x
 				# puck pos after right goalpost then set to the right goalpost_pos+tolerance
-				elif puck_prediction_averaged_mm_x > goal_right_post_mm_x:
-					puck_prediction_averaged_mm_x = goal_right_post_mm_x
+				elif paddle_position_averaged_mm_x > goal_right_post_mm_x:
+					paddle_position_averaged_mm_x = goal_right_post_mm_x
 
 			# set paddle position
-			paddle_position_mm_x = puck_prediction_averaged_mm_x
+			paddle_position_mm_x = paddle_position_averaged_mm_x
 			paddle_position_mm_y = paddle_target_position_mm_y
 
 		if (puck_velocity_mmps_y > min_puck_velocity_mmps_y) and (last_puck_velocity_mmps_y < min_puck_velocity_mmps_y):
-			puck_prediction_averaged_array.fill(0)
-			puck_prediction_averaged_index = 0
+			paddle_position_averaged_array.fill(0)
+			paddle_position_averaged_index = 0
 			paddle_position_mm_x = goal_center_mm_x
 			paddle_position_mm_y = 0
 
 		last_puck_velocity_mmps_y = puck_velocity_mmps_y
-		last_puck_prediction_averaged_mm_x = paddle_position_mm_x
+		last_paddle_position_averaged_mm_x = paddle_position_mm_x
 
 		logging.debug("Paddle defense position is: %i,0", paddle_position_mm_x)
 
-		mc_pos_cmd_x_mm = int(paddle_position_mm_x)
-		mc_pos_cmd_y_mm = int(paddle_position_mm_y)
+		mc_pos_cmd_mm_x = int(paddle_position_mm_x)
+		mc_pos_cmd_mm_y = int(paddle_position_mm_y)
 
 	# send frame
 	if frame_received:
@@ -1100,7 +1118,7 @@ def get_paddle_position():
 		except:
 			pass
 
-## end of method
+## end of function
 
 ## 
 ## make_decisions()
@@ -1118,7 +1136,7 @@ def make_decisions():
 	#ui_rx[ui_rx_enum.motor_speed_y] = pc_motor_speed_y
 
 	# Check ALL states
-	if ((pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
+	if ((mc_state == mc_state_enum.error) or (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
 		handle_errors()
 		return
 	
@@ -1155,6 +1173,11 @@ def make_decisions():
 			Tx_PC_Cmd(PCAN)
 			pc_state_cmd = pc_state_cmd_enum.off
 
+		if ui_diagnostic_request == ui_diagnostic_request_enum.clear_errors:
+			ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+			pc_state_cmd = pc_state_cmd_enum.clear_error
+			Tx_PC_Cmd(PCAN)
+			pc_state_cmd = pc_state_cmd_enum.off
 
 ## end of function
 
@@ -1182,20 +1205,36 @@ def send_UI_states():
 ##
 def handle_errors():
 	global pc_state_cmd
+	global mc_state
+	global mc_error
 	global visualization_data_tx
 	global visualization_data_rx
 	global ui_process
 	global pt_process
-	
+	global PCAN
+
+	# MC error
+	if mc_state == mc_state_enum.error:
+		logging.error("MC: MC Error: %i. Resolve the error and click Clear Error btn under Diagnostics menu", mc_error)
+
+		if ui_diagnostic_request == ui_diagnostic_request_enum.clear_errors:
+			if mc_error == mc_error_enum.pcan:
+				mc_state = mc_state_enum.running
+				mc_error = mc_error_enum.none
+				init_PCAN(PCAN)
+
 	# PC error
 	if pc_state == pc_state_enum.error:
 		logging.error("MC: PC Error: %i. Resolve the error and click Clear Error btn under Diagnostics menu", pc_error)
-		if pc_state_cmd == pc_state_cmd_enum.clear_error:
+		
+		if ui_diagnostic_request == ui_diagnostic_request_enum.clear_errors:
+			pc_state_cmd = pc_state_cmd_enum.clear_error
 			Tx_PC_Cmd(PCAN)
 			logging.error("MC: Commanding PC to Clear Error State to resolve the issue")
+			pc_state_cmd = pc_state_cmd_enum.off
 	
 	# UI error	
-	elif ui_state == ui_state_enum.error:
+	if ui_state == ui_state_enum.error:
 		logging.error("MC: UI Error: %i. Starting a process to shut off PC, PT, UI, MC", ui_error)
 		# shut off PC
 		if (pc_state != pc_state_enum.off):
@@ -1209,7 +1248,7 @@ def handle_errors():
 			sys.exit(0)
 
 	# PT error
-	elif pt_state == pt_state_enum.error:
+	if pt_state == pt_state_enum.error:
 		if pt_error == pt_error_enum.calibration_failed:
 			logging.error("MC: PT Error: %i (Calibration Failed), try recalibrating or restarting the system", ui_error)
 		else:
@@ -1225,6 +1264,7 @@ def handle_errors():
 				prepare_to_quit()
 				sys.exit(0)
 
+	ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
 
 ## end of function
 
@@ -1247,6 +1287,7 @@ def prepare_to_quit():
 	visualization_data_tx.close()
 	visualization_data_rx.close()
 	logging.info("Ready to quit MC")
+
 ## end of function
 
 ##  
@@ -1292,14 +1333,15 @@ def handle_visual_game():
 		logging.debug("MC: Camera isn't in tracking state, can't start visual game")	
 		return
 
-	#get_paddle_position()
-	paddle_control_offense_state_machine()
+	if game_mode == ui_game_mode_enum.offense:
+		paddle_control_offense_state_machine()
+	elif game_mode == ui_game_mode_enum.defense:
+		paddle_control_defense_state_machine()
 
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
 		pc_state_cmd = pc_state_cmd_enum.on
 		Tx_PC_Cmd(PCAN)
-
 	elif ui_game_state == ui_game_state_enum.stopped:
 		pc_state_cmd = pc_state_cmd_enum.off
 		Tx_PC_Cmd(PCAN)
@@ -1311,8 +1353,8 @@ def handle_visual_game():
 ## Take care of manual game decisions (human operating robot vs human)
 ##
 def handle_manual_game():
-	global mc_pos_cmd_x_mm
-	global mc_pos_cmd_y_mm
+	global mc_pos_cmd_mm_x
+	global mc_pos_cmd_mm_y
 	global pc_state_cmd
 
 	if (pt_state != pt_state_enum.tracking)	and (pt_state != pt_state_enum.idle):
@@ -1322,10 +1364,9 @@ def handle_manual_game():
 	if ui_game_state == ui_game_state_enum.playing:
 		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
 		pc_state_cmd = pc_state_cmd_enum.on
-		mc_pos_cmd_x_mm = int(ui_tx[ui_tx_enum.paddle_position_x])
-		mc_pos_cmd_y_mm = int(ui_tx[ui_tx_enum.paddle_position_y])
-		logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_x_mm, mc_pos_cmd_y_mm)
-		#filter_Tx_PC_Cmd()
+		mc_pos_cmd_mm_x = ui_tx[ui_tx_enum.paddle_position_x]
+		mc_pos_cmd_mm_y = ui_tx[ui_tx_enum.paddle_position_y]
+		logging.info("MC Manual game: x=%s y=%s", mc_pos_cmd_mm_x, mc_pos_cmd_mm_y)
 		Tx_PC_Cmd(PCAN)
 
 	elif ui_game_state == ui_game_state_enum.stopped:
@@ -1409,34 +1450,33 @@ def calibrate_puck():
 ## main()
 ##
 try:
-
 	# Create enums
 	get_enums()
 	get_settings()
 
-	# Initialize PCAN device
-	Init_PCAN(PCAN)
+	# Set initial master controller state/error
+	mc_state = mc_state_enum.running
+	mc_error = mc_error_enum.none
 
 	# Create HDF5 file for logging PC position data
-	Create_HDF5()
+	create_HDF5()
+
+	# Initialize PCAN device
+	init_PCAN(PCAN)
 
 	# Initialize IPC between MC - PC - UI
-	Init_IPC()
+	init_IPC()
 
 	logging.info("MC: Entering main loop")
 
-	# Set MC states
-	mc_state = mc_state_enum.running
-	mc_error = mc_error_enum.idle
-
 	# Master Controller loop
 	while True:
-		Rx_IPC()
-		Rx_CAN(PCAN)
-		#add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		rx_IPC()
+		rx_CAN(PCAN)
+		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
 		make_decisions()
-		#add_pos_sent_HDF5(str(datetime.datetime.now()))
-		#update_dset_HDF5()
+		add_pos_sent_HDF5(str(datetime.datetime.now()))
+		update_dset_HDF5()
 		sleep(timeout)
 
 except KeyboardInterrupt:
@@ -1446,6 +1486,10 @@ except KeyboardInterrupt:
 	prepare_to_quit()
 	sys.exit()
 
+except Exception as e:
+	# Really Broken. Quit the puck tracker so we release the webcam and I don't have to reboot the computer over and over
+	print e
+	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 ## end of function
 
 ##############################################################################################

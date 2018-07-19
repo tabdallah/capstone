@@ -6,18 +6,18 @@
                 "medium", 
                 "fast"
             ], 
+            "pc_state_cmd": [
+                "off", 
+                "calibration", 
+                "on", 
+                "clear_error"
+            ], 
             "pc_error": [
                 "none", 
                 "y_axis_overload", 
                 "x_axis_overload", 
                 "can_buffer_full", 
                 "can_tx"
-            ], 
-            "pc_state_cmd": [
-                "off", 
-                "calibration", 
-                "on", 
-                "clear_error"
             ], 
             "pc_state": [
                 "off", 
@@ -62,11 +62,6 @@
                 "run", 
                 "quit"
             ], 
-            "ui_diagnostic_request": [
-                "idle", 
-                "calibrate_fiducials", 
-                "calibrate_paddle_controller"
-            ], 
             "ui_rx": [
                 "idle", 
                 "state_cmd", 
@@ -99,6 +94,10 @@
                 "pc_motor_speed_cmd_y", 
                 "pc_state_cmd"
             ], 
+            "ui_error": [
+                "idle", 
+                "crashed"
+            ], 
             "ui_game_state": [
                 "idle", 
                 "playing", 
@@ -114,12 +113,14 @@
                 "medium", 
                 "fast"
             ], 
-            "ui_error": [
+            "ui_diagnostic_request": [
                 "idle", 
-                "crashed"
+                "calibrate_fiducials", 
+                "calibrate_paddle_controller", 
+                "clear_errors"
             ]
         }, 
-        "game_mode": 0, 
+        "game_mode": 1, 
         "game_speed_y": 1, 
         "game_speed_x": 0, 
         "game_length": 300
@@ -135,11 +136,13 @@
             "mc_state": [
                 "idle", 
                 "running", 
-                "stopped"
+                "stopped", 
+                "error"
             ], 
             "mc_error": [
-                "idle", 
-                "crashed"
+                "none", 
+                "crashed", 
+                "pcan"
             ]
         }
     }, 

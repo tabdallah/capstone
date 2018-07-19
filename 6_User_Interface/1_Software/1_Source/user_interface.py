@@ -111,8 +111,9 @@ class DiagnosticsScreen(BoxLayout, Screen):
         global ui_error
         ui_error = ui_error_enum.idle
         self.manager.ui_rx[ui_rx_enum.pt_error] = pt_error_enum.idle
-        self.manager.ui_rx[ui_rx_enum.pc_error] = pc_error_enum.none
-        self.manager.ui_rx[ui_rx_enum.mc_error] = mc_error_enum.idle
+        #self.manager.ui_rx[ui_rx_enum.pc_error] = pc_error_enum.none
+        self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.clear_errors
+        self.manager.ui_rx[ui_rx_enum.mc_error] = mc_error_enum.none
 
     def calibrate_paddle_controller(self, *args):
         self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_paddle_controller
@@ -349,7 +350,7 @@ class ScreenManagement(ScreenManager):
         if (ui_error != ui_error_enum.idle or
             self.ui_rx[ui_rx_enum.pt_error] != pt_error_enum.idle or
             self.ui_rx[ui_rx_enum.pc_error] != pc_error_enum.none or
-            self.ui_rx[ui_rx_enum.mc_error] != mc_error_enum.idle):
+            self.ui_rx[ui_rx_enum.mc_error] != mc_error_enum.none):
             error_set = True
         else:
             error_set = False

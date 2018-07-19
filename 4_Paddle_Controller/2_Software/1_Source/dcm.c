@@ -67,18 +67,13 @@ void dcm_control(dcm_t *dcm)
 	// Calculate total effective error
 	error_calc = error_i + error_p;
 
-	// Limit speed when close to limit switches
-	if ((abs(dcm->position_mm - dcm->axis_boundary_mm) < dcm->slow_down_threshold_mm) && 
-		(dcm->h_bridge_direction == dcm_h_bridge_dir_reverse)) {
-		// Close to lower limit switch
-		if ((dcm->position_mm > dcm->axis_boundary_mm) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
-			error_calc = abs(dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / error_p;
-		}
-	} else if ((abs((dcm->axis_length_mm - dcm->axis_boundary_mm) - dcm->position_mm) < dcm->slow_down_threshold_mm) &&
-		(dcm->h_bridge_direction == dcm_h_bridge_dir_forward)) {
-		// Close to upper limit switch
-		if ((dcm->position_mm < (dcm->axis_length_mm - dcm->axis_boundary_mm)) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
-			error_calc = abs(dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / error_p * -1;
+	// Calculate speed limit
+	dcm_calculate_speed_limit(dcm);
+	if (dcm->speed_mm_per_s > dcm->speed_limit_mm_per_s) {
+		if (dcm->h_bridge_direction == dcm_h_bridge_dir_forward) {
+			error_calc = dcm->speed_limit_mm_per_s - dcm->speed_mm_per_s;
+		} else if (dcm->h_bridge_direction == dcm_h_bridge_dir_reverse) {
+			error_calc = dcm->speed_mm_per_s - dcm->speed_limit_mm_per_s;
 		}
 	}
 
@@ -148,4 +143,25 @@ void dcm_overload_check(dcm_t *dcm)
 	if (dcm->overload_strike_counter >= DCM_OVERLOAD_STRIKE_COUNT_LIMIT) {
 		dcm_set_error(dcm, dcm_error_overload);
 	}
+}
+
+//;**************************************************************
+//;*                 dcm_calculate_speed_limit
+//;**************************************************************
+static void dcm_calculate_speed_limit(dcm_t *dcm)
+{
+	unsigned int distance_to_limit_mm;
+
+	// Calculate distance to limit switch based on direction of travel
+	if (dcm->h_bridge_direction == dcm_h_bridge_dir_forward) {
+		distance_to_limit_mm = (dcm->axis_length_mm - dcm->axis_boundary_mm) - dcm->position_mm;
+	} else if (dcm->h_bridge_direction == dcm_h_bridge_dir_reverse) {
+		distance_to_limit_mm = dcm->position_mm - dcm->axis_boundary_mm;
+	} else {
+		dcm->speed_limit_mm_per_s = 0;
+	}
+
+	// Calculate speed limit based on current speed and distance from the limit
+	dcm->speed_limit_mm_per_s = ((distance_to_limit_mm + 5) / dcm->speed_limit_distance_factor) 
+			* ((10000 - dcm->speed_mm_per_s + 50) / 100);	
 }

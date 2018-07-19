@@ -65,9 +65,9 @@ typedef struct dcm_t {
 	unsigned int axis_length_mm;
 	unsigned int axis_boundary_mm;
 	unsigned int home_position_mm;
-	unsigned int slow_down_threshold_mm;
-	unsigned int slow_down_speed_mm_per_s;
 	unsigned int speed_mm_per_s;
+	unsigned int speed_limit_mm_per_s;
+	unsigned char speed_limit_distance_factor;
 	unsigned int calc_speed;
 	unsigned char pwm_duty;
 	unsigned char set_speed;
@@ -91,5 +91,6 @@ void dcm_control(dcm_t *dcm);
 void dcm_set_error(dcm_t *dcm, dcm_error_e error);
 void dcm_speed_calc(dcm_t *dcm);
 void dcm_overload_check(dcm_t *dcm);
+static void dcm_calculate_speed_limit(dcm_t *dcm);
 
 #endif

@@ -31,9 +31,8 @@ void x_axis_configure(void)
 	x_axis.gain_p_factor = X_AXIS_GAIN_P_FACTOR;
 	x_axis.gain_i = X_AXIS_GAIN_I;
 	x_axis.integral_limit = X_AXIS_INTEGRAL_LIMIT;
-	x_axis.slow_down_threshold_mm = X_AXIS_SLOWDOWN_THRESHOLD_MM;
-	x_axis.slow_down_speed_mm_per_s = X_AXIS_SLOWDOWN_SPEED_MM_PER_S;
 	x_axis.slew_rate = X_AXIS_SLEW_RATE;
+	x_axis.speed_limit_distance_factor = X_AXIS_SPEED_LIMIT_DISTANCE_FACTOR;
 
 	// Configure PWM channel
 	SET_BITS(PWMCLK, PWMCLK_PCLK0_MASK);	// Use clock SA

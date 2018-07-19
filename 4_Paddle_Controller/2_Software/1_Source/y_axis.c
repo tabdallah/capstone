@@ -31,9 +31,8 @@ void y_axis_configure(void)
 	y_axis.gain_p_factor = Y_AXIS_GAIN_P_FACTOR;
 	y_axis.gain_i = Y_AXIS_GAIN_I;
 	y_axis.integral_limit = Y_AXIS_INTEGRAL_LIMIT;
-	y_axis.slow_down_threshold_mm = Y_AXIS_SLOWDOWN_THRESHOLD_MM;
-	y_axis.slow_down_speed_mm_per_s = Y_AXIS_SLOWDOWN_SPEED_MM_PER_S;
 	y_axis.slew_rate = Y_AXIS_SLEW_RATE;
+	y_axis.speed_limit_distance_factor = Y_AXIS_SPEED_LIMIT_DISTANCE_FACTOR;
 
 	// Configure PWM channel for left motor
 	SET_BITS(PWMCLK, PWMCLK_PCLK4_MASK);	// Use clock SA

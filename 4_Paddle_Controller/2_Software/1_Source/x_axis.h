@@ -17,7 +17,7 @@
 #define X_AXIS_DISABLE_PWM CLEAR_BITS(PWME, PWME_PWME0_MASK)
 
 // Mapping speed to PWM duty
-#define X_AXIS_SPEED_MAX 50
+#define X_AXIS_SPEED_MAX 100
 
 // Encoder port setup and macros
 #define X_AXIS_ENC_PORT PTT
@@ -38,13 +38,12 @@
 #define X_AXIS_HOME_MM 54		// Position of centre of paddle when home position switch is pressed
 #define X_AXIS_LENGTH_MM 775
 #define X_AXIS_BOUNDARY_MM 100
-#define X_AXIS_SLOWDOWN_THRESHOLD_MM 100
-#define X_AXIS_SLOWDOWN_SPEED_MM_PER_S 25
 #define X_AXIS_GAIN_P 3
 #define X_AXIS_GAIN_P_FACTOR 10
 #define X_AXIS_GAIN_I 1
 #define X_AXIS_INTEGRAL_LIMIT 5
-#define X_AXIS_SLEW_RATE 1
+#define X_AXIS_SLEW_RATE 2
+#define X_AXIS_SPEED_LIMIT_DISTANCE_FACTOR 30
 
 // Function prototypes
 void x_axis_configure(void);

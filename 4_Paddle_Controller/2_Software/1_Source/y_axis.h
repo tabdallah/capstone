@@ -52,13 +52,12 @@
 #define Y_AXIS_HOME_MM 133		// Position of centre of paddle when home position switch is pressed
 #define Y_AXIS_LENGTH_MM 1000
 #define Y_AXIS_BOUNDARY_MM 230
-#define Y_AXIS_SLOWDOWN_THRESHOLD_MM 100
-#define Y_AXIS_SLOWDOWN_SPEED_MM_PER_S 50
 #define Y_AXIS_GAIN_P 5
 #define Y_AXIS_GAIN_P_FACTOR 10
 #define Y_AXIS_GAIN_I 1
 #define Y_AXIS_INTEGRAL_LIMIT 10
 #define Y_AXIS_SLEW_RATE 1
+#define Y_AXIS_SPEED_LIMIT_DISTANCE_FACTOR 100
 
 // Function prototypes
 void y_axis_configure(void);

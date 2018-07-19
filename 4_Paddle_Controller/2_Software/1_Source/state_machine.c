@@ -10,6 +10,7 @@
 #include "x_axis.h"
 #include "y_axis.h"
 #include "can.h"
+#include "timer.h"
 
 static sm_state_cmd_e state_cmd = sm_state_cmd_off;
 static sm_state_e state = sm_state_off;
@@ -50,6 +51,7 @@ void sm_step(void)
 {
 	dcm_t *x_axis = x_axis_get_data();
 	dcm_t *y_axis = y_axis_get_data();
+	can_error_e *can_error = can_get_error();
 
 	// Check for error first
 	if ((error != sm_error_none) && (state != sm_state_error)) {
@@ -68,6 +70,10 @@ void sm_step(void)
 		case sm_state_calibration:
 			// This is bad since it blocks everything else, but for now it's fine
 			y_axis_home();
+			while (abs(y_axis->axis_boundary_mm - y_axis->position_mm) != 0) {
+				y_axis_position_ctrl();
+				timer_delay_ms(1);
+			}
 			x_axis_home();
 			state_cmd = sm_state_cmd_on;
 			sm_enter_state(sm_state_on);
@@ -86,6 +92,7 @@ void sm_step(void)
 			if ((error == sm_error_none) && (state_cmd == sm_state_cmd_clear_error)) {
 				x_axis->error = dcm_error_none;
 				y_axis->error = dcm_error_none;
+				*can_error = can_error_none;
 				sm_enter_state(sm_state_off);
 			}
 			break;

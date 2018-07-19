@@ -19,8 +19,8 @@
 #define DCM_MM_PER_REV 40
 #define DCM_ENC_TICKS_PER_REV 48
 
-#define DCM_OVERLOAD_STRIKE_COUNT_LIMIT 25
-#define DCM_OVERLOAD_SPEED_MM_PER_S	5
+#define DCM_OVERLOAD_STRIKE_COUNT_LIMIT 50
+#define DCM_OVERLOAD_SPEED_MM_PER_S	3
 
 // Enumerated data types
 typedef enum {

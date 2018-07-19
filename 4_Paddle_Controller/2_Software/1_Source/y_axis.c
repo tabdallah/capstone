@@ -75,8 +75,8 @@ void y_axis_configure(void)
 void y_axis_home(void)
 {
 	// Drive motors backwards
-	Y_AXIS_L_SET_PWM_DUTY(43);
-	Y_AXIS_R_SET_PWM_DUTY(43);
+	Y_AXIS_L_SET_PWM_DUTY(45);
+	Y_AXIS_R_SET_PWM_DUTY(45);
 
 	// Wait for limit switches to be hit
 	// To Do: Should have some timeout here to handle broken switch

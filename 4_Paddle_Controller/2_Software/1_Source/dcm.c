@@ -45,7 +45,7 @@ void dcm_control(dcm_t *dcm)
 	EnableInterrupts;	// End critical region
 
 	// Stop if at desired position
-	if (abs(dcm->position_error_mm) <= 2) {
+	if (abs(dcm->position_error_mm) <= 3) {
 		error_i = 0;
 		dcm->calc_speed = 0;
 		dcm->h_bridge_direction = dcm_h_bridge_dir_brake;
@@ -72,13 +72,13 @@ void dcm_control(dcm_t *dcm)
 		(dcm->h_bridge_direction == dcm_h_bridge_dir_reverse)) {
 		// Close to lower limit switch
 		if ((dcm->position_mm > dcm->axis_boundary_mm) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
-			error_calc = (dcm->slow_down_speed_mm_per_s - dcm->speed_mm_per_s) / 10;
+			error_calc = abs(dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / error_p;
 		}
 	} else if ((abs((dcm->axis_length_mm - dcm->axis_boundary_mm) - dcm->position_mm) < dcm->slow_down_threshold_mm) &&
 		(dcm->h_bridge_direction == dcm_h_bridge_dir_forward)) {
 		// Close to upper limit switch
 		if ((dcm->position_mm < (dcm->axis_length_mm - dcm->axis_boundary_mm)) && (dcm->speed_mm_per_s > dcm->slow_down_speed_mm_per_s)) {
-			error_calc = (dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / 10;
+			error_calc = abs(dcm->speed_mm_per_s - dcm->slow_down_speed_mm_per_s) / error_p * -1;
 		}
 	}
 
@@ -127,6 +127,12 @@ void dcm_overload_check(dcm_t *dcm)
 		dcm->overload_strike_counter = 0;
 	}
 	dcm->h_bridge_direction_old = dcm->h_bridge_direction;
+
+	// Reset strike counter if control mode is not enable
+	if (dcm->ctrl_mode != dcm_ctrl_mode_enable) {
+		dcm->overload_strike_counter = 0;
+		return;
+	}
 
 	// Only checking overload condition at max set speed
 	if (dcm->set_speed == dcm->max_speed) {

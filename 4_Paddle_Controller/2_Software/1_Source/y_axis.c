@@ -98,13 +98,8 @@ void y_axis_position_ctrl(void)
 	static unsigned char count = 0;
 
 	// Speed calculation at 100 Hz
-	if ((count % 10) == 0) {
-		dcm_speed_calc(&y_axis);	
-		dcm_overload_check(&y_axis);
-		count = 0;
-	} else {
-		count ++;
-	}
+	dcm_speed_calc(&y_axis);
+	dcm_overload_check(&y_axis);
 
 	// Perform position control at 1 kHz
 	y_axis.home_switch = Y_AXIS_L_HOME;

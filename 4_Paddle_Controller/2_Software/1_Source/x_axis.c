@@ -14,6 +14,8 @@
 
 static dcm_t x_axis;
 
+unsigned char ir_sense = 0;
+
 //;**************************************************************
 //;*                 x_axis_configure(void)
 //;*	Configure H-Bridge direction control port pins.
@@ -87,13 +89,8 @@ void x_axis_position_ctrl(void)
 	static unsigned char count = 0;
 
 	// Speed calculation at 100 Hz
-	if ((count % 10) == 0) {
-		dcm_speed_calc(&x_axis);	
-		dcm_overload_check(&x_axis);
-		count = 0;
-	} else {
-		count ++;
-	}
+	dcm_speed_calc(&x_axis);
+	dcm_overload_check(&x_axis);
 
 	// Perform position control at 1 kHz
 	x_axis.home_switch = X_AXIS_HOME;

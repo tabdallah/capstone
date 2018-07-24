@@ -106,8 +106,7 @@ void dcm_speed_calc(dcm_t *dcm)
 {
 	unsigned long speed_calc_mm_per_s;
 
-	speed_calc_mm_per_s = 100 * abs(dcm->position_mm - dcm->position_mm_old);
-	speed_calc_mm_per_s = (speed_calc_mm_per_s * DCM_MM_PER_REV) / DCM_ENC_TICKS_PER_REV;
+	speed_calc_mm_per_s = 1000 * abs(dcm->position_mm - dcm->position_mm_old);
 	dcm->speed_mm_per_s = 0xFFFF & speed_calc_mm_per_s;
 	dcm->position_mm_old = dcm->position_mm;
 }
@@ -163,5 +162,5 @@ static void dcm_calculate_speed_limit(dcm_t *dcm)
 
 	// Calculate speed limit based on current speed and distance from the limit
 	dcm->speed_limit_mm_per_s = ((distance_to_limit_mm + 5) / dcm->speed_limit_distance_factor) 
-			* ((10000 - dcm->speed_mm_per_s + 50) / 100);	
+			* ((10000 - dcm->speed_mm_per_s + 50) / 10);
 }

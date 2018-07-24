@@ -80,6 +80,9 @@
                 "state", 
                 "error", 
                 "game_state", 
+                "game_mode",
+                "game_speed_x",
+                "game_speed_y", 
                 "screen", 
                 "diagnostic_request", 
                 "lower_hue", 
@@ -89,10 +92,7 @@
                 "upper_sat", 
                 "upper_val", 
                 "paddle_position_x", 
-                "paddle_position_y", 
-                "pc_motor_speed_cmd_x", 
-                "pc_motor_speed_cmd_y", 
-                "pc_state_cmd"
+                "paddle_position_y"
             ], 
             "ui_error": [
                 "idle", 
@@ -120,9 +120,9 @@
                 "clear_errors"
             ]
         }, 
-        "game_mode": 1, 
+        "game_mode": 0, 
         "game_speed_y": 1, 
-        "game_speed_x": 0, 
+        "game_speed_x": 2, 
         "game_length": 300
     }, 
     "master_controller": {
@@ -216,35 +216,35 @@
                 }, 
                 "val": {
                     "upper": 245, 
-                    "lower": 190
+                    "lower": 162
                 }, 
                 "sat": {
-                    "upper": 226, 
+                    "upper": 228, 
                     "lower": 97
                 }
             }, 
             "coordinates": {
                 "bl": {
-                    "y": 456.26628664495115, 
-                    "x": 18.90988056460369
+                    "y": 466.36851738865164, 
+                    "x": 22.024811877160868
                 }, 
                 "tl": {
-                    "y": 13.672184753729818, 
-                    "x": 16.594522787655833
+                    "y": 6.521628498727735, 
+                    "x": 21.93723494486853
                 }, 
                 "tr": {
-                    "y": 104.1204481792717, 
-                    "x": 628.266106442577
+                    "y": 105.00296296296295, 
+                    "x": 630.6296296296296
                 }, 
                 "br": {
-                    "y": 345.25, 
-                    "x": 638.3333333333333
+                    "y": 350.64072632944226, 
+                    "x": 634.7431906614786
                 }
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.7320163087958438, 
-            "mm_per_pixel_y": 1.7503621752413514
+            "mm_per_pixel_x": 2.7619134880673215, 
+            "mm_per_pixel_y": 1.6846911684512011
         }
     }
 }

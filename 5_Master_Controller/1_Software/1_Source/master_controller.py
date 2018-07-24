@@ -618,8 +618,9 @@ def rx_IPC():
 	global ui_diagnostic_request
 	global ui_game_state
 	global ui_screen
-	global pc_motor_speed_cmd_x
-	global pc_motor_speed_cmd_y
+	global game_mode
+	global mc_motor_speed_cmd_x
+	global mc_motor_speed_cmd_y
 
 	# store last received data values
 	last_puck_position_mm_x = puck_position_mm_x
@@ -639,8 +640,9 @@ def rx_IPC():
 	ui_diagnostic_request = int(ui_tx[ui_tx_enum.diagnostic_request])
 	ui_game_state = int(ui_tx[ui_tx_enum.game_state])
 	ui_screen = int(ui_tx[ui_tx_enum.screen])
-	mc_motor_speed_cmd_x = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_x])
-	mc_motor_speed_cmd_y = int(ui_tx[ui_tx_enum.pc_motor_speed_cmd_y])
+	mc_motor_speed_cmd_x = int(ui_tx[ui_tx_enum.game_speed_x])
+	mc_motor_speed_cmd_y = int(ui_tx[ui_tx_enum.game_speed_y])
+	game_mode = int(ui_tx[ui_tx_enum.game_mode])
 
 	# pass through data from ui to pt
 	pt_rx[pt_rx_enum.lower_hue] = ui_tx[ui_tx_enum.lower_hue]
@@ -700,7 +702,6 @@ def paddle_control_offense_state_machine():
 		paddle_position_averaged_array.fill(0)
 		paddle_position_averaged_index = 0
 
-	
 	# STATE MACHINE
 	if offense_sm_state == mc_control_state_machine_enum.home:
 		# go home
@@ -737,7 +738,7 @@ def paddle_control_offense_state_machine():
 		if (puck_velocity_mmps_y > 0):
 			offense_sm_state = mc_control_state_machine_enum.home
 		
-		# if puck moved past us - defend
+		# if puck moved past attack line - defend
 		if ((puck_position_mm_y < attack_line_mm_y) and
 			(puck_velocity_mmps_y < min_puck_velocity_mmps_y)):
 			offense_sm_state = mc_control_state_machine_enum.defend
@@ -1131,10 +1132,6 @@ def make_decisions():
 	# pass state data to the UI
 	send_UI_states()
 
-	#send PC motor speeds
-	#ui_rx[ui_rx_enum.motor_speed_x] = pc_motor_speed_x
-	#ui_rx[ui_rx_enum.motor_speed_y] = pc_motor_speed_y
-
 	# Check ALL states
 	if ((mc_state == mc_state_enum.error) or (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
 		handle_errors()
@@ -1155,7 +1152,6 @@ def make_decisions():
 		handle_manual_game()
 
 	elif ui_screen == ui_screen_enum.menu:
-		update_game_settings()
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
 
 	elif ui_screen == ui_screen_enum.fiducial_calibration:

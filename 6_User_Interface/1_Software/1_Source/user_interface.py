@@ -224,7 +224,7 @@ class FiducialCalibrationScreen(BoxLayout, Screen):
 
         if self.ids['calibrate_continue_button'].text == "Save & Calibrate":
             fiducial_lower_hsv = (self.ids['lower_hue'].value, self.ids['lower_sat'].value, self.ids['lower_val'].value)
-            fiducial_upper_hsv = (self.ids['upper_hue'].value, self.ids['upget_settingper_sat'].value, self.ids['upper_val'].value)
+            fiducial_upper_hsv = (self.ids['upper_hue'].value, self.ids['upper_sat'].value, self.ids['upper_val'].value)
             update_hsv_settings()
             self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.calibrate_fiducials
             self.ids['slider_layout'].disabled = True
@@ -337,6 +337,11 @@ class ScreenManagement(ScreenManager):
         self.get_screen('diagnostics').ids['pc_state_label'].text = pc_state_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_state]]
         self.get_screen('diagnostics').ids['pc_error_label'].text = pc_error_enum.reverse_mapping[self.ui_rx[ui_rx_enum.pc_error]]
         
+        # update game settings for master controller
+        self.ui_tx[ui_tx_enum.game_mode] = game_mode
+        self.ui_tx[ui_tx_enum.game_speed_x] = game_speed_x
+        self.ui_tx[ui_tx_enum.game_speed_y] = game_speed_y
+
         # transmit hsv data when we're calibrating fiducials or puck
         if self.current == 'fiducial_calibration' or self.current == 'puck_calibration':
             self.ui_tx[ui_tx_enum.lower_hue] = self.get_screen(self.current).ids['lower_hue'].value

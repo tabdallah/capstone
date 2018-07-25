@@ -88,6 +88,7 @@ pc_error = 0
 
 # Other
 pc_goal_scored = 0
+last_pc_goal_scored = 0
 mc_cmd_pc_debug = 0		# for debug purposes in mc_cmd_pc msg 
 pc_status_debug = 0		# for debug purposes in pc_status msg 
 
@@ -308,12 +309,15 @@ def rx_CAN(device):
 	global pc_state
 	global pc_error
 	global pc_goal_scored
+	global last_pc_goal_scored
 	global pc_motor_speed_y
 	global pc_motor_speed_x
 	global pc_status_debug
 
 	message = PCANBasic.Read(PCAN, PCAN_USBBUS1)
-	#print "thing", message
+
+	# Save last read data 
+	last_pc_goal_scored = pc_goal_scored
 
 	# Keep reading messages until there aren't any more
 	while message[1].ID > 1:
@@ -681,6 +685,11 @@ def filter_tx_PC_cmd():
 
 ## end of function
 
+##
+## paddle_control_offense_state_machine()
+## Control paddle position commands through a state machine that 
+## 		changes states based on puck position/velocity 
+##	
 def paddle_control_offense_state_machine():
 	global offense_sm_state
 	global last_offense_sm_state
@@ -791,6 +800,13 @@ def paddle_control_offense_state_machine():
 
 	last_offense_sm_state = offense_sm_state
 
+# end of function
+
+##
+## paddle_control_defense_state_machine()
+## Control paddle position commands through a state machine that 
+## 		changes states based on puck position/velocity 
+##	
 def paddle_control_defense_state_machine():
 	global defense_sm_state
 	global last_defense_sm_state
@@ -875,6 +891,13 @@ def paddle_control_defense_state_machine():
 
 	last_defense_sm_state = defense_sm_state
 
+# end of function
+
+##
+## get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received)
+## Get an x axis position for the paddle based on desired intercept position
+## 		and puck bounce prediction
+##	
 def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received):
 	global paddle_position_mm_x
 	global paddle_position_averaged_mm_x
@@ -964,181 +987,23 @@ def get_paddle_position_mm_x(puck_intercept_position_mm_y, frame, frame_received
 	# after our paddle postion prediction is drawn onto the frame, return the frame
 	return frame
 
-## 
-## get_paddle_position()
-## Calculates linear trajectory of the puck based on XY positions and Y velocity
-## Outputs XY position for the paddle
-##
-def get_paddle_position():
-	global last_puck_velocity_mmps_y
-	global last_paddle_position_averaged_mm_x
-	global paddle_position_averaged_array
-	global paddle_position_averaged_index
-	global mc_pos_cmd_mm_x
-	global mc_pos_cmd_mm_y
-	
-	# get frame for visualization
-	if visualization_data_rx.empty():
-		frame_received = False
-	else:
-		frame = visualization_data_rx.get(True)
-		frame_received = True
-
-	if int(puck_position_mm_x) == 0 and int(puck_position_mm_y) == 0: 
-		paddle_position_mm_x = goal_center_mm_x
-		paddle_position_mm_y = 0
-		mc_pos_cmd_mm_x = int(paddle_position_mm_x)
-		mc_pos_cmd_mm_y = int(paddle_position_mm_y)
-
-	elif puck_position_mm_x != last_puck_position_mm_x and puck_position_mm_y != last_puck_position_mm_y:
-		# set the target paddle position based on game mode
-		if game_mode == ui_game_mode_enum.offense:
-			paddle_target_position_mm_y = paddle_offense_position_mm_y
-		else:
-			paddle_target_position_mm_y = paddle_defense_position_mm_y
-
-		# default paddle position
-		paddle_position_mm_x = last_paddle_position_averaged_mm_x
-		paddle_position_mm_y = 0
-
-		# predicting the x axis position of the puck	
-		puck_prediction_mm_x = 0
-		
-		# check if the puck is moving towards the robot, if yes: DEFEND!
-		if puck_velocity_mmps_y < min_puck_velocity_mmps_y:
-			# using the equation of a line y = mx + b, find predicted x position when y = 0
-			vector_mm_x = puck_position_mm_x - last_puck_position_mm_x
-			vector_mm_y = puck_position_mm_y - last_puck_position_mm_y
-			
-			if vector_mm_x == 0:
-				# avoid divide by zero
-				slope = 999999
-			else:
-				slope = vector_mm_y/vector_mm_x
-			
-			# b = y - mx
-			intercept_mm_y = puck_position_mm_y - (slope * puck_position_mm_x)
-			
-			# x = (y - b)/m
-			if slope == 0:
-				puck_prediction_mm_x = 0
-			else:
-				puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-
-			# predict bounces and get a real x prediction
-			bounce_count = 0
-			while True:
-				if (table_width_mm_x - puck_radius_mm) >= puck_prediction_mm_x >= puck_radius_mm:
-					if frame_received:
-						if bounce_count == 0:
-							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-						else:
-							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-					break
-
-				elif puck_prediction_mm_x < puck_radius_mm:
-					bounce_mm_y = (slope * puck_radius_mm) + intercept_mm_y
-					bounce_mm_x = puck_radius_mm
-					slope = -slope
-					intercept_mm_y = bounce_mm_y - (slope * puck_radius_mm)
-					puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-					if frame_received:
-						if bounce_count == 0:
-							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-						else:
-							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-
-				elif puck_prediction_mm_x > (table_width_mm_x - puck_radius_mm):
-					bounce_mm_y = (slope * (table_width_mm_x - puck_radius_mm)) + intercept_mm_y
-					bounce_mm_x = (table_width_mm_x - puck_radius_mm)
-					slope = -slope
-					intercept_mm_y = bounce_mm_y - (slope * (table_width_mm_x - puck_radius_mm))
-					puck_prediction_mm_x = ((paddle_target_position_mm_y + paddle_radius_mm) - intercept_mm_y) / slope
-					if frame_received:
-						if bounce_count == 0:
-							cv2.line(frame, (int(puck_position_mm_y/mm_per_pixel_y), int(puck_position_mm_x/mm_per_pixel_x)), (int(bounce_mm_y/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-						else:
-							cv2.line(frame, (int(last_bounce_mm_y/mm_per_pixel_y), int(last_bounce_mm_x/mm_per_pixel_x)), (int((bounce_mm_y)/mm_per_pixel_y), int(bounce_mm_x/mm_per_pixel_x)), (255,0,0), 3)
-							
-				last_bounce_mm_y = bounce_mm_y
-				last_bounce_mm_x = bounce_mm_x
-				bounce_count += 1
-
-			# draw a circle around the raw desired paddle position
-			if frame_received:
-				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(puck_prediction_mm_x/mm_per_pixel_x)), 10, (0, 0, 255), 2)
-
-			# now that we have a predicted x position, take an average to improve accuracy  
-			paddle_position_averaged_array[paddle_position_averaged_index] = puck_prediction_mm_x
-			number_non_zero_values = np.count_nonzero(paddle_position_averaged_array)
-			if number_non_zero_values != 0:
-				paddle_position_averaged_mm_x = (np.sum(paddle_position_averaged_array)) / number_non_zero_values
-			else:
-				paddle_position_averaged_mm_x = 0
-			
-			# manage index for array
-			paddle_position_averaged_index += 1
-			if paddle_position_averaged_index >= paddle_position_averaged_window_size:
-				paddle_position_averaged_index = 0
-
-			# draw a circle around the averaged desired paddle position
-			if frame_received:
-				cv2.circle(frame, (int((paddle_target_position_mm_y + paddle_radius_mm)/mm_per_pixel_y), int(paddle_position_averaged_mm_x/mm_per_pixel_x)), 10, (0, 255, 255), 2)
-
-			if game_mode == ui_game_mode_enum.defense: # only goal post correct if defense
-				# Goal post correction
-				if paddle_position_averaged_mm_x < goal_left_post_mm_x:
-					paddle_position_averaged_mm_x = goal_left_post_mm_x
-				# puck pos after right goalpost then set to the right goalpost_pos+tolerance
-				elif paddle_position_averaged_mm_x > goal_right_post_mm_x:
-					paddle_position_averaged_mm_x = goal_right_post_mm_x
-
-			# set paddle position
-			paddle_position_mm_x = paddle_position_averaged_mm_x
-			paddle_position_mm_y = paddle_target_position_mm_y
-
-		if (puck_velocity_mmps_y > min_puck_velocity_mmps_y) and (last_puck_velocity_mmps_y < min_puck_velocity_mmps_y):
-			paddle_position_averaged_array.fill(0)
-			paddle_position_averaged_index = 0
-			paddle_position_mm_x = goal_center_mm_x
-			paddle_position_mm_y = 0
-
-		last_puck_velocity_mmps_y = puck_velocity_mmps_y
-		last_paddle_position_averaged_mm_x = paddle_position_mm_x
-
-		logging.debug("Paddle defense position is: %i,0", paddle_position_mm_x)
-
-		mc_pos_cmd_mm_x = int(paddle_position_mm_x)
-		mc_pos_cmd_mm_y = int(paddle_position_mm_y)
-
-	# send frame
-	if frame_received:
-		frame = cv2.resize(frame, dsize=(800,600), interpolation=cv2.INTER_LINEAR)
-		try:
-			visualization_data_tx.put_nowait(frame)
-		except:
-			pass
-
-## end of function
+# end of function 
 
 ## 
 ## make_decisions()
 ## Controls interface between puck tracker, user interface, and paddle controller
 ##
 def make_decisions():
-	global last_ui_screen
-	global pc_state_cmd
-
 	# pass state data to the UI
 	send_UI_states()
 
 	# Check ALL states
-	if ((mc_state == mc_state_enum.error) or (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
-		handle_errors()
+	if ((pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit)):
+		handle_quits()
 		return
 	
-	elif ((pt_state == pt_state_enum.quit) or (ui_state == ui_state_enum.request_quit) or (ui_state == ui_state_enum.quit)):
-		handle_quits()
+	elif ((mc_state == mc_state_enum.error) or (pt_state == pt_state_enum.error) or (ui_state == ui_state_enum.error) or (pc_state == pc_state_enum.error)):
+		handle_errors()
 		return
 	
 	elif ui_state != ui_state_enum.running:
@@ -1162,18 +1027,7 @@ def make_decisions():
 
 	elif ui_screen == ui_screen_enum.diagnostic:
 		pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.idle
-
-		if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_paddle_controller:
-			ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
-			pc_state_cmd = pc_state_cmd_enum.calibration
-			Tx_PC_Cmd(PCAN)
-			pc_state_cmd = pc_state_cmd_enum.off
-
-		if ui_diagnostic_request == ui_diagnostic_request_enum.clear_errors:
-			ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
-			pc_state_cmd = pc_state_cmd_enum.clear_error
-			Tx_PC_Cmd(PCAN)
-			pc_state_cmd = pc_state_cmd_enum.off
+		handle_diagnostic_requests()
 
 ## end of function
 
@@ -1335,7 +1189,8 @@ def handle_visual_game():
 		paddle_control_defense_state_machine()
 
 	if ui_game_state == ui_game_state_enum.playing:
-		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		if pc_goal_scored != last_pc_goal_scored:
+			ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
 		pc_state_cmd = pc_state_cmd_enum.on
 		Tx_PC_Cmd(PCAN)
 	elif ui_game_state == ui_game_state_enum.stopped:
@@ -1358,7 +1213,8 @@ def handle_manual_game():
 		return
 
 	if ui_game_state == ui_game_state_enum.playing:
-		ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
+		if pc_goal_scored != last_pc_goal_scored:
+			ui_rx[ui_rx_enum.goal_scored] = pc_goal_scored
 		pc_state_cmd = pc_state_cmd_enum.on
 		mc_pos_cmd_mm_x = ui_tx[ui_tx_enum.paddle_position_x]
 		mc_pos_cmd_mm_y = ui_tx[ui_tx_enum.paddle_position_y]
@@ -1368,27 +1224,29 @@ def handle_manual_game():
 	elif ui_game_state == ui_game_state_enum.stopped:
 		pc_state_cmd = pc_state_cmd_enum.off
 		Tx_PC_Cmd(PCAN)
+
 ## end of function
 
-## 
-## update_game_settings()
-## Retrieve the game settings controlled by the user interface
+##  
+## handle_diagnostic_requests()
+## Handles requests to calibrate pc or clear errors
 ##
-def update_game_settings():
-    global game_mode
-    global game_speed_x
-    global game_speed_y
+def handle_diagnostic_requests():
+	global pc_state_cmd
 
-    # get settings from file
-    with open((settings_path + 'settings.json'), 'r') as fp:
-        settings = json.load(fp)
-        fp.close()
+	if ui_diagnostic_request == ui_diagnostic_request_enum.calibrate_paddle_controller:
+		ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+		pc_state_cmd = pc_state_cmd_enum.calibration
+		Tx_PC_Cmd(PCAN)
+		pc_state_cmd = pc_state_cmd_enum.off
 
-    game_mode = settings['user_interface']['game_mode']
-    game_speed_x = settings['user_interface']['game_speed_x']
-    game_speed_y = settings['user_interface']['game_speed_y']
+	if ui_diagnostic_request == ui_diagnostic_request_enum.clear_errors:
+		ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.idle
+		pc_state_cmd = pc_state_cmd_enum.clear_error
+		Tx_PC_Cmd(PCAN)
+		pc_state_cmd = pc_state_cmd_enum.off
 
-## end of function
+# end of fuction
 
 ##  
 ## calibrate_fiducials()

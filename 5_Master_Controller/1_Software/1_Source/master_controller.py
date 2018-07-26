@@ -340,7 +340,8 @@ def rx_CAN(device):
 			pc_motor_speed_y = pc_status_motor_goal_b4 & mask_motor_speed_y_b4
 			logging.debug("Incoming message from PC: Motor Speed Y: %s", pc_motor_speed_y)
 
-			pc_goal_scored = pc_status_motor_goal_b4 & mask_goal_scored_b4
+			pc_goal_scored = (pc_status_motor_goal_b4 & mask_goal_scored_b4) >> 4
+			print "Goal Scored from CAN:", pc_goal_scored
 			logging.debug("Incoming message from PC: Goal Scored: %s", pc_goal_scored)
 		
 			pc_state = int(message[1].DATA[5])

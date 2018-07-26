@@ -292,7 +292,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.error] = pt_error_enum.camera
     
     pt_state = pt_state_enum.idle
-    pt_error = pt_error_enum.idle
+    pt_error = pt_error_enum.none
     calibration_attempts = 0
     fiducials_found = 0
 

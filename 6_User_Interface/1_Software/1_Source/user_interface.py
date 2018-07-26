@@ -20,6 +20,7 @@ from kivy.uix.label import Label
 from kivy.uix.scatter import Scatter
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.widget import Widget
+from kivy.uix.popup import Popup
 
 # paths to import external files
 images_filepath = "../../../6_User_Interface/1_Software/2_Images/"
@@ -55,9 +56,9 @@ class IntroScreen(BoxLayout, Screen):
         Clock.schedule_once(self.go_menu, 0)
 
         # play intro music
-        introMusic = SoundLoader.load(audio_filepath + 'organ.wav')
+        """introMusic = SoundLoader.load(audio_filepath + 'organ.wav')
         if introMusic:
-            introMusic.play()
+            introMusic.play()"""
     
     def on_enter(self):
         self.manager.ui_tx[ui_tx_enum.screen] = ui_screen_enum.intro
@@ -109,8 +110,8 @@ class DiagnosticsScreen(BoxLayout, Screen):
 
     def clear_errors(self, *args):
         global ui_error
-        ui_error = ui_error_enum.idle
-        self.manager.ui_rx[ui_rx_enum.pt_error] = pt_error_enum.idle
+        ui_error = ui_error_enum.none
+        self.manager.ui_rx[ui_rx_enum.pt_error] = pt_error_enum.none
         self.manager.ui_rx[ui_rx_enum.pc_error] = pc_error_enum.none
         self.manager.ui_rx[ui_rx_enum.mc_error] = mc_error_enum.none
         self.manager.ui_tx[ui_tx_enum.diagnostic_request] = ui_diagnostic_request_enum.clear_errors
@@ -352,8 +353,8 @@ class ScreenManagement(ScreenManager):
             self.ui_tx[ui_tx_enum.upper_val] = self.get_screen(self.current).ids['upper_val'].value
         
         # error handling logic
-        if (ui_error != ui_error_enum.idle or
-            self.ui_rx[ui_rx_enum.pt_error] != pt_error_enum.idle or
+        if (ui_error != ui_error_enum.none or
+            self.ui_rx[ui_rx_enum.pt_error] != pt_error_enum.none or
             self.ui_rx[ui_rx_enum.pc_error] != pc_error_enum.none or
             self.ui_rx[ui_rx_enum.mc_error] != mc_error_enum.none):
             error_set = True
@@ -409,6 +410,17 @@ class GameControl(BoxLayout):
             self.parent.manager.ui_tx[ui_tx_enum.game_state] = ui_game_state_enum.stopped
             Clock.unschedule(self.decrement_clock)
             self.ids['pause_resume_game_button'].disabled = True
+
+            # declare a winner
+            if self.human_score > self.robot_score:
+                popup_text = 'You beat the robot! Congratulations'
+            elif self.human_score == self.robot_score:
+                popup_text = 'The game ended a tie.'
+            elif self.human_score < self.robot_score:
+                popup_text = 'You lost. The robot is your superior.'
+
+            popup = Popup(title='Game Over',title_size=20,separator_color=(0,0.4,1,0.4),content=Label(text=popup_text,font_size=30),size_hint=(None,None),size=(500,200))
+            popup.open()
 
     def start_reset_game(self, *args):
         if self.ids['start_reset_game_button'].text == "Start Game":
@@ -680,7 +692,7 @@ def ui_process(ui_rx, ui_tx, visualization_data):
     get_hsv_settings()
 
     ui_state = ui_state_enum.idle
-    ui_error = ui_error_enum.idle
+    ui_error = ui_error_enum.none
 
     while True:
         # retrieve commands from master controller

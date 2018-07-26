@@ -45,6 +45,12 @@
 
 // Enumerated data types
 typedef enum {
+	can_goal_none = 0,
+	can_goal_human = (1 << 4),	// Goal scored on human
+	can_goal_robot = (2 << 4),	// Goal scored on robot
+} can_goal_e;
+
+typedef enum {
 	can_error_none = 0,
 	can_error_buffer_full = 1,
 	can_error_tx = 2
@@ -70,6 +76,7 @@ typedef struct {
 	unsigned int pos_y_mm;
 	sm_state_e state;
 	sm_error_e error;
+	can_goal_e goal;
 } can_msg_pc_status_t;
 
 // Function prototypes

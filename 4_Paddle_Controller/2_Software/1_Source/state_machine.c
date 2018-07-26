@@ -69,12 +69,14 @@ void sm_step(void)
 			break;
 		case sm_state_calibration:
 			// This is bad since it blocks everything else, but for now it's fine
+			/*
 			y_axis_home();
 			while (abs(y_axis->axis_boundary_mm - y_axis->position_mm) != 0) {
 				y_axis_position_ctrl();
 				timer_delay_ms(1);
 			}
 			x_axis_home();
+			*/
 			state_cmd = sm_state_cmd_on;
 			sm_enter_state(sm_state_on);
 			break;

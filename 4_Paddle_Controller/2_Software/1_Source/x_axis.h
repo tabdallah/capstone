@@ -17,7 +17,7 @@
 #define X_AXIS_DISABLE_PWM CLEAR_BITS(PWME, PWME_PWME0_MASK)
 
 // Mapping speed to PWM duty
-#define X_AXIS_SPEED_MAX 100
+#define X_AXIS_SPEED_MAX 0
 
 // Encoder port setup and macros
 #define X_AXIS_ENC_PORT PTT

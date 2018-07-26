@@ -9,6 +9,7 @@
 #include "dcm.h"
 #include "x_axis.h"
 #include "y_axis.h"
+#include "ir.h"
 #include <stdlib.h>
 
 // Code from AN3034 app note (but not really because that code was hot garbage)
@@ -159,12 +160,7 @@ void can_send_status(void)
 	unsigned char data[8];
 	unsigned long pos_x_calc, pos_y_calc;
 	dcm_t *x_axis, *y_axis;
-
-	// Return immediately if previous CAN error
-	/*
-	if (error != can_error_none) {
-		return;
-	}*/
+	ir_sensor_e ir_sensor_output;
 
 	// Calculate X and Y axis positions in mm
 	x_axis = x_axis_get_data();
@@ -182,13 +178,22 @@ void can_send_status(void)
 	can_msg_pc_status.state = sm_get_state();
 	can_msg_pc_status.error = sm_get_error();
 
+	// Get goal data
+	ir_sensor_output = ir_get_output(ir_goal_human);
+	if (ir_sensor_output == ir_sensor_blocked) {
+		can_msg_pc_status.goal = can_goal_human;
+	} else {
+		can_msg_pc_status.goal = can_goal_none;
+		// TODO add logic for robot goal
+	}
+
 	// Pack data into 8 byte array
 	// This seems sloppy, fix this later.
 	data[0] = can_msg_pc_status.pos_x_mm & 0x00FF;
 	data[1] = (can_msg_pc_status.pos_x_mm & 0xFF00) >> 8;
 	data[2] = can_msg_pc_status.pos_y_mm & 0x00FF;
 	data[3] = (can_msg_pc_status.pos_y_mm & 0xFF00) >> 8;
-	data[4] = 0;	// Motor speed and goals scored placeholder
+	data[4] = (can_msg_pc_status.goal & 0xF0);	// TODO add speed settings
 	data[5] = can_msg_pc_status.state;
 	data[6] = can_msg_pc_status.error;
 	data[7] = 0;	// Debug

@@ -2,19 +2,30 @@
 #include "derivative.h"      /* derivative-specific definitions */
 #include "TA_Header_W2016.h"  /* my macros and constants */
 #include "timer.h"  // Macros and constants for timer3handler.
-#include "x_axis.h"
-#include "y_axis.h"
+#include "ir.h"
 
 static unsigned char timer_tcnt_overflow = 0;
 
 //;**************************************************************
 //;*                 timer_configure(void)
 //;*    Configures the timer module with parameters for PWM operation
-//;*    Sets up channel 6 for a 1kHz interrupt timer
+//;*    Sets up channel 6 for a 10kHz interrupt timer
 //;**************************************************************   
 void timer_configure(void) {
     TSCR1 = TSCR1_INIT; // Turn on timer module and enable fast-clear and freeze in debug
     TSCR2 = TSCR2_INIT; // Set pre-scaler to 4 for finest resolution @50Hz PWM frequency
+
+    // Use TC6 as 10kHz interrupt timer
+    TIOS |= TIOS_IOS6_MASK;
+    SET_OC_ACTION(6, OC_OFF);
+    TC6 = TCNT + (TCNT_uS * 100);
+    TIE |= TIOS_IOS6_MASK;
+}
+
+interrupt 14 void timer_10kHz(void)
+{
+    ir_10kHz_task();
+    TC6 = TCNT + (TCNT_uS * 100);
 }
 
 //;**************************************************************

@@ -24,7 +24,7 @@
 #define Y_AXIS_R_DISABLE_PWM CLEAR_BITS(PWME, PWME_PWME5_MASK)
 
 // Mapping speed to PWM duty
-#define Y_AXIS_SPEED_MAX 0
+#define Y_AXIS_SPEED_MAX 100
 
 // Encoder port setup and macros
 #define Y_AXIS_ENC_PORT PTT
@@ -49,8 +49,8 @@
 #define Y_AXIS_R_HOME ((Y_AXIS_HOME_PORT & Y_AXIS_R_HOME_PIN) >> Y_AXIS_R_HOME_SHIFT)
 
 // Position control constants
-#define Y_AXIS_HOME_MM 54		// Position of centre of paddle when home position switch is pressed
-#define Y_AXIS_LENGTH_MM 900
+#define Y_AXIS_HOME_MM 80		// Position of centre of paddle when home position switch is pressed
+#define Y_AXIS_LENGTH_MM 850
 #define Y_AXIS_BOUNDARY_MM 100
 #define Y_AXIS_GAIN_P 5
 #define Y_AXIS_GAIN_P_FACTOR 10

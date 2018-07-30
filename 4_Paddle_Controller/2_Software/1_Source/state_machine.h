@@ -28,7 +28,8 @@ typedef enum {
 	sm_error_y_axis_overload = 1,
 	sm_error_x_axis_overload = 2,
 	sm_error_can_buffer_full = 3,
-	sm_error_can_tx = 4
+	sm_error_can_tx = 4,
+	sm_error_light_screen_centre = 5
 } sm_error_e;
 
 // Function prototypes

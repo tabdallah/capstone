@@ -31,12 +31,14 @@ void dcm_control(dcm_t *dcm)
 	}
 
 	// Read home position switches
+	/*
 	if (dcm->home_switch == dcm_home_switch_pressed) {
 		DisableInterrupts;
 		dcm->position_mm = dcm->home_position_mm;
 		dcm->position_enc_ticks = (dcm->position_mm * DCM_ENC_TICKS_PER_REV) / DCM_MM_PER_REV;
 		EnableInterrupts;
 	}
+	*/
 
 	// Calculate position error
 	DisableInterrupts;	// Start critical region

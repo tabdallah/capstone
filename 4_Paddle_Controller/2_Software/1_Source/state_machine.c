@@ -11,6 +11,7 @@
 #include "y_axis.h"
 #include "can.h"
 #include "timer.h"
+#include "ir.h"
 
 static sm_state_cmd_e state_cmd = sm_state_cmd_off;
 static sm_state_e state = sm_state_off;
@@ -69,14 +70,13 @@ void sm_step(void)
 			break;
 		case sm_state_calibration:
 			// This is bad since it blocks everything else, but for now it's fine
-			/*
 			y_axis_home();
-			while (abs(y_axis->axis_boundary_mm - y_axis->position_mm) != 0) {
+			while (abs(y_axis->position_cmd_mm - y_axis->position_mm) != 0) {
 				y_axis_position_ctrl();
 				timer_delay_ms(1);
 			}
 			x_axis_home();
-			*/
+			y_axis->position_cmd_mm = y_axis->home_position_mm;
 			state_cmd = sm_state_cmd_on;
 			sm_enter_state(sm_state_on);
 			break;
@@ -146,6 +146,7 @@ void sm_error_handling(void)
 	dcm_t *x_axis = x_axis_get_data();
 	dcm_t *y_axis = y_axis_get_data();
 	can_error_e *can_error = can_get_error();
+	ir_sensor_e ir_centre_output = ir_get_output(ir_light_screen_centre_ice);
 
 	// Execute clear error command if it is active
 	if (state_cmd == sm_state_cmd_clear_error) {
@@ -193,6 +194,12 @@ void sm_error_handling(void)
 				error = sm_error_x_axis_overload;
 				break;
 		}
+		return;
+	}
+
+	// Check for light screen break
+	if (ir_centre_output == ir_sensor_blocked) {
+		error = sm_error_light_screen_centre;
 		return;
 	}
 }

@@ -86,8 +86,8 @@ void y_axis_home(void)
 	y_axis.position_mm = y_axis.home_position_mm;
 	y_axis.position_enc_ticks = (y_axis.position_mm * DCM_ENC_TICKS_PER_REV) / DCM_MM_PER_REV;
 
-	// Set target to boundary
-	y_axis.position_cmd_mm = y_axis.axis_boundary_mm;
+	// Set target to boundary + 100 so x-axis can be homed
+	y_axis.position_cmd_mm = y_axis.axis_boundary_mm + 100;
 }
 
 //;**************************************************************

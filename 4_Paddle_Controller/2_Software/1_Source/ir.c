@@ -9,13 +9,17 @@
 #include "ir.h"
 
 // Define IR sensors
-static ir_sensor_t ir_sensor_goal_human;
+static ir_sensor_t ir_sensor_goal_human, ir_sensor_goal_robot, ir_sensor_centre;
 
 //;**************************************************************
 //;*                 ir_configure
 //;**************************************************************
 void ir_configure(void)
 {
+	ir_sensor_goal_human.output_filtered = ir_sensor_clear;
+	ir_sensor_goal_robot.output_filtered = ir_sensor_clear;
+	ir_sensor_centre.output_filtered = ir_sensor_clear;
+
 	CLEAR_BITS(IR_DDR, IR_SENSOR_1_PIN);
 	CLEAR_BITS(IR_DDR, IR_SENSOR_2_PIN);
 	CLEAR_BITS(IR_DDR, IR_SENSOR_3_PIN);
@@ -23,8 +27,12 @@ void ir_configure(void)
 	CLEAR_BITS(IR_DDR, IR_SENSOR_5_PIN);
 	CLEAR_BITS(IR_DDR, IR_SENSOR_6_PIN);
 
+	ir_sensor_centre.port_pin = IR_SENSOR_1_PIN;
+	ir_sensor_centre.port_pin_shift = IR_SENSOR_1_SHIFT;
 	ir_sensor_goal_human.port_pin = IR_SENSOR_2_PIN;
 	ir_sensor_goal_human.port_pin_shift = IR_SENSOR_2_SHIFT;
+	ir_sensor_goal_robot.port_pin = IR_SENSOR_3_PIN;
+	ir_sensor_goal_robot.port_pin_shift = IR_SENSOR_3_SHIFT;
 
 	SET_BITS(GOAL_LIGHT_DDR, GOAL_LIGHT_HUMAN_PIN);
 	SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
@@ -82,7 +90,9 @@ static void ir_sensor_filter(ir_sensor_t *ir_sensor)
 //;**************************************************************
 void ir_10kHz_task(void)
 {
+	ir_sensor_read(&ir_sensor_centre);
 	ir_sensor_read(&ir_sensor_goal_human);
+	ir_sensor_read(&ir_sensor_goal_robot);
 }
 
 //;**************************************************************
@@ -90,11 +100,25 @@ void ir_10kHz_task(void)
 //;**************************************************************
 void ir_1kHz_task(void)
 {
+	// Avoid false-positives out of reset by doing nothing
+	static unsigned int startup_counter = 100;
+	if (startup_counter > 0) {
+		startup_counter --;
+		return;
+	}
+
+	ir_sensor_filter(&ir_sensor_centre);
 	ir_sensor_filter(&ir_sensor_goal_human);
+	ir_sensor_filter(&ir_sensor_goal_robot);
 	if (ir_sensor_goal_human.goal_light_timer > 0) {
 		CLEAR_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
 	} else {
 		SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
+	}
+	if (ir_sensor_goal_robot.goal_light_timer > 0) {
+		CLEAR_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_ROBOT_PIN);
+	} else {
+		SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_ROBOT_PIN);
 	}
 }
 
@@ -107,8 +131,14 @@ ir_sensor_e ir_get_output(ir_sensor_name_e sensor)
 
 	switch (sensor)
 	{
+		case ir_light_screen_centre_ice:
+			output = ir_sensor_centre.output_filtered;
+			break;
 		case ir_goal_human:
 			output = ir_sensor_goal_human.output_filtered;
+			break;
+		case ir_goal_robot:
+			output = ir_sensor_goal_robot.output_filtered;
 			break;
 		default:
 			output = ir_sensor_clear;

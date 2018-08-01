@@ -40,6 +40,42 @@
 			<key>sourceFP</key>
 			<string>r3hnRnrMTpy09IJj2fhtuw - 2018-08-01 03:10:59 +0000</string>
 		</dict>
+		<dict>
+			<key>date</key>
+			<string>Wednesday, August 1, 2018 at 2:21:33 PM Eastern Daylight Time</string>
+			<key>fullDate</key>
+			<date>2018-08-01T18:21:33Z</date>
+			<key>resultStr</key>
+			<array>
+				<string>/Users/davideelman/Desktop/Capstone Video.mov</string>
+			</array>
+			<key>sourceFP</key>
+			<string>r3hnRnrMTpy09IJj2fhtuw - 2018-08-01 18:13:30 +0000</string>
+		</dict>
+		<dict>
+			<key>date</key>
+			<string>Wednesday, August 1, 2018 at 2:59:56 PM Eastern Daylight Time</string>
+			<key>fullDate</key>
+			<date>2018-08-01T18:59:56Z</date>
+			<key>resultStr</key>
+			<array>
+				<string>/Users/davideelman/Desktop/Capstone Video.mp4</string>
+			</array>
+			<key>sourceFP</key>
+			<string>r3hnRnrMTpy09IJj2fhtuw - 2018-08-01 18:52:21 +0000</string>
+		</dict>
+		<dict>
+			<key>date</key>
+			<string>Wednesday, August 1, 2018 at 3:51:50 PM Eastern Daylight Time</string>
+			<key>fullDate</key>
+			<date>2018-08-01T19:51:50Z</date>
+			<key>resultStr</key>
+			<array>
+				<string>/Users/davideelman/Desktop/Capstone Video.mov</string>
+			</array>
+			<key>sourceFP</key>
+			<string>r3hnRnrMTpy09IJj2fhtuw - 2018-08-01 19:41:15 +0000</string>
+		</dict>
 	</array>
 </dict>
 </plist>

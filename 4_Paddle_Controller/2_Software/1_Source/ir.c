@@ -31,8 +31,8 @@ void ir_configure(void)
 	ir_sensor_centre.port_pin_shift = IR_SENSOR_1_SHIFT;
 	ir_sensor_goal_human.port_pin = IR_SENSOR_2_PIN;
 	ir_sensor_goal_human.port_pin_shift = IR_SENSOR_2_SHIFT;
-	ir_sensor_goal_robot.port_pin = IR_SENSOR_3_PIN;
-	ir_sensor_goal_robot.port_pin_shift = IR_SENSOR_3_SHIFT;
+	ir_sensor_goal_robot.port_pin = IR_SENSOR_6_PIN;
+	ir_sensor_goal_robot.port_pin_shift = IR_SENSOR_6_SHIFT;
 
 	SET_BITS(GOAL_LIGHT_DDR, GOAL_LIGHT_HUMAN_PIN);
 	SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
@@ -110,15 +110,19 @@ void ir_1kHz_task(void)
 	ir_sensor_filter(&ir_sensor_centre);
 	ir_sensor_filter(&ir_sensor_goal_human);
 	ir_sensor_filter(&ir_sensor_goal_robot);
+	
+	// Logic to turn on goal lights
 	if (ir_sensor_goal_human.goal_light_timer > 0) {
 		CLEAR_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
 	} else {
 		SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_HUMAN_PIN);
 	}
+
+	// Robot side goal light doesn't go through schmidt trigger
 	if (ir_sensor_goal_robot.goal_light_timer > 0) {
-		CLEAR_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_ROBOT_PIN);
-	} else {
 		SET_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_ROBOT_PIN);
+	} else {
+		CLEAR_BITS(GOAL_LIGHT_PORT, GOAL_LIGHT_ROBOT_PIN);
 	}
 }
 

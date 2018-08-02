@@ -8,7 +8,7 @@ class Neuron {
   
   Neuron(int inputs) {
     upper_limit = 1000;
-    lower_limit = 0;
+    lower_limit = -1000;
     num_inputs = inputs;
     weights = new float[num_inputs];
     input_data = new float[num_inputs];

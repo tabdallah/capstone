@@ -11,7 +11,7 @@ class Human {
   Human() {
     state = state_Home;
     pos_command = new PVector(width/2, paddle_diameter * 2);
-  }  
+  }
   
   //-----------------------------------------------------------------------------------------------------------------
   // Logic for "human player" control
@@ -21,6 +21,7 @@ class Human {
     float puck_distance_to_attack_line_y = 0;
     float paddle_time_to_attack_line_y = 0;
     float puck_time_to_attack_line_y = 0;
+    PVector pos_command_calc = new PVector(0, 0);
     String debug_text;
     
     // Logic for 'home' state
@@ -49,7 +50,14 @@ class Human {
       text("state: attack", 10, 10);
       
       if (attack_move_active) {
-        pos_command.x = puck_pos.x;
+        // X-Axis position command should be a straight line between the puck, paddle and net
+        pos_command_calc.x = puck_pos.x - (width/2);
+        pos_command_calc.y = puck_pos.y - height;
+        pos_command_calc.normalize();
+        pos_command_calc = pos_command_calc.mult((paddle_diameter/2) + (puck_diameter/2));
+        pos_command.x = puck_pos.x + pos_command_calc.x;        
+        
+        //pos_command.x = puck_pos.x;
         pos_command.y = attack_line_y;
       } else {
         // Calculate distance and time to attack line for paddle and puck

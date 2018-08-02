@@ -1,5 +1,5 @@
-int brain_input_neurons = 7;
-int brain_hidden_neurons = 8;
+int brain_input_neurons = 9;
+int brain_hidden_neurons = 10;
 int brain_output_neurons = 2;
 
 class Brain {
@@ -8,10 +8,10 @@ class Brain {
   boolean robot_victory;  // True if the robot won the game
   float average_speed;
   
-  // Input order: puck_pos_x, puck_pos_y, puck_vel_x, puck_vel_y, paddle_pos_x, paddle_pos_y, bias
+  // Input order: puck_pos_x, puck_pos_y, puck_vel_x, puck_vel_y, paddle_pos_x, paddle_pos_y, paddle_vel_x, paddle_vel_y, bias
   Neuron[] input;
 
-  // Hidden layer neurons 1-7 are fed from input layer, 8 is bias
+  // Hidden layer neurons 1-9 are fed from input layer, 10 is bias
   Neuron[] hidden;
 
   // Output order: pos_cmd_x, pos_cmd_y
@@ -23,10 +23,11 @@ class Brain {
     output_command = new PVector(0, 0);
     average_speed = 0;
     
-    // All input layer neurons only have 1 input
+    // All input layer neurons only have 1 input with no weight
     input = new Neuron[brain_input_neurons];
     for (int i=0; i < brain_input_neurons; i++) {
       input[i] = new Neuron(1);
+      input[i].weights[0] = 1;
     }
 
     // Hidden layer neurons except for bias neuron take input from every input layer neuron
@@ -57,7 +58,9 @@ class Brain {
     input[3].input_data[0] = puck.vel.y;
     input[4].input_data[0] = robot_paddle.pos.x; 
     input[5].input_data[0] = robot_paddle.pos.y;
-    input[6].input_data[0] = 1;  // Bias
+    input[6].input_data[0] = robot_paddle.vel.x;
+    input[7].input_data[0] = robot_paddle.vel.y;
+    input[8].input_data[0] = 1;  // Bias
     
     // Process input layer
     for (int i=0; i < brain_input_neurons; i++) {
@@ -98,8 +101,8 @@ class Brain {
   
   //-----------------------------------------------------------------------------------------------------------------
   // Randomly selects an input weight to mutate (one in the hidden layer and one in the output layer)
-  void mutate() {
-    for (int i=0; i < 3; i++) {
+  void mutate(int number_of_mutations) {
+    for (int i=0; i < number_of_mutations; i++) {
       int hidden_neuron_to_mutate = int(random(0, brain_input_neurons-1));  // Don't mutate the bias neuron
       int output_neuron_to_mutate = int(random(0, brain_output_neurons-1));
       int hidden_weight_to_mutate = int(random(0, brain_input_neurons-1));
@@ -124,5 +127,16 @@ class Brain {
       foo.output[i] = output[i].copy();
     }
     return foo;
+  }
+  
+  //-----------------------------------------------------------------------------------------------------------------
+  // Records a copy of the brain in the brain_log.csv file  
+  void log() {
+    Table table = new Table();
+    table.addColumn("generation");
+    table.addColumn("brain");
+    table.addColumn("1");
+    
+    
   }
 }

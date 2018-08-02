@@ -49,6 +49,7 @@ typedef struct ir_sensor_t {
 	unsigned int goal_light_timer;
 	unsigned char port_pin;
 	unsigned char port_pin_shift;
+	unsigned char filter_threshold;
 	unsigned char samples[IR_FILTER_KERNEL_SIZE];
 	unsigned char sample_index;
 	unsigned char latch_count;

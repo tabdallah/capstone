@@ -34,51 +34,39 @@ class Puck {
   // Calls the move function and check for collisions and stuff
   void update() {
     float distance_to_paddle = 0;
+    PVector new_direction = new PVector(0, 0);
+    float vel_magnitude = 0;
     
-    // Check for collision with paddles, first human then robot
+    // Check for collision with human paddle
     distance_to_paddle = sqrt(pow(pos.x - human_paddle.pos.x, 2) + pow(pos.y - human_paddle.pos.y, 2));
     if (distance_to_paddle <= ((puck_diameter/2) + (paddle_diameter/2))) {
-      // Collision with human paddle
-      if (human_paddle.vel.x > 0) {
-        vel.x = human_paddle.vel.x;
-      } else {
-        vel.x = -vel.x;
-      }
-      if (human_paddle.pos.y < pos.y) {
-        if (human_paddle.vel.y > 0) {
-          vel.y = human_paddle.vel.y;
-        } else {
-          vel.y = -vel.y;
-        }
-      } else {
-        if (human_paddle.vel.y < 0) {
-          vel.y = human_paddle.vel.y;
-        } else {
-          vel.y = -vel.y;
-        }
-      }
+      // determine new direction vector based on line drawn between centre of paddle and puck
+      new_direction.x = pos.x - human_paddle.pos.x;
+      new_direction.y = pos.y - human_paddle.pos.y;
+      new_direction.normalize();
+      
+      // determine magnitude of new velocity
+      vel_magnitude = max(sqrt(pow(human_paddle.vel.x, 2) + pow(human_paddle.vel.y, 2)), sqrt(pow(vel.x, 2) + pow(vel.y, 2)));
+      
+      // scale new direction to create new puck velocity
+      vel.x = new_direction.x * vel_magnitude;
+      vel.y = new_direction.y * vel_magnitude;
     }
+
+    // Check for collision with robot paddle
     distance_to_paddle = sqrt( pow(pos.x - robot_paddle.pos.x, 2) + pow(pos.y - robot_paddle.pos.y, 2));
     if (distance_to_paddle <= ((puck_diameter/2) + (paddle_diameter/2))) {
-      // Collision with robot paddle
-      if (robot_paddle.vel.x > 0) {
-        vel.x = robot_paddle.vel.x;
-      } else {
-        vel.x = -vel.x;
-      }
-      if (robot_paddle.pos.y > pos.y) {
-        if (robot_paddle.vel.y < 0) {
-          vel.y = robot_paddle.vel.y;
-        } else {
-          vel.y = -vel.y;
-        }
-      } else {
-        if (robot_paddle.vel.y > 0) {
-          vel.y = human_paddle.vel.y;
-        } else {
-          vel.y = -vel.y;
-        }
-      }
+      // determine new direction vector based on line drawn between centre of paddle and puck
+      new_direction.x = pos.x - robot_paddle.pos.x;
+      new_direction.y = pos.y - robot_paddle.pos.y;
+      new_direction.normalize();
+      
+      // determine magnitude of new velocity
+      vel_magnitude = max(sqrt(pow(robot_paddle.vel.x, 2) + pow(robot_paddle.vel.y, 2)), sqrt(pow(vel.x, 2) + pow(vel.y, 2)));
+      
+      // scale new direction to create new puck velocity
+      vel.x = new_direction.x * vel_magnitude;
+      vel.y = new_direction.y * vel_magnitude;
     }
       
     // Move puck to new position and handle bounces

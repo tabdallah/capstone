@@ -103,6 +103,7 @@ interrupt 38 void can_rx_handler(void) {
   	unsigned char i;	      // Loop counter
 	unsigned int ID0, ID1;   // To read CAN ID registers and manipulate 11-bit ID's into a single number
 	dcm_t *x_axis, *y_axis;
+	sm_state_e sm_state = sm_get_state();
 
 	// Store 11-bit CAN ID as a single number
 	ID0 = (CANRXIDR0 << 3);
@@ -140,8 +141,10 @@ interrupt 38 void can_rx_handler(void) {
 	x_axis->position_cmd_mm = can_msg_mc_cmd_pc.pos_cmd_x_mm;
 
 	// Set Y-Axis position command
-	y_axis = y_axis_get_data();
-	y_axis->position_cmd_mm = can_msg_mc_cmd_pc.pos_cmd_y_mm;
+	if (sm_state != sm_state_calibration) {
+		y_axis = y_axis_get_data();
+		y_axis->position_cmd_mm = can_msg_mc_cmd_pc.pos_cmd_y_mm;
+	}
 
 	// Set state machine command
 	sm_set_state_cmd(can_msg_mc_cmd_pc.state_cmd);
@@ -160,7 +163,7 @@ void can_send_status(void)
 	unsigned char data[8];
 	unsigned long pos_x_calc, pos_y_calc;
 	dcm_t *x_axis, *y_axis;
-	ir_sensor_e ir_sensor_output;
+	ir_sensor_e ir_sensor_human, ir_sensor_robot;
 
 	// Calculate X and Y axis positions in mm
 	x_axis = x_axis_get_data();
@@ -179,12 +182,14 @@ void can_send_status(void)
 	can_msg_pc_status.error = sm_get_error();
 
 	// Get goal data
-	ir_sensor_output = ir_get_output(ir_goal_human);
-	if (ir_sensor_output == ir_sensor_blocked) {
+	ir_sensor_human = ir_get_output(ir_goal_human);
+	ir_sensor_robot = ir_get_output(ir_goal_robot);
+	if (ir_sensor_human == ir_sensor_blocked) {
 		can_msg_pc_status.goal = can_goal_human;
+	} else if (ir_sensor_robot == ir_sensor_blocked) {
+		can_msg_pc_status.goal = can_goal_robot;
 	} else {
 		can_msg_pc_status.goal = can_goal_none;
-		// TODO add logic for robot goal
 	}
 
 	// Pack data into 8 byte array

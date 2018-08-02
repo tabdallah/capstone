@@ -73,20 +73,12 @@ void y_axis_configure(void)
 //;**************************************************************
 void y_axis_home(void)
 {
-	unsigned char pressed_count = 100;
-
 	// Drive motors backwards
 	Y_AXIS_L_SET_PWM_DUTY(45);
 	Y_AXIS_R_SET_PWM_DUTY(45);
 
 	// Wait for limit switch to be hit
-	while(pressed_count > 0) {
-		y_axis.home_switch = Y_AXIS_L_HOME;
-		if (y_axis.home_switch == dcm_home_switch_pressed) {
-			pressed_count --;
-		}
-		timer_delay_ms(1);
-	}
+	while(Y_AXIS_L_HOME == dcm_home_switch_unpressed) {};
 	Y_AXIS_L_SET_PWM_DUTY(DCM_PWM_DUTY_OFF);
 	Y_AXIS_R_SET_PWM_DUTY(DCM_PWM_DUTY_OFF);
 	y_axis.position_mm = y_axis.home_position_mm;

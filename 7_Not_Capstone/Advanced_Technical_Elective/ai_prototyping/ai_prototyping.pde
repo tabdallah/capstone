@@ -7,7 +7,7 @@ Brain[] brains;
 int number_brains = 5;
 int current_brain = 0;
 int generation = 1;
-int max_game_time_ms = 5000;
+int max_game_time_ms = 10000;
 int goal_width_x = 200;
 int goal_height_y = 10;
 PVector pos_old;

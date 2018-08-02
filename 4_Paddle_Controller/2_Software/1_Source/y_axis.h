@@ -49,7 +49,7 @@
 #define Y_AXIS_R_HOME ((Y_AXIS_HOME_PORT & Y_AXIS_R_HOME_PIN) >> Y_AXIS_R_HOME_SHIFT)
 
 // Position control constants
-#define Y_AXIS_HOME_MM 80		// Position of centre of paddle when home position switch is pressed
+#define Y_AXIS_HOME_MM 76		// Position of centre of paddle when home position switch is pressed
 #define Y_AXIS_LENGTH_MM 850
 #define Y_AXIS_BOUNDARY_MM 100
 #define Y_AXIS_GAIN_P 5

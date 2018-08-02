@@ -17,8 +17,11 @@ static ir_sensor_t ir_sensor_goal_human, ir_sensor_goal_robot, ir_sensor_centre;
 void ir_configure(void)
 {
 	ir_sensor_goal_human.output_filtered = ir_sensor_clear;
+	ir_sensor_goal_human.filter_threshold = 5;
 	ir_sensor_goal_robot.output_filtered = ir_sensor_clear;
+	ir_sensor_goal_robot.filter_threshold = 5;
 	ir_sensor_centre.output_filtered = ir_sensor_clear;
+	ir_sensor_centre.filter_threshold = 10;
 
 	CLEAR_BITS(IR_DDR, IR_SENSOR_1_PIN);
 	CLEAR_BITS(IR_DDR, IR_SENSOR_2_PIN);
@@ -68,7 +71,7 @@ static void ir_sensor_filter(ir_sensor_t *ir_sensor)
 			sample_count ++;
 		}
 	}
-	if (sample_count >= IR_FILTER_THRESHOLD) {
+	if (sample_count >= ir_sensor->filter_threshold) {
 		ir_sensor->goal_light_timer = GOAL_LIGHT_TIMER;
 		ir_sensor->output_filtered = ir_sensor_blocked;
 		ir_sensor->latch_count = 250;
@@ -101,7 +104,7 @@ void ir_10kHz_task(void)
 void ir_1kHz_task(void)
 {
 	// Avoid false-positives out of reset by doing nothing
-	static unsigned int startup_counter = 100;
+	static unsigned int startup_counter = 1000;
 	if (startup_counter > 0) {
 		startup_counter --;
 		return;

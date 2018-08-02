@@ -7,6 +7,8 @@ class Brain {
   int time_count_ms;      // Keeps track of how long the game went
   boolean robot_victory;  // True if the robot won the game
   float average_speed;
+  float loser_fitness;
+  float winner_fitness;
   
   // Input order: puck_pos_x, puck_pos_y, puck_vel_x, puck_vel_y, paddle_pos_x, paddle_pos_y, paddle_vel_x, paddle_vel_y, bias
   Neuron[] input;
@@ -131,12 +133,39 @@ class Brain {
   
   //-----------------------------------------------------------------------------------------------------------------
   // Records a copy of the brain in the brain_log.csv file  
-  void log() {
+  void log(int brain_number) {   
     Table table = new Table();
     table.addColumn("generation");
-    table.addColumn("brain");
-    table.addColumn("1");
+    table.addColumn("brain_number");
+    table.addColumn("time_count_ms");
+    table.addColumn("average_speed");
+    for (int i=0; i < brain_hidden_neurons; i++) {
+      for (int j=0; j < brain_input_neurons; j++) {
+       table.addColumn("h" + str(i) + "w" + str(j)); 
+      }      
+    }
+    for (int i=0; i < brain_output_neurons; i++) {
+      for (int j=0; j < brain_hidden_neurons; j++) {
+       table.addColumn("o" + str(i) + "w" + str(j)); 
+      }      
+    }
+        
+    TableRow newRow = table.addRow();
+    newRow.setInt("generation", generation);
+    newRow.setInt("brain_number", brain_number);
+    newRow.setInt("time_count_ms", time_count_ms);
+    newRow.setFloat("average_speed", average_speed);
+    for (int i=0; i < brain_hidden_neurons; i++) {
+      for (int j=0; j < hidden[i].num_inputs; j++) {
+       newRow.setFloat("h" + str(i) + "w" + str(j), hidden[i].weights[j]);
+      }
+    }
+    for (int i=0; i < brain_output_neurons; i++) {
+      for (int j=0; j < output[i].num_inputs; j++) {
+       newRow.setFloat("o" + str(i) + "w" + str(j), output[i].weights[j]); 
+      }      
+    }
     
-    
+    saveTable(table, "log_data/generation_" + str(generation) + ".csv");
   }
 }

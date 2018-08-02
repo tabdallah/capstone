@@ -17,7 +17,7 @@ PVector pos_old;
 void setup()
 {
   size(775, 1000);  // size of the window
-  frameRate(1000);  // 1kHz operation
+  frameRate(10000);  // Run as fast as the CPU will handle
   puck = new Puck();
   puck.vel.x = 1;
   puck.vel.y = 1;
@@ -39,10 +39,7 @@ void setup()
 void draw()
 {
   int best_brain = 0;
-  int max_speed_counter = 0;
-  int same_brain_counter = 0;
-  int number_of_mutations = 0;
-  float highest_avg_speed = 0;
+  int number_of_mutations = 3;
   Brain best_brain_copy = new Brain();
   
   // Let the brains play
@@ -63,93 +60,31 @@ void draw()
     
     // Pick the best brain
     for (int i=0; i < number_brains; i++) {    
-      // First priority: brains that win
+      // Calculate the "loser fitness" i.e. how long did it last and how high was its average speed
+      brains[i].loser_fitness = brains[i].time_count_ms + brains[i].average_speed;
+      
+      // Calculate the "winner fitness" i.e. how long did it take to win
+      brains[i].winner_fitness = brains[i].time_count_ms;
+      
+      // First priority: brains that win (lower fitness score is better)
       if (brains[best_brain].robot_victory) {
         if (brains[i].robot_victory) {
-          // Who won the fastest?
-          if (brains[i].time_count_ms < brains[best_brain].time_count_ms) {
+          if (brains[i].winner_fitness < brains[best_brain].winner_fitness) {
             best_brain = i;        
           }
         }
       } else {
-        // Second priority: Brains that last the longest
-        //if (brains[i].time_count_ms > brains[best_brain].time_count_ms) {
-          //best_brain = i;
-        //}
-        
-        // Second priority: Brains with the highest average speed
-        if (brains[i].average_speed > brains[best_brain].average_speed) {
+        // Second priority: Brains that last the longest and have highest average speed (higher fitness score is better)
+        if (brains[i].loser_fitness > brains[best_brain].loser_fitness) {
           best_brain = i;
         }        
       }
     }
     
-    // Check if all the brains had the same average speed
-    same_brain_counter = 0;
-    for (int i=0; i < (number_brains-1); i++) {
-      if ((brains[i].average_speed - brains[i+1].average_speed) < 2) {
-        same_brain_counter ++;
-      }
-    }
-    if (same_brain_counter >= (number_brains-1)) {
-      println("Average speeds all equal, large mutation");
-      number_of_mutations = 3;
-    } else {
-      number_of_mutations = 1; 
-    }
-    
-    /*
-    if (brains[best_brain].average_speed < 4000) {
-      println("Average speed too low, large mutation");
-      number_of_mutations = 100;
-    } else {
-      println("Average speed too low, large mutation");
-      number_of_mutations = 10;
-    }*/
-    
-    // Ensure we don't just have an entire generation that is losing in the same amount of time by sitting still
-    /*
-    if (brains[best_brain].robot_victory == false) {
-      // Check if all the brains took the same amount of time to lose
-      for (int i=0; i < (number_brains-1); i++) {
-        if ((brains[i].time_count_ms - brains[i+1].time_count_ms) < 2) {
-          same_brain_counter ++;
-        }
-      }
-      
-      if (same_brain_counter >= (number_brains-1)) {
-        println("All brains lost in same amount of time");
-        // Check if all the brains had the same average speed
-        same_brain_counter = 0;
-        for (int i=0; i < (number_brains-1); i++) {
-          if ((brains[i].average_speed - brains[i+1].average_speed) < 2) {
-            same_brain_counter ++;
-          }
-        }
-        
-        if (same_brain_counter >= (number_brains-1)) {
-          println("All brains had same average speed");
-          println("Major mutation incoming");
-          // No best brain, spawn entirely new generation
-          best_brain = 0;
-          number_of_mutations = 50;
-        } else {
-          // Select the brain with the highest average speed to encourage movement
-          best_brain = 0;
-          for (int i=0; i < number_brains; i++) {
-            print("avg speed: ");
-            println(brains[i].average_speed);
-            if (brains[i].average_speed > brains[best_brain].average_speed) {
-              best_brain = i;
-            }
-          }
-        }
-      }
-    }*/
-    
     // Copy the best brain and mutate each child
     best_brain_copy = brains[best_brain].copy();
     for (int i=1; i < number_brains; i++) {
+      brains[i].log(i);
       brains[i] = best_brain_copy.copy();
       brains[i].mutate(number_of_mutations);
     }
@@ -210,6 +145,7 @@ void play(int brain)
     print("Brain: ");
     println(brain);
     println("Robot took too long");
+    println(brains[brain].average_speed);
     puck.goal_human = true;
     return;
   }

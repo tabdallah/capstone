@@ -33,8 +33,13 @@ class Paddle {
   //-----------------------------------------------------------------------------------------------------------------
   // Moves the paddle
   void move() {
+    if (robot) {
+      acc.limit(0.5);
+    } else {
+      acc.limit(0.8);  // Artificially make the human faster than the robot
+    }
     vel.add(acc);
-    vel.limit(4);  // limit to 4m/s
+    vel.limit(2);  // limit to 4m/s
     pos.add(vel);
   }
 

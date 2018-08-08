@@ -82,8 +82,8 @@ class Human {
         text(debug_text, 10, 60);
         
         // Start moving paddle when timing for collision is good
-        if (abs(puck_time_to_attack_line_y - paddle_time_to_attack_line_y) <= 1) {
-          pos_command.x = puck_pos.x;
+        if (abs(puck_time_to_attack_line_y - paddle_time_to_attack_line_y) <= 0.1) {
+          pos_command.x = puck_pos.x + random(-30, 30);
           pos_command.y = attack_line_y;
           attack_move_active = true;
         }
@@ -99,7 +99,7 @@ class Human {
     // Logic for 'defend' state
     if (state == state_Defend) {
       text("state: defend", 10, 10);
-      pos_command.x = puck_pos.x;
+      pos_command.x = puck_pos.x + random(-30, 30);
       pos_command.y = paddle_diameter/2;
       
       if (puck_vel.y > 0) {
@@ -111,8 +111,8 @@ class Human {
     // Logic for 'return' state
     if (state == state_Return) {
       text("state: return", 10, 10);
-      pos_command.x = puck_pos.x;
-      pos_command.y = puck_pos.y;
+      pos_command.x = puck_pos.x + random(-30, 30);
+      pos_command.y = puck_pos.y - 10;
       
       if (puck_pos.y > height/2) {
         state = state_Home;

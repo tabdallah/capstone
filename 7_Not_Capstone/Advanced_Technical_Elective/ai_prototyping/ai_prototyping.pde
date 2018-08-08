@@ -39,7 +39,8 @@ void setup()
 void draw()
 {
   int best_brain = 0;
-  int number_of_mutations = 3;
+  int number_of_mutations = 1;
+  int similar_brains = 0;
   Brain best_brain_copy = new Brain();
   
   // Let the brains play
@@ -61,15 +62,15 @@ void draw()
     // Pick the best brain
     for (int i=0; i < number_brains; i++) {    
       // Calculate the "loser fitness" i.e. how long did it last and how high was its average speed
-      brains[i].loser_fitness = brains[i].time_count_ms + brains[i].average_speed;
+      brains[i].loser_fitness = (brains[i].time_count_ms * 10) + brains[i].average_dist_to_puck;
       
       // Calculate the "winner fitness" i.e. how long did it take to win
-      brains[i].winner_fitness = brains[i].time_count_ms;
+      brains[i].winner_fitness = ((max_game_time_ms - brains[i].time_count_ms) * 10);
       
-      // First priority: brains that win (lower fitness score is better)
+      // First priority: brains that win (higher fitness score is better)
       if (brains[best_brain].robot_victory) {
         if (brains[i].robot_victory) {
-          if (brains[i].winner_fitness < brains[best_brain].winner_fitness) {
+          if (brains[i].winner_fitness > brains[best_brain].winner_fitness) {
             best_brain = i;        
           }
         }
@@ -77,11 +78,28 @@ void draw()
         // Second priority: Brains that last the longest and have highest average speed (higher fitness score is better)
         if (brains[i].loser_fitness > brains[best_brain].loser_fitness) {
           best_brain = i;
-        }        
+        }
       }
     }
     
+    // Make sure all the brains aren't the same
+    if (!brains[best_brain].robot_victory) {
+      for (int i=0; i < (number_brains-1); i++) {
+        if (brains[i].loser_fitness == brains[i+1].loser_fitness) {
+          similar_brains++;
+        }
+      }
+    }
+    if (similar_brains >= (number_brains-1)) {
+      println("All brains are the same, big mutation");
+      best_brain = int(random(0, number_brains-1));
+      number_of_mutations = 2;
+    }
+    
     // Copy the best brain and mutate each child
+    brains[best_brain].redirections = 0;
+    brains[best_brain].average_speed = 0;
+    brains[best_brain].average_dist_to_puck = 0;
     best_brain_copy = brains[best_brain].copy();
     for (int i=1; i < number_brains; i++) {
       brains[i].log(i);
@@ -101,6 +119,7 @@ void draw()
 // Logic to play a game of air hockey with visualization
 void play(int brain)
 {
+  PVector dist_to_puck = new PVector(0, 0);
   String info_text;
   info_text = "generation: " + generation + "\nbrain: " + brain + "\ntime: " + (brains[brain].time_count_ms);
   
@@ -114,7 +133,7 @@ void play(int brain)
   
   // draw puck and paddles
   brains[brain].update();
-  puck.update();
+  puck.update(brains[brain]);
   puck.show();
   human_player.update(human_paddle.pos, puck.pos, puck.vel);
   human_paddle.update(human_player.pos_command);
@@ -129,6 +148,8 @@ void play(int brain)
     println("Robot wins");
     println(brains[brain].time_count_ms);
     println(brains[brain].average_speed);
+    println(brains[brain].redirections);
+    println(brains[brain].average_dist_to_puck);
     return;
   }
   if (puck.goal_human) {
@@ -137,6 +158,8 @@ void play(int brain)
     println("Human wins");
     println(brains[brain].time_count_ms);
     println(brains[brain].average_speed);
+    println(brains[brain].redirections);
+    println(brains[brain].average_dist_to_puck);
     return;
   }
   
@@ -146,11 +169,20 @@ void play(int brain)
     println(brain);
     println("Robot took too long");
     println(brains[brain].average_speed);
+    println(brains[brain].redirections);
+    println(brains[brain].average_dist_to_puck);
     puck.goal_human = true;
     return;
   }
 
   brains[brain].average_speed += abs(robot_paddle.pos.x - pos_old.x) + abs(robot_paddle.pos.y - pos_old.y);
+  if (puck.pos.y > height/2) {
+    // Determine how close the paddle is to the puck (reverse logic, higher is better)
+    dist_to_puck.x = robot_paddle.pos.x - puck.pos.x;
+    dist_to_puck.y = robot_paddle.pos.y - puck.pos.y;
+    brains[brain].average_dist_to_puck += (height/2) - (dist_to_puck.mag());
+  }  
+  
   pos_old.x = robot_paddle.pos.x;
   pos_old.y = robot_paddle.pos.y;
 }

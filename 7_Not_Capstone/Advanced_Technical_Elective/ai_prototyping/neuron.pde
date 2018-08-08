@@ -27,6 +27,8 @@ class Neuron {
     for (int i = 0; i < num_inputs; i++) {
       output += (input_data[i] * weights[i]);      
     }
+    output = output * upper_limit / sqrt(1 + pow(output, 2));  // Apply sigmoid function x / sqrt(1 + x^2)    
+    
     if (output > upper_limit) {
       output = upper_limit;
     } else if (output < lower_limit) {

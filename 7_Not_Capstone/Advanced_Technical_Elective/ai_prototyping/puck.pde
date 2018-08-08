@@ -26,13 +26,13 @@ class Puck {
   void move() {
     // Apply the acceleration and move the paddle
     vel.add(acc);
-    vel.limit(4);  // Limit to 4m/s
+    vel.limit(10);  // Limit to 4m/s
     pos.add(vel);
   }
 
   //-------------------------------------------------------------------------------------------------------------------
   // Calls the move function and check for collisions and stuff
-  void update() {
+  void update(Brain brain) {
     float distance_to_paddle = 0;
     PVector new_direction = new PVector(0, 0);
     float vel_magnitude = 0;
@@ -67,6 +67,7 @@ class Puck {
       // scale new direction to create new puck velocity
       vel.x = new_direction.x * vel_magnitude;
       vel.y = new_direction.y * vel_magnitude;
+      brain.redirections ++;
     }
       
     // Move puck to new position and handle bounces

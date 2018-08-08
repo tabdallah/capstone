@@ -5,8 +5,10 @@ int brain_output_neurons = 2;
 class Brain {
   PVector output_command;
   int time_count_ms;      // Keeps track of how long the game went
+  int redirections;
   boolean robot_victory;  // True if the robot won the game
   float average_speed;
+  float average_dist_to_puck;
   float loser_fitness;
   float winner_fitness;
   
@@ -21,9 +23,11 @@ class Brain {
 
   Brain() {
     time_count_ms = 0;
+    redirections = 0;
     robot_victory = false;
     output_command = new PVector(0, 0);
     average_speed = 0;
+    average_dist_to_puck = 0;
     
     // All input layer neurons only have 1 input with no weight
     input = new Neuron[brain_input_neurons];
@@ -113,6 +117,7 @@ class Brain {
       hidden[hidden_neuron_to_mutate].weights[hidden_weight_to_mutate] = random(-10, 10);
       output[output_neuron_to_mutate].weights[output_weight_to_mutate] = random(-10, 10);
     }
+    redirections = 0;
   }
   
   //-----------------------------------------------------------------------------------------------------------------
@@ -139,6 +144,7 @@ class Brain {
     table.addColumn("brain_number");
     table.addColumn("time_count_ms");
     table.addColumn("average_speed");
+    table.addColumn("average_dist_to_puck");
     for (int i=0; i < brain_hidden_neurons; i++) {
       for (int j=0; j < brain_input_neurons; j++) {
        table.addColumn("h" + str(i) + "w" + str(j)); 
@@ -155,6 +161,7 @@ class Brain {
     newRow.setInt("brain_number", brain_number);
     newRow.setInt("time_count_ms", time_count_ms);
     newRow.setFloat("average_speed", average_speed);
+    newRow.setFloat("average_dist_to_puck", average_dist_to_puck);
     for (int i=0; i < brain_hidden_neurons; i++) {
       for (int j=0; j < hidden[i].num_inputs; j++) {
        newRow.setFloat("h" + str(i) + "w" + str(j), hidden[i].weights[j]);

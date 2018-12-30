@@ -8,7 +8,11 @@
             ], 
             "pc_error": [
                 "none", 
-                "calibration"
+                "y_axis_overload", 
+                "x_axis_overload", 
+                "can_buffer_full", 
+                "can_tx", 
+                "light_screen_broken"
             ], 
             "pc_state_cmd": [
                 "off", 
@@ -61,7 +65,9 @@
             ], 
             "ui_diagnostic_request": [
                 "idle", 
-                "calibrate_fiducials"
+                "calibrate_fiducials", 
+                "calibrate_paddle_controller", 
+                "clear_errors"
             ], 
             "ui_rx": [
                 "idle", 
@@ -72,15 +78,16 @@
                 "pc_state", 
                 "pc_error", 
                 "mc_state", 
-                "mc_error", 
-                "pc_motor_speed_x", 
-                "pc_motor_speed_y"
+                "mc_error"
             ], 
             "ui_tx": [
                 "idle", 
                 "state", 
                 "error", 
                 "game_state", 
+                "game_mode", 
+                "game_speed_x", 
+                "game_speed_y", 
                 "screen", 
                 "diagnostic_request", 
                 "lower_hue", 
@@ -90,10 +97,7 @@
                 "upper_sat", 
                 "upper_val", 
                 "paddle_position_x", 
-                "paddle_position_y", 
-                "pc_motor_speed_cmd_x", 
-                "pc_motor_speed_cmd_y", 
-                "pc_state_cmd"
+                "paddle_position_y"
             ], 
             "ui_game_state": [
                 "idle", 
@@ -102,8 +106,8 @@
             ], 
             "ui_goal_scored": [
                 "none", 
-                "human", 
-                "robot"
+                "robot", 
+                "human"
             ], 
             "ui_game_speed": [
                 "slow", 
@@ -111,25 +115,33 @@
                 "fast"
             ], 
             "ui_error": [
-                "idle", 
+                "none", 
                 "crashed"
             ]
         }, 
-        "game_mode": 1, 
-        "game_speed_y": 1, 
-        "game_speed_x": 0, 
+        "game_mode": 0, 
+        "game_speed_y": 0, 
+        "game_speed_x": 2, 
         "game_length": 300
     }, 
     "master_controller": {
         "enumerations": {
+            "mc_control_state_machine": [
+                "home", 
+                "attack", 
+                "defend", 
+                "return_puck"
+            ], 
             "mc_state": [
                 "idle", 
                 "running", 
-                "stopped"
+                "stopped", 
+                "error"
             ], 
             "mc_error": [
-                "idle", 
-                "crashed"
+                "none", 
+                "crashed", 
+                "pcan"
             ]
         }
     }, 
@@ -174,7 +186,7 @@
                 "quit"
             ], 
             "pt_error": [
-                "idle", 
+                "none", 
                 "camera", 
                 "calibration_failed"
             ]
@@ -182,16 +194,16 @@
         "puck": {
             "color": {
                 "hue": {
-                    "upper": 80, 
-                    "lower": 35
+                    "upper": 82, 
+                    "lower": 32
                 }, 
                 "val": {
                     "upper": 255, 
-                    "lower": 11
+                    "lower": 40
                 }, 
                 "sat": {
                     "upper": 255, 
-                    "lower": 65
+                    "lower": 72
                 }
             }
         }, 
@@ -203,35 +215,35 @@
                 }, 
                 "val": {
                     "upper": 245, 
-                    "lower": 190
+                    "lower": 135
                 }, 
                 "sat": {
-                    "upper": 226, 
-                    "lower": 97
+                    "upper": 228, 
+                    "lower": 154
                 }
             }, 
             "coordinates": {
                 "bl": {
-                    "y": 456.26628664495115, 
-                    "x": 18.90988056460369
+                    "y": 467.69141480508097, 
+                    "x": 18.40341655716163
                 }, 
                 "tl": {
-                    "y": 13.672184753729818, 
-                    "x": 16.594522787655833
+                    "y": 13.571938668346984, 
+                    "x": 20.013652593992855
                 }, 
                 "tr": {
-                    "y": 104.1204481792717, 
-                    "x": 628.266106442577
+                    "y": 112.81616161616161, 
+                    "x": 631.0949494949494
                 }, 
                 "br": {
-                    "y": 345.25, 
-                    "x": 638.3333333333333
+                    "y": 354.5950782997763, 
+                    "x": 635.7919463087248
                 }
             }
         }, 
         "scaling_factors": {
-            "mm_per_pixel_x": 2.732016308795844, 
-            "mm_per_pixel_y": 1.7503621752413514
+            "mm_per_pixel_x": 2.7410213030902812, 
+            "mm_per_pixel_y": 1.7059387240570552
         }
     }
 }

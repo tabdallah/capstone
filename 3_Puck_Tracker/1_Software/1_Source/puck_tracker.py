@@ -17,10 +17,10 @@ puck_velocity_mmps_x = 0
 puck_velocity_mmps_y = 0
 table_width_mm = 774.7
 table_length_mm = 1692.275
-puck_minimum_area = 300
-puck_maximum_area = 500
-puck_minimum_radius = 10
-puck_maximum_radius = 20
+puck_minimum_area = 500
+puck_maximum_area = 800
+puck_minimum_radius = 15
+puck_maximum_radius = 25
 camera_vertical_resolution = 480
 camera_horizontal_resolution = 640
 camera_fps = 224
@@ -102,6 +102,9 @@ def get_puck_position(frame):
                 cv2.circle(frame, (int(puck_center_coords[0]), int(puck_center_coords[1])), int(radius + 2), (0, 255, 255), 2)
                 puck_position_mm_x = puck_center_coords[0]*mm_per_pixel_x
                 puck_position_mm_y = puck_center_coords[1]*mm_per_pixel_y
+        else:
+            puck_position_mm_x = 0
+            puck_position_mm_y = 0
 
     return frame
 
@@ -289,7 +292,7 @@ def pt_process(pt_rx, pt_tx, visualization_data):
             pt_tx[pt_tx_enum.error] = pt_error_enum.camera
     
     pt_state = pt_state_enum.idle
-    pt_error = pt_error_enum.idle
+    pt_error = pt_error_enum.none
     calibration_attempts = 0
     fiducials_found = 0
 

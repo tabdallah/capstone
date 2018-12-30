@@ -341,7 +341,6 @@ def rx_CAN(device):
 			logging.debug("Incoming message from PC: Motor Speed Y: %s", pc_motor_speed_y)
 
 			pc_goal_scored = (pc_status_motor_goal_b4 & mask_goal_scored_b4) >> 4
-			print "Goal Scored from CAN:", pc_goal_scored
 			logging.debug("Incoming message from PC: Goal Scored: %s", pc_goal_scored)
 		
 			pc_state = int(message[1].DATA[5])
@@ -1328,9 +1327,9 @@ try:
 	while True:
 		rx_IPC()
 		rx_CAN(PCAN)
-		add_pos_rcvd_HDF5(str(datetime.datetime.now()))
+		add_pos_rcvd_HDF5(str(datetime.datetime.now())) # TODO - is this working right?
 		make_decisions()
-		add_pos_sent_HDF5(str(datetime.datetime.now()))
+		add_pos_sent_HDF5(str(datetime.datetime.now())) # TODO - is this working right?
 		update_dset_HDF5()
 		sleep(timeout)
 
@@ -1343,7 +1342,7 @@ except KeyboardInterrupt:
 
 except Exception as e:
 	# Really Broken. Quit the puck tracker so we release the webcam and I don't have to reboot the computer over and over
-	print e
+	print e # TODO - redirect this to the log file
 	pt_rx[pt_rx_enum.state_cmd] = pt_state_cmd_enum.quit
 ## end of function
 

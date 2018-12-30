@@ -28,10 +28,10 @@ audio_filepath = "../../../6_User_Interface/1_Software/3_Audio/"
 settings_filepath = "../../../6_User_Interface/1_Software/4_Json/"
 
 # configuration parameter for touchscreen or normal monitor
-touchscreen = False
+touchscreen = True
 if touchscreen:
     Config.set('graphics', 'fullscreen', 'auto')
-    Config.set('graphics', 'show_cursor', '0') 
+    Config.set('graphics', 'show_cursor', '1') 
 else:
     Config.set('graphics','width','1024')
     Config.set('graphics','height','600')
